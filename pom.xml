@@ -62,7 +62,7 @@
         <module>providers</module>
         <module>drivers</module>
 
-        <module>apps</module>
+        <!--<module>apps</module>-->
         <module>incubator</module>
         <module>features</module>
 

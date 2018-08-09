@@ -258,7 +258,7 @@ function cell {
     *)
         [ ! -f $ONOS_ROOT/tools/test/cells/$1 ] && echo "No such cell: $1" >&2 && return 1
         clearCell
-        export ONOS_USER=sdn
+        export ONOS_USER=yby
         export ONOS_GROUP=sdn
         export ONOS_WEB_USER=onos
         export ONOS_WEB_PASS=rocks
