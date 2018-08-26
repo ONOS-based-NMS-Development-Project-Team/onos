@@ -18,36 +18,25 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>univ.bupt.soon</groupId>
-    <artifactId>alarm_pred</artifactId>
+    <artifactId>ml_show</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>bundle</packaging>
 
     <description>ONOS OSGi bundle archetype</description>
-    <url>https://ipoc.bupt.edu.cn/info/1034/1030.htm</url>
+    <url>http://onosproject.org</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <onos.version>1.13.3-SNAPSHOT</onos.version>
-        <onos.app.name>univ.bupt.soon.alarm_prediction</onos.app.name>
-        <onos.app.title>Alarm Prediction Application</onos.app.title>
+        <onos.app.name>univ.bupt.soon.ml_show</onos.app.name>
+        <onos.app.title>Machine learning result showing Application</onos.app.title>
         <onos.app.origin>BUPT</onos.app.origin>
         <onos.app.category>default</onos.app.category>
         <onos.app.url>https://ipoc.bupt.edu.cn/info/1034/1030.htm</onos.app.url>
-        <onos.app.readme>application for predicting alarm according performance developed by BUPT team</onos.app.readme>
+        <onos.app.readme>application for show of ML result developed by BUPT team</onos.app.readme>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>univ.bupt.soon</groupId>
-            <artifactId>ml_platform</artifactId>
-            <version>0.1-SNAPSHOT</version>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>42.2.4</version>
-        </dependency>
         <dependency>
             <groupId>org.onosproject</groupId>
             <artifactId>onos-api</artifactId>
