@@ -16,10 +16,9 @@
   -->
 <app name="univ.bupt.soon.alarm_prediction" origin="BUPT" version="0.1-SNAPSHOT"
         title="Alarm Prediction Application" category="default" url="https://ipoc.bupt.edu.cn/info/1034/1030.htm"
-        featuresRepo="mvn:univ.bupt.soon/alarm_pred/0.1-SNAPSHOT/xml/features"
-        features="alarm_pred" apps="">
+        featuresRepo="mvn:univ.bupt.soon/alarm-prediction/0.1-SNAPSHOT/xml/features"
+        features="alarm-prediction" apps="">
     <description>application for predicting alarm according performance developed by BUPT team</description>
-    <artifact>mvn:univ.bupt.soon/alarm_pred/0.1-SNAPSHOT</artifact>
+    <artifact>mvn:univ.bupt.soon/alarm-prediction/0.1-SNAPSHOT</artifact>
     <artifact>mvn:org.postgresql/postgresql/42.2.4</artifact>
-    <!--<artifact>mvn:univ.bupt.soon/ml_platform/0.1-SNAPSHOT</artifact>-->
 </app>

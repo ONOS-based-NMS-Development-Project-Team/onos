@@ -2,8 +2,9 @@ package org.onosproject.soon;
 
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.onosproject.soon.dataset.original.Item;
 import org.onosproject.soon.mlmodel.MLModelConfig;
-import org.onosproject.soon.mlmodel.MLModelType;
+import org.onosproject.soon.mlmodel.MLAlgorithmType;
 
 import java.util.Date;
 import java.util.List;
@@ -21,7 +22,7 @@ public interface ModelControlService {
      @param config :  模型具体配置。
      @return :  增加的神经网络模型的id。如果为-1,表示模型增加失败
      **/
-    int addNewModel(MLModelType type, int trainDatasetId, MLModelConfig config);
+    int addNewModel(MLAlgorithmType type, int trainDatasetId, MLModelConfig config);
 
 
     /**
@@ -32,7 +33,7 @@ public interface ModelControlService {
      * @param testDatasetIds 测试集id的集合。表示在多少个测试集上进行测试。如果为null，表示不进行测试。
      * @return 是否开始成功。如果当前模型已经处于训练状态，则返回false。
      */
-    boolean startTraining(MLModelType type, int id, int trainDatasetId, List<Integer> testDatasetIds);
+    boolean startTraining(MLAlgorithmType type, int id, int trainDatasetId, List<Integer> testDatasetIds);
 
     /**
      * 中断模型的训练过程
@@ -41,7 +42,7 @@ public interface ModelControlService {
      * @param trainDatasetId 训练数据集的id
      * @return 是否中断成功。如果该模型本来就不处于训练状态，则仍然返回true
      */
-    boolean stopTraining(MLModelType type, int id, int trainDatasetId);
+    boolean stopTraining(MLAlgorithmType type, int id, int trainDatasetId);
 
     /**
      * 获取指定模型应用的结果
@@ -51,7 +52,7 @@ public interface ModelControlService {
      * @param recentItemNum 将模型应用于最近发生的几次数据中去
      * @return 返回模型应用的结果。return.size()==recentItemNum
      */
-    List<String> getAppliedResult(MLModelType type, int id, int trainDatasetId, int recentItemNum);
+    List<String> getAppliedResult(MLAlgorithmType type, int id, int trainDatasetId, int recentItemNum);
 
 
     /**
@@ -63,7 +64,7 @@ public interface ModelControlService {
      * @param topk 在测试集上的topk要求
      * @return 在测试集上的topk准确率
      */
-    List<Double> getModelEvaluation(MLModelType type, int id, int trainDatasetId, int testDatasetId, List<Integer> topk);
+    List<Double> getModelEvaluation(MLAlgorithmType type, int id, int trainDatasetId, int testDatasetId, List<Integer> topk);
 
 
     /**
@@ -74,9 +75,18 @@ public interface ModelControlService {
      * @param board 节点的单板，可为null
      * @param port 单板的端口，可为null
      * @param itemNum 获取的数据条目数
-     * @return 返回JSON字符串，以及对应的class类。
+     * @return 返回Item的列表。
      */
-    Pair<Class, List<String>> updateData(Date begin, Date end, String node, String board, String port, int itemNum);
+    List<Item> updateData(Date begin, Date end, String node, String board, String port, int itemNum);
+
+
+    /**
+     * 更新数据集，用于前台展示。实现分页查询
+     * @param offset
+     * @param limit
+     * @return
+     */
+    List<Item> updateData(int offset, int limit);
 
 
     /**
@@ -86,7 +96,7 @@ public interface ModelControlService {
      * @param annotations 相关解释
      * @return 返回指定模型的配置
      */
-    MLModelConfig getModelConfig(MLModelType type, int id, Map<String, String> annotations);
+    MLModelConfig getModelConfig(MLAlgorithmType type, int id, Map<String, String> annotations);
 
 
     /**

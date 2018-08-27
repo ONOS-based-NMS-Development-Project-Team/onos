@@ -14,12 +14,11 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<features xmlns="http://karaf.apache.org/xmlns/features/v1.2.0" name="alarm_pred-0.1-SNAPSHOT">
-    <feature name="alarm_pred" version="0.1-SNAPSHOT"
+<features xmlns="http://karaf.apache.org/xmlns/features/v1.2.0" name="alarm-prediction-0.1-SNAPSHOT">
+    <feature name="alarm-prediction" version="0.1-SNAPSHOT"
              description="application for predicting alarm according performance developed by BUPT team">
         <feature>onos-api</feature>
-        <bundle>mvn:univ.bupt.soon/alarm_pred/0.1-SNAPSHOT</bundle>
+        <bundle>mvn:univ.bupt.soon/alarm-prediction/0.1-SNAPSHOT</bundle>
         <bundle>mvn:org.postgresql/postgresql/42.2.4</bundle>
-        <!--<bundle>mvn:univ.bupt.soon/ml_platform/0.1-SNAPSHOT</bundle>-->
     </feature>
 </features>

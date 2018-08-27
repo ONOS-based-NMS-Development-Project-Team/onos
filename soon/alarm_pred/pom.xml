@@ -18,7 +18,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>univ.bupt.soon</groupId>
-    <artifactId>alarm_pred</artifactId>
+    <artifactId>alarm-prediction</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>bundle</packaging>
 
@@ -37,11 +37,6 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>univ.bupt.soon</groupId>
-            <artifactId>ml_platform</artifactId>
-            <version>0.1-SNAPSHOT</version>
-        </dependency>
         <!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
         <dependency>
             <groupId>org.postgresql</groupId>
