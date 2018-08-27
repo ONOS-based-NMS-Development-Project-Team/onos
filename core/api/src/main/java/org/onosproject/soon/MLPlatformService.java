@@ -1,4 +1,4 @@
-package univ.bupt.soon.mlplatform.api;
+package org.onosproject.soon;
 
 
 /**

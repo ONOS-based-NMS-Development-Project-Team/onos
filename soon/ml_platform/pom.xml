@@ -18,7 +18,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>univ.bupt.soon</groupId>
-    <artifactId>ml_platform</artifactId>
+    <artifactId>machine-learning-platform</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>bundle</packaging>
 
@@ -94,9 +94,9 @@
                 <configuration>
                     <instructions>
                         <_wab>src/main/webapp/</_wab>
-                        <Include-Resource>
-                            {maven-resources}
-                        </Include-Resource>
+                        <!--<Include-Resource>-->
+                            <!--{maven-resources}-->
+                        <!--</Include-Resource>-->
                         <Bundle-SymbolicName>
                             ${project.groupId}.${project.artifactId}
                         </Bundle-SymbolicName>
