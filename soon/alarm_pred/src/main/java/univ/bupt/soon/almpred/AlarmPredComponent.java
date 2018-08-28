@@ -30,7 +30,7 @@ public class AlarmPredComponent implements ModelControlService {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final String serviceName = "alarm_prediction";
-    // 存储模型相关的内容
+    // 存储模型相关的内容。模型类型，模型id，模型详细配置
     private final Map<MLAlgorithmType, Map<Integer, MLModelDetail>> models = Maps.newConcurrentMap();
 
     SQLQuery query = SQLQuery.instance;
@@ -61,27 +61,27 @@ public class AlarmPredComponent implements ModelControlService {
 
     @Override
     public int addNewModel(MLAlgorithmType mlAlgorithmType, int trainDatasetId, MLModelConfig mlModelConfig) {
-        return 0;
+        throw new NotImplementedException("Not Implemented Yet!!!");
     }
 
     @Override
     public boolean startTraining(MLAlgorithmType mlAlgorithmType, int i, int i1, List<Integer> list) {
-        return false;
+        throw new NotImplementedException("Not Implemented Yet!!!");
     }
 
     @Override
     public boolean stopTraining(MLAlgorithmType mlAlgorithmType, int i, int i1) {
-        return false;
+        throw new NotImplementedException("Not Implemented Yet!!!");
     }
 
     @Override
     public List<String> getAppliedResult(MLAlgorithmType mlAlgorithmType, int i, int i1, int i2) {
-        return null;
+        throw new NotImplementedException("Not Implemented Yet!!!");
     }
 
     @Override
     public List<Double> getModelEvaluation(MLAlgorithmType mlAlgorithmType, int i, int i1, int i2, List<Integer> list) {
-        return null;
+        throw new NotImplementedException("Not Implemented Yet!!!");
     }
 
     /**
@@ -104,11 +104,11 @@ public class AlarmPredComponent implements ModelControlService {
 
     @Override
     public MLModelConfig getModelConfig(MLAlgorithmType mlAlgorithmType, int i, Map<String, String> map) {
-        return null;
+        throw new NotImplementedException("Not Implemented Yet!!!");
     }
 
     @Override
     public Statistics getAppStatics() {
-        return null;
+        throw new NotImplementedException("Not Implemented Yet!!!");
     }
 }

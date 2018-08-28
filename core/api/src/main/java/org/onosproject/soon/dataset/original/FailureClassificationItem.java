@@ -1,6 +1,8 @@
 package org.onosproject.soon.dataset.original;
 
 
+import com.google.common.base.Objects;
+
 import java.util.Date;
 
 /**
@@ -39,7 +41,7 @@ import java.util.Date;
  *   node5 character varying(50),
  *   board5 character varying(50),
  *   time5 timestamp without time zone,
- *   class character varying(30), -- 标签，表示故障类型
+ *   cls character varying(30), -- 标签，表示故障类型
  *   CONSTRAINT failure_class_pkey PRIMARY KEY (id)
  */
 public class FailureClassificationItem implements Item {
@@ -83,6 +85,8 @@ public class FailureClassificationItem implements Item {
     private String node5;
     private String board5;
     private Date time5;
+
+    private String cls;
 
     public int getId() {
         return id;
@@ -346,5 +350,100 @@ public class FailureClassificationItem implements Item {
 
     public void setTime5(Date time5) {
         this.time5 = time5;
+    }
+
+    public String getCls() {
+        return cls;
+    }
+
+    public void setCls(String cls) {
+        this.cls = cls;
+    }
+
+
+    @Override
+    public String toString() {
+        return "FailureClassificationItem{" +
+                "id=" + id +
+                ", train=" + train +
+                ", dataid=" + dataid +
+                ", level0='" + level0 + '\'' +
+                ", name0='" + name0 + '\'' +
+                ", node0='" + node0 + '\'' +
+                ", board0='" + board0 + '\'' +
+                ", time0=" + time0 +
+                ", level1='" + level1 + '\'' +
+                ", name1='" + name1 + '\'' +
+                ", node1='" + node1 + '\'' +
+                ", board1='" + board1 + '\'' +
+                ", time1=" + time1 +
+                ", level2='" + level2 + '\'' +
+                ", name2='" + name2 + '\'' +
+                ", node2='" + node2 + '\'' +
+                ", board2='" + board2 + '\'' +
+                ", time2=" + time2 +
+                ", level3='" + level3 + '\'' +
+                ", name3='" + name3 + '\'' +
+                ", node3='" + node3 + '\'' +
+                ", board3='" + board3 + '\'' +
+                ", time3=" + time3 +
+                ", level4='" + level4 + '\'' +
+                ", name4='" + name4 + '\'' +
+                ", node4='" + node4 + '\'' +
+                ", board4='" + board4 + '\'' +
+                ", time4=" + time4 +
+                ", level5='" + level5 + '\'' +
+                ", name5='" + name5 + '\'' +
+                ", node5='" + node5 + '\'' +
+                ", board5='" + board5 + '\'' +
+                ", time5=" + time5 +
+                ", cls='" + cls + '\'' +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FailureClassificationItem that = (FailureClassificationItem) o;
+        return id == that.id &&
+                train == that.train &&
+                dataid == that.dataid &&
+                Objects.equal(level0, that.level0) &&
+                Objects.equal(name0, that.name0) &&
+                Objects.equal(node0, that.node0) &&
+                Objects.equal(board0, that.board0) &&
+                Objects.equal(time0, that.time0) &&
+                Objects.equal(level1, that.level1) &&
+                Objects.equal(name1, that.name1) &&
+                Objects.equal(node1, that.node1) &&
+                Objects.equal(board1, that.board1) &&
+                Objects.equal(time1, that.time1) &&
+                Objects.equal(level2, that.level2) &&
+                Objects.equal(name2, that.name2) &&
+                Objects.equal(node2, that.node2) &&
+                Objects.equal(board2, that.board2) &&
+                Objects.equal(time2, that.time2) &&
+                Objects.equal(level3, that.level3) &&
+                Objects.equal(name3, that.name3) &&
+                Objects.equal(node3, that.node3) &&
+                Objects.equal(board3, that.board3) &&
+                Objects.equal(time3, that.time3) &&
+                Objects.equal(level4, that.level4) &&
+                Objects.equal(name4, that.name4) &&
+                Objects.equal(node4, that.node4) &&
+                Objects.equal(board4, that.board4) &&
+                Objects.equal(time4, that.time4) &&
+                Objects.equal(level5, that.level5) &&
+                Objects.equal(name5, that.name5) &&
+                Objects.equal(node5, that.node5) &&
+                Objects.equal(board5, that.board5) &&
+                Objects.equal(time5, that.time5) &&
+                Objects.equal(cls, that.cls);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id, train, dataid, level0, name0, node0, board0, time0, level1, name1, node1, board1, time1, level2, name2, node2, board2, time2, level3, name3, node3, board3, time3, level4, name4, node4, board4, time4, level5, name5, node5, board5, time5, cls);
     }
 }

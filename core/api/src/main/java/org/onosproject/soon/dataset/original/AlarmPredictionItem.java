@@ -1,6 +1,12 @@
 package org.onosproject.soon.dataset.original;
 
 
+import com.google.common.base.Objects;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import java.util.Arrays;
+
 /**
  * CREATE TABLE public.alarm_prediction
  * (
@@ -61,4 +67,64 @@ public class AlarmPredictionItem implements Item {
     public void setDataid(int dataid) {
         this.dataid = dataid;
     }
+
+    @Override
+    public String toString() {
+        return "AlarmPredictionItem{" +
+                "id=" + id +
+                ", input=" + Arrays.toString(input) +
+                ", alarm_happen=" + alarm_happen +
+                ", train=" + train +
+                ", dataid=" + dataid +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AlarmPredictionItem that = (AlarmPredictionItem) o;
+        return id == that.id &&
+                alarm_happen == that.alarm_happen &&
+                train == that.train &&
+                dataid == that.dataid &&
+                comp(input, that.input);
+    }
+
+    private boolean comp(double[] a, double[] b) {
+        if (a==null && b==null) {
+            return true;
+        }
+        if (a==null || b==null) {
+            return false;
+        }
+        if (a.length != b.length) {
+            return false;
+        }
+        for (int i=0; i<a.length; i++) {
+            if (a[i] != b[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private int hash(double[] a) {
+        if (a == null) {
+            return 0;
+        }
+        int rtn = Objects.hashCode(a[0]);
+        if (a.length>1) {
+            for (int i=1; i<a.length; i++) {
+                rtn = Objects.hashCode(rtn, a[i]);
+            }
+        }
+        return rtn;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id, hash(input), alarm_happen, train, dataid);
+    }
+
 }
