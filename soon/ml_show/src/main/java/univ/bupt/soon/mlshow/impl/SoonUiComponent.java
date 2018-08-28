@@ -18,6 +18,14 @@ package univ.bupt.soon.mlshow.impl;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import org.apache.felix.scr.annotations.*;
+import org.onosproject.cluster.ClusterService;
+import org.onosproject.mastership.MastershipAdminService;
+import org.onosproject.net.device.DeviceProviderRegistry;
+import org.onosproject.net.device.DeviceProviderService;
+import org.onosproject.net.device.DeviceService;
+import org.onosproject.net.link.LinkProviderRegistry;
+import org.onosproject.net.link.LinkProviderService;
+import org.onosproject.net.topology.TopologyProviderRegistry;
 import org.onosproject.soon.MLAppRegistry;
 import org.onosproject.soon.ModelControlService;
 import org.onosproject.ui.UiExtension;
@@ -26,6 +34,7 @@ import org.onosproject.ui.UiMessageHandlerFactory;
 import org.onosproject.ui.UiView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import univ.bupt.soon.mlshow.demonet.TopoReport;
 
 import java.util.List;
 import java.util.Map;
@@ -69,12 +78,26 @@ public class SoonUiComponent implements MLAppRegistry {
     @Activate
     protected void activate() {
         uiExtensionService.register(extension);
+        // 拓扑注入服务
+//        topoReport = new TopoReport();
+//        devProService = deviceProviderRegistry.register(topoReport);
+//        linkProService = linkProviderRegistry.register(topoReport);
+//        topoReport.setClusterService(clusterService);
+//        topoReport.setMastershipAdminService(mastershipAdminService);
+//        topoReport.setDevProService(devProService);
+//        topoReport.setLinkProService(linkProService);
+//        topoReport.setDeviceService(deviceService);
+//        topoReport.reportNodes();
+//        topoReport.reportLinks();
+
         log.info("Started");
     }
 
     @Deactivate
     protected void deactivate() {
         uiExtensionService.unregister(extension);
+        deviceProviderRegistry.unregister(topoReport);
+        linkProviderRegistry.unregister(topoReport);
         log.info("Stopped");
     }
 
@@ -93,4 +116,22 @@ public class SoonUiComponent implements MLAppRegistry {
         modelServices.remove(s);
         return true;
     }
+
+
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected DeviceProviderRegistry deviceProviderRegistry;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected LinkProviderRegistry linkProviderRegistry;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected TopologyProviderRegistry topologyProviderRegistry;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected MastershipAdminService mastershipAdminService;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected ClusterService clusterService;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected DeviceService deviceService;
+
+    private DeviceProviderService devProService;
+    private LinkProviderService linkProService;
+    private TopoReport topoReport;
 }
