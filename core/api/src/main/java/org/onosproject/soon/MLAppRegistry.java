@@ -11,12 +11,12 @@ public interface MLAppRegistry {
      * @param name 基于机器学习的应用名
      * @return 注册是否成功
      */
-    boolean register(ModelControlService service, String name);
+    boolean register(ModelControlService service, MLAppType name);
 
     /**
      * 注销基于机器学习的应用服务
      * @param name 应用名
      * @return 注销是否成功
      */
-    boolean unregister(String name);
+    boolean unregister(MLAppType name);
 }

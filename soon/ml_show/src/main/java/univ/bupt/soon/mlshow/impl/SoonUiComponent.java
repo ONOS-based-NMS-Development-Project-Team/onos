@@ -27,6 +27,7 @@ import org.onosproject.net.link.LinkProviderRegistry;
 import org.onosproject.net.link.LinkProviderService;
 import org.onosproject.net.topology.TopologyProviderRegistry;
 import org.onosproject.soon.MLAppRegistry;
+import org.onosproject.soon.MLAppType;
 import org.onosproject.soon.ModelControlService;
 import org.onosproject.ui.UiExtension;
 import org.onosproject.ui.UiExtensionService;
@@ -46,15 +47,34 @@ import java.util.Map;
 @Service
 public class SoonUiComponent implements MLAppRegistry {
 
-    private static final String VIEW_ID = "soon";
+    private static final String VIEW_ID = "alarmPre";
     private static final String VIEW_TEXT = "Self Oprimizing Optical Network";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private Map<String, ModelControlService> modelServices = Maps.newConcurrentMap();
+    public static Map<MLAppType, ModelControlService> modelServices = Maps.newConcurrentMap();
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected UiExtensionService uiExtensionService;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected DeviceProviderRegistry deviceProviderRegistry;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected LinkProviderRegistry linkProviderRegistry;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected TopologyProviderRegistry topologyProviderRegistry;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected MastershipAdminService mastershipAdminService;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected ClusterService clusterService;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected DeviceService deviceService;
+
+    private DeviceProviderService devProService;
+    private LinkProviderService linkProService;
+    private TopoReport topoReport;
+
+    // 构建不同应用的handler
+    private AlarmPredMessageHandler alarmPredMessageHandler = new AlarmPredMessageHandler();
 
 
     // List of application views
@@ -66,6 +86,7 @@ public class SoonUiComponent implements MLAppRegistry {
     private final UiMessageHandlerFactory messageHandlerFactory =
             () -> ImmutableList.of(
                     // 添加handler
+                    alarmPredMessageHandler
             );
 
     // Application UI extension
@@ -96,13 +117,13 @@ public class SoonUiComponent implements MLAppRegistry {
     @Deactivate
     protected void deactivate() {
         uiExtensionService.unregister(extension);
-        deviceProviderRegistry.unregister(topoReport);
-        linkProviderRegistry.unregister(topoReport);
+//        deviceProviderRegistry.unregister(topoReport);
+//        linkProviderRegistry.unregister(topoReport);
         log.info("Stopped");
     }
 
     @Override
-    public boolean register(ModelControlService modelControlService, String s) {
+    public boolean register(ModelControlService modelControlService, MLAppType s) {
         if (modelServices.containsKey(s)) {
             return false;
         } else {
@@ -112,26 +133,9 @@ public class SoonUiComponent implements MLAppRegistry {
     }
 
     @Override
-    public boolean unregister(String s) {
+    public boolean unregister(MLAppType s) {
         modelServices.remove(s);
         return true;
     }
 
-
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected DeviceProviderRegistry deviceProviderRegistry;
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected LinkProviderRegistry linkProviderRegistry;
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected TopologyProviderRegistry topologyProviderRegistry;
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected MastershipAdminService mastershipAdminService;
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected ClusterService clusterService;
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected DeviceService deviceService;
-
-    private DeviceProviderService devProService;
-    private LinkProviderService linkProService;
-    private TopoReport topoReport;
 }

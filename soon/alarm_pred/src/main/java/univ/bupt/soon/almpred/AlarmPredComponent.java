@@ -8,10 +8,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.felix.scr.annotations.*;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
-import org.onosproject.soon.MLAppRegistry;
-import org.onosproject.soon.MLPlatformService;
-import org.onosproject.soon.ModelControlService;
-import org.onosproject.soon.Statistics;
+import org.onosproject.soon.*;
 import org.onosproject.soon.dataset.original.AlarmPredictionItem;
 import org.onosproject.soon.dataset.original.Item;
 import org.onosproject.soon.mlmodel.MLAlgorithmType;
@@ -29,7 +26,6 @@ import java.util.Map;
 public class AlarmPredComponent implements ModelControlService {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final String serviceName = "alarm_prediction";
     // 存储模型相关的内容。模型类型，模型id，模型详细配置
     private final Map<MLAlgorithmType, Map<Integer, MLModelDetail>> models = Maps.newConcurrentMap();
 
@@ -47,17 +43,22 @@ public class AlarmPredComponent implements ModelControlService {
     protected void activate() {
 
         appId = coreService.registerApplication("unive.bupt.soon.almpred");
-        mlAppRegistry.register(this, serviceName);
+        mlAppRegistry.register(this, MLAppType.ALARM_PREDICTION);
         query.connect();
     }
 
     @Deactivate
     protected void deactivate() {
-        mlAppRegistry.unregister(serviceName);
+        mlAppRegistry.unregister(MLAppType.ALARM_PREDICTION);
         query.close();
         log.info("SOON - alarm prediction - Stopped");
     }
 
+
+    @Override
+    public MLAppType getServiceName() {
+        return MLAppType.ALARM_PREDICTION;
+    }
 
     @Override
     public int addNewModel(MLAlgorithmType mlAlgorithmType, int trainDatasetId, MLModelConfig mlModelConfig) {

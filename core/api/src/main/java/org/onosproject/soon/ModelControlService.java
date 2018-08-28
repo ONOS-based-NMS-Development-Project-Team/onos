@@ -15,6 +15,13 @@ import java.util.Map;
  */
 public interface ModelControlService {
 
+
+    /**
+     * 获取服务所属的具体应用的类型
+     * @return 具
+     */
+    MLAppType getServiceName();
+
     /**
      增加新的模型
      @param type : 神经网络类型标识，包含全连接神经网络、卷积神经网络、循环神经网络。
