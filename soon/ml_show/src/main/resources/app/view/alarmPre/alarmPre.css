@@ -1,0 +1,144 @@
+/*
+	ONOS GUI --SOONAlarmPre View  --css file
+ */
+
+#ov-soon-alarmPre h2 {
+	display:inline-block;
+}
+
+#ov-soon-alarmPre div.ctrl-btns{
+	width:240px;
+}
+
+#alarmPre-setting-panel.floatpanel {
+	z-index: 0;
+}
+
+#alarmPre-setting-panel .title-container{
+	padding: 0 5px;
+	overflow-y: scroll;
+}
+
+#alarmPre-setting-panel hr{
+	width:100%;
+	margin:3px auto;
+}
+
+#alarmPre-setting-panel p {
+	display: inline-block;
+	color:#3c3a3a;
+	width:90%;
+	height:40px;
+	font-size:12pt;
+	font-weight:bold;
+	overflow: hidden;
+	white-space: nowrap;
+	padding: 0 5px;
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+
+#alarmPre-setting-panel .container {
+	padding:0px 10px;
+	overflow-y:scroll;
+}
+
+#alarmPre-setting-panel .container div.left {
+	padding:0 10px;
+	width:30%;
+	float:left;
+}
+
+#alarmPre-setting-panel .container div.right {
+	margin-left: 156px;
+	padding: 0 10px;
+}
+
+#alarmPre-setting-panel .container div.addSetting-btn {
+	padding:10px 21px;
+	float:left;
+	height:46px;
+}
+
+#alarmPre-setting-panel .container div.deleteSetting-btn {
+	padding:10px 21px;
+	float:right;
+	height: 46px;
+}
+
+#alarmPre-setting-panel .container div.top-below {
+	padding: 10px 0px;
+}
+
+#alarmPre-setting-panel .container div.setting-menu-container {
+	padding: 15px 3px;
+	height:360px;
+}
+
+#alarmPre-setting-panel .container div.setting-menu-container table {
+	display: table;
+	border: 2px solid grey;
+	border-collapse: separate;
+	border-spacing: 10px;
+}
+
+#alarmPre-setting-panel .container div.setting-menu-container tr {
+	text-align: left;
+	font-weight: bold;
+	font-size: 10pt;
+	padding: 0 10px;
+	cursor:pointer;
+}
+
+#alarmPre-setting-panel .container div.setting-content-container {
+	padding:10px 0;
+	height: 436px;
+}
+
+#alarmPre-setting-panel .container div.setting-content {
+	padding:0 10px;
+}
+
+#alarmPre-setting-panel .container div.setting-content label  {
+	width: 100px;
+	text-align:right;
+}
+
+#alarmPre-setting-panel input.input {
+	float:right;
+}
+
+#alarmPre-setting-panel button.modelParaBtn  {
+	background-color: #518ecc;
+	color: white;
+	margin:6px;
+	display: inline-block;
+	text-align: center;
+	cursor:pointer;
+	float:left;
+	width:80%;
+}
+
+#alarmPre-setting-panel .container div.setting-footer{
+	height: 40px;
+	padding:10px 3px;
+}
+
+#alarmPre-setting-panel .container div.setting-footer button{
+	background-color: #518ecc;
+	color: white;
+	margin:6px;
+	display: inline-block;
+	text-align: center;
+	cursor:pointer;
+	float:right;
+}
+
+#soonAlarmPre-dialog.floatpanel.dialog form div {
+	text-align: right;
+	width: 100px;
+}
+
+.light #alarmPre-setting-panel div.alarmPreShow use{
+	fill:#009fdb;
+}

@@ -8,10 +8,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.felix.scr.annotations.*;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
-import org.onosproject.soon.MLAppRegistry;
-import org.onosproject.soon.MLPlatformService;
-import org.onosproject.soon.ModelControlService;
-import org.onosproject.soon.Statistics;
+import org.onosproject.soon.*;
 import org.onosproject.soon.dataset.original.AlarmPredictionItem;
 import org.onosproject.soon.dataset.original.Item;
 import org.onosproject.soon.mlmodel.MLAlgorithmType;
@@ -29,8 +26,7 @@ import java.util.Map;
 public class AlarmPredComponent implements ModelControlService {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final String serviceName = "alarm_prediction";
-    // 存储模型相关的内容
+    // 存储模型相关的内容。模型类型，模型id，模型详细配置
     private final Map<MLAlgorithmType, Map<Integer, MLModelDetail>> models = Maps.newConcurrentMap();
 
     SQLQuery query = SQLQuery.instance;
@@ -47,41 +43,46 @@ public class AlarmPredComponent implements ModelControlService {
     protected void activate() {
 
         appId = coreService.registerApplication("unive.bupt.soon.almpred");
-        mlAppRegistry.register(this, serviceName);
+        mlAppRegistry.register(this, MLAppType.ALARM_PREDICTION);
         query.connect();
     }
 
     @Deactivate
     protected void deactivate() {
-        mlAppRegistry.unregister(serviceName);
+        mlAppRegistry.unregister(MLAppType.ALARM_PREDICTION);
         query.close();
         log.info("SOON - alarm prediction - Stopped");
     }
 
 
     @Override
+    public MLAppType getServiceName() {
+        return MLAppType.ALARM_PREDICTION;
+    }
+
+    @Override
     public int addNewModel(MLAlgorithmType mlAlgorithmType, int trainDatasetId, MLModelConfig mlModelConfig) {
-        return 0;
+        throw new NotImplementedException("Not Implemented Yet!!!");
     }
 
     @Override
     public boolean startTraining(MLAlgorithmType mlAlgorithmType, int i, int i1, List<Integer> list) {
-        return false;
+        throw new NotImplementedException("Not Implemented Yet!!!");
     }
 
     @Override
     public boolean stopTraining(MLAlgorithmType mlAlgorithmType, int i, int i1) {
-        return false;
+        throw new NotImplementedException("Not Implemented Yet!!!");
     }
 
     @Override
     public List<String> getAppliedResult(MLAlgorithmType mlAlgorithmType, int i, int i1, int i2) {
-        return null;
+        throw new NotImplementedException("Not Implemented Yet!!!");
     }
 
     @Override
     public List<Double> getModelEvaluation(MLAlgorithmType mlAlgorithmType, int i, int i1, int i2, List<Integer> list) {
-        return null;
+        throw new NotImplementedException("Not Implemented Yet!!!");
     }
 
     /**
@@ -104,11 +105,11 @@ public class AlarmPredComponent implements ModelControlService {
 
     @Override
     public MLModelConfig getModelConfig(MLAlgorithmType mlAlgorithmType, int i, Map<String, String> map) {
-        return null;
+        throw new NotImplementedException("Not Implemented Yet!!!");
     }
 
     @Override
     public Statistics getAppStatics() {
-        return null;
+        throw new NotImplementedException("Not Implemented Yet!!!");
     }
 }
