@@ -1,14 +1,15 @@
-package org.onosproject.soon.mlmodel;
+package org.onosproject.soon.mlmodel.config.nn;
 
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.onosproject.soon.mlmodel.config.nn.*;
+import org.onosproject.soon.mlmodel.MLAlgorithmConfig;
+import org.onosproject.soon.mlmodel.MLAlgorithmType;
 
 import java.util.List;
 
 /**
- * 神经网络模型的参数，留给赵子飘实现
+ * 神经网络模型的参数
  */
 public class NNAlgorithmConfig extends MLAlgorithmConfig {
     // 输入神经元个数
