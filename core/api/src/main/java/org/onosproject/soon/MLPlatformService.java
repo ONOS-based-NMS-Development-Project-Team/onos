@@ -2,6 +2,7 @@ package org.onosproject.soon;
 
 
 import org.onosproject.soon.dataset.DataSegment;
+import org.onosproject.soon.dataset.dataset.SegmentForDataset;
 import org.onosproject.soon.dataset.original.Item;
 import org.onosproject.soon.mlmodel.MLModelDetail;
 import java.net.URL;
@@ -25,7 +26,7 @@ public interface MLPlatformService {
      * @param trainData 训练集数据
      * @return 训练集数据id
      */
-    int sendTrainData(List<List<Double>> trainData);
+    int sendTrainData(SegmentForDataset trainData);
 
 
     /**
@@ -33,7 +34,7 @@ public interface MLPlatformService {
      * @param testData 测试集数据
      * @return 测试集数据id
      */
-    int sendTestData(List<List<Double>> testData);
+    int sendTestData(SegmentForDataset testData);
 
     /**
      * 开始训练

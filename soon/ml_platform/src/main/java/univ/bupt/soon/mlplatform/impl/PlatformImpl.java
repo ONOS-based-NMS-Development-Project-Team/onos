@@ -15,13 +15,19 @@
  */
 package univ.bupt.soon.mlplatform.impl;
 
+import com.google.common.collect.Lists;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Deactivate;
 import org.apache.felix.scr.annotations.Service;
 import org.onosproject.soon.MLPlatformService;
+import org.onosproject.soon.dataset.dataset.SegmentForDataset;
+import org.onosproject.soon.mlmodel.MLModelDetail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.URL;
+import java.util.List;
 
 /**
  * Skeletal ONOS application component.
@@ -42,4 +48,53 @@ public class PlatformImpl implements MLPlatformService {
         log.info("Stopped");
     }
 
+    @Override
+    public void sendMLConfig(MLModelDetail mlModelDetail) {
+
+    }
+
+    @Override
+    public int sendTrainData(SegmentForDataset segmentForDataset) {
+        return 0;
+    }
+
+    @Override
+    public int sendTestData(SegmentForDataset segmentForDataset) {
+        return 0;
+    }
+
+    @Override
+    public void startTrain() {
+
+    }
+
+    @Override
+    public void stopTrain() {
+
+    }
+
+    @Override
+    public List<Double> applyModel(List<List<Double>> list) {
+        return null;
+    }
+
+    @Override
+    public void deleteModel() {
+
+    }
+
+    @Override
+    public void deleteTrainDataset(int i) {
+
+    }
+
+    @Override
+    public void deleteTestDataset(int i) {
+
+    }
+
+    @Override
+    public URL getResultURL() {
+        return null;
+    }
 }
