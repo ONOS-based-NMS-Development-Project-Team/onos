@@ -1,9 +1,8 @@
 package org.onosproject.soon;
 
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.onosproject.soon.dataset.original.Item;
-import org.onosproject.soon.mlmodel.MLModelConfig;
+import org.onosproject.soon.mlmodel.MLAlgorithmConfig;
 import org.onosproject.soon.mlmodel.MLAlgorithmType;
 
 import java.util.Date;
@@ -29,7 +28,7 @@ public interface ModelControlService {
      @param config :  模型具体配置。
      @return :  增加的神经网络模型的id。如果为-1,表示模型增加失败
      **/
-    int addNewModel(MLAlgorithmType type, int trainDatasetId, MLModelConfig config);
+    int addNewModel(MLAlgorithmType type, int trainDatasetId, MLAlgorithmConfig config);
 
 
     /**
@@ -103,7 +102,7 @@ public interface ModelControlService {
      * @param annotations 相关解释
      * @return 返回指定模型的配置
      */
-    MLModelConfig getModelConfig(MLAlgorithmType type, int id, Map<String, String> annotations);
+    MLAlgorithmConfig getModelConfig(MLAlgorithmType type, int id, Map<String, String> annotations);
 
 
     /**

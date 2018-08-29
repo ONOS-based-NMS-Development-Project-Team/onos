@@ -14,8 +14,8 @@ public class SoonWebSocketServlet extends WebSocketServlet {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private int id=0;
-    static Map<Integer, SoonWebsocket> socks = Maps.newHashMap();  // 存储已经存在的socket连接
+    static int id=0;
+    static Map<Integer, SoonWebsocket> socks = Maps.newConcurrentMap();  // 存储已经存在的socket连接
 
     @Override
     public void init() throws ServletException {

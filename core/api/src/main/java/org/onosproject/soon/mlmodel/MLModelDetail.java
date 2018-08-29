@@ -10,18 +10,18 @@ import java.util.Map;
  */
 public class MLModelDetail {
 
-    private MLModelConfig config; // 模型配置
+    private MLAlgorithmConfig config; // 模型配置
     private MLModelState state;  // 模型所处状态
     private int trainDatasetId;  // 训练集id
     private final int id; // 该模型的id
     // Key - 测试集id， Key.Value - 在测试集id上的最好表现
     private Map<Integer, Double> performances = Maps.newConcurrentMap();
 
-    public MLModelConfig getConfig() {
+    public MLAlgorithmConfig getConfig() {
         return config;
     }
 
-    public void setConfig(MLModelConfig config) {
+    public void setConfig(MLAlgorithmConfig config) {
         this.config = config;
     }
 
@@ -53,7 +53,7 @@ public class MLModelDetail {
         return id;
     }
 
-    public MLModelDetail(MLModelConfig config, MLModelState state, int trainDatasetId,
+    public MLModelDetail(MLAlgorithmConfig config, MLModelState state, int trainDatasetId,
                          int id, Map<Integer, Double> performances) {
         this.config = config;
         this.state = state;
