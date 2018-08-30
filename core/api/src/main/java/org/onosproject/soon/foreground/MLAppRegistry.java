@@ -1,4 +1,4 @@
-package org.onosproject.soon;
+package org.onosproject.soon.foreground;
 
 /**
  * 基于机器学习的应用的注册服务
