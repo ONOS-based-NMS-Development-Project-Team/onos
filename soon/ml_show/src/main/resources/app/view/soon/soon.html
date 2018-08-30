@@ -1,0 +1,529 @@
+<div id="ov-soon">
+    <div class="soon-left">
+        <div class="soon-left-logo-container">
+            <span class="soon-left-logo" ng-click="OvSoonCtrl.defaultSubPage()">
+                <img class="soon-logo" src="data/img/soonLogo.png">
+            </span>
+        </div>
+        <div class="soon-left-content-container">
+            <ul class="soon-left-content" id="soonContent">
+                <li>
+                   <div class="soon-left-content-item-container">
+                       <p ng-click="OvSoonCtrl.navTo()">
+                           alarm predict
+                       </p>
+                   </div>
+                </li>
+                <li>
+                    <div class="soon-left-content-item-container">
+                        <p ng-click="OvSoonCtrl.navTo()">
+                            fault classification
+                        </p>
+                    </div>
+                </li>
+                <li>
+                    <div class="soon-left-content-item-container">
+                        <p ng-click="OvSoonCtrl.navTo()">
+                            fault locate
+                        </p>
+                    </div>
+                </li>
+                <li>
+                    <div class="soon-left-content-item-container">
+                        <p ng-click="OvSoonCtrl.navTo()">
+                            traffic predict
+                        </p>
+                    </div>
+                </li>
+                <li>
+                    <div class="soon-left-content-item-container">
+                        <p ng-click="OvSoonCtrl.navTo()">
+                            service reroute
+                        </p>
+                    </div>
+                </li>
+                <li>
+                    <div class="soon-left-content-item-container">
+                        <p ng-click="OvSoonCtrl.navTo()">
+                            model library
+                        </p>
+                    </div>
+                </li>
+                <li>
+                    <div class="soon-left-content-item-container">
+                        <p ng-click="OvSoonCtrl.navTo()">
+                            raw data
+                        </p>
+                    </div>
+                </li>
+                <li>
+                    <div class="soon-left-content-item-container">
+                        <p ng-click="OvSoonCtrl.navTo()">
+                            data set
+                        </p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <div class="soon-left-splitter-container">
+            <div class="soon-left-splitter" tooltip tt-msg="collapseSidebarTip" ng-click="OvSoonCtrl.collapseSidebar()"></div>
+        </div>
+    </div>
+    <div class="soon-right" id="soon-view">
+        <div class="alarm-predict" id="alarmPred">
+            <div class="tabular-header">
+                <h2>
+                    alarm predict
+                </h2>
+                <div class="ctrl-btns">
+                    <div class="refresh" ng-class="{active: autoRefresh}"
+                        icon icon-size="42" icon-id="refresh"
+                        tooltip tt-message="autoRefreshTip"
+                        ng-click="toggleRefresh()"></div>
+
+                    <div class="separator"></div>
+
+                    <div class="functionStart"
+                         tooltip tt-message="alarmPredStartTip"
+                         ng-click="alarmPredShow(true)">
+                        <img src="data/img/functionStart.png" class="ctrl-imgs">
+                    </div>
+                    <div class="functionStop"
+                         tooltip tt-message="alarmPredStopTip"
+                         ng-click="alarmPredShow(false)">
+                        <img src="data/img/functionStop.png" class="ctrl-imgs">
+                    </div>
+                    <div class="showRawData"
+                         tooltip tt-message="showRawDataTip"
+                         ng-click="showRawData()">
+                        <img src="data/img/showRawData.png" class="ctrl-imgs">
+                    </div>
+                    <div class="showTrainDataSet"
+                         tooltip tt-message="showTrainDataSetTip"
+                         ng-click="showTrainDataSet()">
+                        <img src="data/img/showTrainDataSet.png" class="ctrl-imgs">
+                    </div>
+                    <div class="showTestDataSet"
+                         tooltip tt-message="showTestDataSetTip"
+                         ng-click="showTestDataSet()">
+                        <img src="data/img/showTestDataSet.png" class="ctrl-imgs">
+                    </div>
+                    <div class="showModelInformation"
+                         tooltip tt-message="showModelInformationTip"
+                         ng-click="showModelInformation()">
+                        <img src="data/img/showModelInformation.png" class="ctrl-imgs">
+                    </div>
+                    <div class="alarmPredSetting"
+                         tooltip tt-message="alarmPredSettingTip"
+                         ng-click="alarmPredSetting()">
+                        <img src="data/img/setting.png" class="ctrl-imgs">
+                    </div>
+                </div>
+                <div class="search">
+                    <input type="text" ng-model="queryTxt" placeholder="Search"/>
+                    <select ng-model="queryBy">
+                        <option value="" disabled>Search By</option>
+                        <option value="$">All Fields</option>
+                        <option value="time">time</option>
+                        <option value="alarmOccur">alarm occur</option>
+                        <option value="modelId">model id</option>
+                        <option value="trainDataSetId">train data set id</option>
+                        <option value="testDataSetId">test data set id</option>
+                        <option value="testAccuracy">test accuracy</option>
+                    </select>
+                </div>
+            </div>
+            <div class="summary-list" onos-table-resize>
+                <div class="table-header" onos-sortable-header>
+                    <table>
+                        <tr>
+                            <td colId="time" sortable col-width="140px"> time </td>
+                            <td colId="alarmOccur" sortable col-width="140px"> alarm occur </td>
+                            <td colId="modelId" sortable col-width="140px"> model id </td>
+                            <td colId="trainDataSetId" sortable col-width="140px"> train data set id </td>
+                            <td colId="testDataSetId" sortable col-width="140px"> test data set id </td>
+                            <td colId="testAccuracy" sortable col-width="140px"> test accuracy </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="table-body">
+                    <table onos-flash-changes id-prop="id">
+                        <tr ng-if="!tableData.length" class="no-data">
+                            <td colspan="6">
+                                {{annots.no_rows_msg}}
+                            </td>
+                        </tr>
+
+                        <tr ng-repeat="alarmPred in tableData | filter:queryFilter track by $index"
+                            ng-click="selectCallback($event,alarmPred)"
+                            ng-class="{selected: alarmPred.id === selId}"
+                            ng-repeat-complete row-id="{{alarmPred.id}}">
+                            <td>{{alarmPred.time}}</td>
+                            <td>{{alarmPred.alarmOccur}}</td>
+                            <td>{{alarmPred.modelId}}</td>
+                            <td>{{alarmPred.trainDataSetId}}</td>
+                            <td>{{alarmPred.testDataSetId}}</td>
+                            <td>{{alarmPred.testAccuracy}}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="alarm-classification" id="faultClassification">
+            <div class="tabular-header">
+                <h2>
+                    alarm classification
+                </h2>
+                <div class="ctrl-btns">
+                    <div class="refresh" ng-class="{active: autoRefresh}"
+                         icon icon-size="42" icon-id="refresh"
+                         tooltip tt-message="autoRefreshTip"
+                         ng-click="toggleRefresh()"></div>
+
+                    <div class="separator"></div>
+
+                    <div class="functionStart"
+                         tooltip tt-message="faultClassificationStartTip"
+                         ng-click="faultClassificationShow(true)">
+                        <img src="data/img/functionStart.png" class="ctrl-imgs">
+                    </div>
+                    <div class="functionStop"
+                         tooltip tt-message="faultClassificationStopTip"
+                         ng-click="faultClassificationShow(false)">
+                        <img src="data/img/functionStop.png" class="ctrl-imgs">
+                    </div>
+                    <div class="showRawData"
+                         tooltip tt-message="showRawDataTip"
+                         ng-click="showRawData()">
+                        <img src="data/img/showRawData.png" class="ctrl-imgs">
+                    </div>
+                    <div class="showTrainDataSet"
+                         tooltip tt-message="showTrainDataSetTip"
+                         ng-click="showTrainDataSet()">
+                        <img src="data/img/showTrainDataSet.png" class="ctrl-imgs">
+                    </div>
+                    <div class="showTestDataSet"
+                         tooltip tt-message="showTestDataSetTip"
+                         ng-click="showTestDataSet()">
+                        <img src="data/img/showTestDataSet.png" class="ctrl-imgs">
+                    </div>
+                    <div class="showModelInformation"
+                         tooltip tt-message="showModelInformationTip"
+                         ng-click="showModelInformation()">
+                        <img src="data/img/showModelInformation.png" class="ctrl-imgs">
+                    </div>
+                    <div class="faultClassificationSetting"
+                         tooltip tt-message="faultClassificationSettingTip"
+                         ng-click="faultClassificationSetting()">
+                        <img src="data/img/setting.png" class="ctrl-imgs">
+                    </div>
+                </div>
+                <div class="search">
+                    <input type="text" ng-model="queryTxt" placeholder="Search"/>
+                    <select ng-model="queryBy">
+                        <option value="" disabled>Search By</option>
+                        <option value="$">All Fields</option>
+                        <option value="time">time</option>
+                        <option value="faultType">fault type</option>
+                        <option value="modelId">model id</option>
+                        <option value="trainDataSetId">train data set id</option>
+                        <option value="testDataSetId">test data set id</option>
+                        <option value="testAccuracy">test accuracy</option>
+                    </select>
+                </div>
+            </div>
+            <div class="summary-list" onos-table-resize>
+                <div class="table-header" onos-sortable-header>
+                    <table>
+                        <tr>
+                            <td colId="time" sortable col-width="140px"> time </td>
+                            <td colId="faultType" sortable col-width="140px"> fault type </td>
+                            <td colId="modelId" sortable col-width="140px"> model id </td>
+                            <td colId="trainDataSetId" sortable col-width="140px"> train data set id </td>
+                            <td colId="testDataSetId" sortable col-width="140px"> test data set id </td>
+                            <td colId="testAccuracy" sortable col-width="140px"> test accuracy </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="table-body">
+                    <table onos-flash-changes id-prop="id">
+                        <tr ng-if="!tableData.length" class="no-data">
+                            <td colspan="6">
+                                {{annots.no_rows_msg}}
+                            </td>
+                        </tr>
+
+                        <tr ng-repeat="faultClassification in tableData | filter:queryFilter track by $index"
+                            ng-click="selectCallback($event,faultClassification)"
+                            ng-class="{selected: faultClassification.id === selId}"
+                            ng-repeat-complete row-id="{{faultClassification.id}}">
+                            <td>{{alarmPred.time}}</td>
+                            <td>{{alarmPred.faultType}}</td>
+                            <td>{{alarmPred.modelId}}</td>
+                            <td>{{alarmPred.trainDataSetId}}</td>
+                            <td>{{alarmPred.testDataSetId}}</td>
+                            <td>{{alarmPred.testAccuracy}}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="raw-data" id="rawData">
+            <div class="tabular-header">
+                <h2>
+                    raw data
+                </h2>
+                <div class="ctrl-btns">
+                    <div class="refresh" ng-class="{active: autoRefresh}"
+                         icon icon-size="42" icon-id="refresh"
+                         tooltip tt-message="autoRefreshTip"
+                         ng-click="toggleRefresh()"></div>
+
+                    <div class="separator"></div>
+
+                    <div class="showHistoricalAlarm"
+                         tooltip tt-message="showHistoricalAlarmTip"
+                         ng-click="showHistoricalAlarm()">
+                        <img src="data/img/showHistoricalAlarm.png" class="ctrl-imgs">
+                    </div>
+                    <div class="showCurrentAlarm"
+                         tooltip tt-message="showCurrentAlarmTip"
+                         ng-click="showCurrentAlarm()">
+                        <img src="data/img/showCurrentAlarm.png" class="ctrl-imgs">
+                    </div>
+                    <div class="showPerformanceData"
+                         tooltip tt-message="showPerformanceDataTip"
+                         ng-click="showPerformanceData()">
+                        <img src="data/img/showPerformanceData.png" class="ctrl-imgs">
+                    </div>
+                </div>
+                <div class="search">
+                    <input type="text" ng-model="queryTxt" placeholder="Search"/>
+                    <select ng-model="queryBy">
+                    </select>
+                </div>
+            </div>
+            <div class="raw-data-subpage" id="historicalAlarm">
+                <div class="summary-list" onos-table-resize>
+                    <div class="table-header" onos-sortable-header>
+                        <table>
+                            <tr>
+                                <td colId="level" sortable col-width="140px"> level </td>
+                                <td colId="alarmSource" sortable col-width="140px"> alarm source </td>
+                                <td colId="name" sortable col-width="140px"> name </td>
+                                <td colId="type" sortable col-width="140px"> type </td>
+                                <td colId="location" sortable col-width="140px"> location </td>
+                                <td colId="pathLevel" sortable col-width="140px"> path level </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="table-body">
+                        <table onos-flash-changes id-prop="id">
+                            <tr ng-if="!tableData.length" class="no-data">
+                                <td colspan="6">
+                                    {{annots.no_rows_msg}}
+                                </td>
+                            </tr>
+
+                            <tr ng-repeat="historicalAlarm in tableData | filter:queryFilter track by $index"
+                                ng-click="selectCallback($event,historicalAlarm)"
+                                ng-class="{selected: historicalAlarm.id === selId}"
+                                ng-repeat-complete row-id="{{historicalAlarm.id}}">
+                                <td>{{alarmPred.level}}</td>
+                                <td>{{alarmPred.alarmSource}}</td>
+                                <td>{{alarmPred.name}}</td>
+                                <td>{{alarmPred.type}}</td>
+                                <td>{{alarmPred.location}}</td>
+                                <td>{{alarmPred.pathLevel}}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="raw-data-subpage" id="currentAlarm">
+                <div class="summary-list" onos-table-resize>
+                    <div class="table-header" onos-sortable-header>
+                        <table>
+                            <tr>
+                                <td colId="level" sortable col-width="140px"> level </td>
+                                <td colId="alarmSource" sortable col-width="140px"> alarm source </td>
+                                <td colId="name" sortable col-width="140px"> name </td>
+                                <td colId="location" sortable col-width="140px"> location </td>
+                                <td colId="frequency" sortable col-width="140px"> frequency </td>
+                                <td colId="pathLevel" sortable col-width="140px"> path level </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="table-body">
+                        <table onos-flash-changes id-prop="id">
+                            <tr ng-if="!tableData.length" class="no-data">
+                                <td colspan="6">
+                                    {{annots.no_rows_msg}}
+                                </td>
+                            </tr>
+
+                            <tr ng-repeat="currentAlarm in tableData | filter:queryFilter track by $index"
+                                ng-click="selectCallback($event,currentAlarm)"
+                                ng-class="{selected: currentAlarm.id === selId}"
+                                ng-repeat-complete row-id="{{currentAlarm.id}}">
+                                <td>{{alarmPred.level}}</td>
+                                <td>{{alarmPred.alarmSource}}</td>
+                                <td>{{alarmPred.name}}</td>
+                                <td>{{alarmPred.location}}</td>
+                                <td>{{alarmPred.frequency}}</td>
+                                <td>{{alarmPred.pathLevel}}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="raw-data-subpage" id="performance">
+                <div class="summary-list" onos-table-resize>
+                    <div class="table-header" onos-sortable-header>
+                        <table>
+                            <tr>
+                                <td colId="node" sortable col-width="100px"> node </td>
+                                <td colId="board" sortable col-width="100px"> board </td>
+                                <td colId="port" sortable col-width="100px"> port </td>
+                                <td colId="component" sortable col-width="100px"> component </td>
+                                <td colId="event" sortable col-width="100px"> event </td>
+                                <td colId="endTime" sortable col-width="100px"> end time </td>
+                                <td colId="maxVal" sortable col-width="100px"> max value </td>
+                                <td colId="curVal" sortable col-width="100px"> current value </td>
+                                <td colId="minCul" sortable col-width="100px"> min value </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="table-body">
+                        <table onos-flash-changes id-prop="id">
+                            <tr ng-if="!tableData.length" class="no-data">
+                                <td colspan="9">
+                                    {{annots.no_rows_msg}}
+                                </td>
+                            </tr>
+
+                            <tr ng-repeat="alarmPred in tableData | filter:queryFilter track by $index"
+                                ng-click="selectCallback($event,alarmPred)"
+                                ng-class="{selected: alarmPred.id === selId}"
+                                ng-repeat-complete row-id="{{alarmPred.id}}">
+                                <td>{{alarmPred.node}}</td>
+                                <td>{{alarmPred.board}}</td>
+                                <td>{{alarmPred.port}}</td>
+                                <td>{{alarmPred.component}}</td>
+                                <td>{{alarmPred.event}}</td>
+                                <td>{{alarmPred.endTime}}</td>
+                                <td>{{alarmPred.maxVal}}</td>
+                                <td>{{alarmPred.curVal}}</td>
+                                <td>{{alarmPred.minVal}}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="data-set" id="dataSet">
+            <div class="tabular-header">
+                <h2>
+                    data set
+                </h2>
+                <div class="ctrl-btns">
+                    <div class="refresh" ng-class="{active: autoRefresh}"
+                         icon icon-size="42" icon-id="refresh"
+                         tooltip tt-message="autoRefreshTip"
+                         ng-click="toggleRefresh()"></div>
+
+                    <div class="separator"></div>
+
+                    <div class="deleteDataSet"
+                         tooltip tt-message="deleteDataSetTip"
+                         ng-click="deleteDataSet()">
+                        <img src="data/img/delete.png" class="ctrl-imgs">
+                    </div>
+                    <div class="dataSetShowSelect"
+                         tooltip tt-message="dataSetShowSelectTip"
+                         ng-click="dataSetShowSelect()">
+                        <img src="data/img/showSelect.png" class="ctrl-imgs">
+                    </div>
+                </div>
+                <div class="search">
+                    <input type="text" ng-model="queryTxt" placeholder="Search"/>
+                    <select ng-model="queryBy">
+                    </select>
+                </div>
+            </div>
+            <div class="data-set-subpage" id="alarmPredDataSet">
+                <div class="summary-list" onos-table-resize>
+                    <div class="table-header" onos-sortable-header>
+                        <table>
+                            <tr>
+                                <td colId="id" sortable col-width="100px"> data id </td>
+                                <td colId="alarmHappen" sortable col-width="100px"> alarm happen </td>
+                                <td colId="dataSetId" sortable col-width="100px"> data set id </td>
+                                <td colId="input" sortable col-width="400px"> input </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="table-body">
+                        <table onos-flash-changes id-prop="id">
+                            <tr ng-if="!tableData.length" class="no-data">
+                                <td colspan="4">
+                                    {{annots.no_rows_msg}}
+                                </td>
+                            </tr>
+
+                            <tr ng-repeat="alarmPredDataSet in tableData | filter:queryFilter track by $index"
+                                ng-click="selectCallback($event,alarmPredDataSet)"
+                                ng-class="{selected: alarmPredDataSet.id === selId}"
+                                ng-repeat-complete row-id="{{alarmPredDataSet.id}}">
+                                <td>{{alarmPred.id}}</td>
+                                <td>{{alarmPred.alarmHappen}}</td>
+                                <td>{{alarmPred.dataSetId}}</td>
+                                <td>{{alarmPred.input}}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="data-set-subpage" id="faultClassificationDataSet">
+                <div class="summary-list" onos-table-resize>
+                    <div class="table-header" onos-sortable-header>
+                        <table>
+                            <tr>
+                                <td colId="id" sortable col-width="100px"> data id </td>
+                                <td colId="faultType" sortable col-width="100px"> fault type </td>
+                                <td colId="dataSetId" sortable col-width="100px"> data set id </td>
+                                <td colId="input" sortable col-width="400px"> input </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="table-body">
+                        <table onos-flash-changes id-prop="id">
+                            <tr ng-if="!tableData.length" class="no-data">
+                                <td colspan="4">
+                                    {{annots.no_rows_msg}}
+                                </td>
+                            </tr>
+
+                            <tr ng-repeat="faultClassificationDataSet in tableData | filter:queryFilter track by $index"
+                                ng-click="selectCallback($event,faultClassificationDataSet)"
+                                ng-class="{selected: faultClassificationDataSet.id === selId}"
+                                ng-repeat-complete row-id="{{faultClassificationDataSet.id}}">
+                                <td>{{alarmPred.id}}</td>
+                                <td>{{alarmPred.faultType}}</td>
+                                <td>{{alarmPred.dataSetId}}</td>
+                                <td>{{alarmPred.input}}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

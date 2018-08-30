@@ -21,6 +21,13 @@ public enum Indication {
             return "/config/test";
         }
     },
+    // 配置模型所使用的算法类型
+    CONFIG_MODEL_TYPE() {
+        @Override
+        public String getName() {
+            return "/config/model/type";
+        }
+    },
     // 配置模型参数
     CONFIG_MODEL() {
         public String getName() {

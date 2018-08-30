@@ -46,6 +46,7 @@ import static org.onosproject.soon.mlmodel.MLAlgorithmType.FCNNModel;
  */
 public class AlarmPredMessageHandler extends UiMessageHandler {
 
+
     private static final String ALARM_PRED_TRAIN_DATA_REQ = "alarmPredTrainDataRequest";
     private static final String ALARM_PRED_TRAIN_DATA_RESP = "alarmPredTrainDataResponse";
     private static final String ALARM_PRED_TRAIN_TABLES = "alarmPredTrains";
