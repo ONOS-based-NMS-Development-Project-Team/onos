@@ -337,6 +337,21 @@
             };
 
             buildAllTable();
+            $scope.$on('$destroy',function(){
+                ks.unbindKeys();
+                wss.unbindHandlers();
+                ds.closeDialog();
+            });
+
+            Object.defineProperty($scope, 'queryFilter', {
+                get: function () {
+                    var out = {};
+                    out[$scope.queryBy || '$'] = $scope.queryTxt;
+                    return out;
+                    },
+            });
+
+            $log.log('ovSoonCtrl has been created');
                 }])
 
 }());
