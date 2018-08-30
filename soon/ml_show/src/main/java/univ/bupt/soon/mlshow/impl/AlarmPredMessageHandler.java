@@ -38,9 +38,9 @@ import java.util.List;
  */
 public class AlarmPredMessageHandler extends UiMessageHandler {
 
-    private static final String ALARM_PRE_DATA_REQ = "alarmPreDataRequest";
-    private static final String ALARM_PRE_DATA_RESP = "alarmPreDataResponse";
-    private static final String SAMPLE_TABLES = "alarmPres";
+    private static final String ALARM_PRE_DATA_REQ = "alarmPredDataRequest";
+    private static final String ALARM_PRE_DATA_RESP = "alarmPredDataResponse";
+    private static final String SAMPLE_TABLES = "alarmPreds";
 
     private static final String ALARM_PRE_DETAIL_REQ = "alarmPreDetailsRequest";
     private static final String ALARM_PRE_DETAIL_RESP = "alarmPreDetailsResponse";
