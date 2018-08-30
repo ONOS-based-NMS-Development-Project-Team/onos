@@ -23,7 +23,9 @@ import org.onosproject.soon.dataset.original.AlarmPredictionItem;
 
 import org.onosproject.soon.dataset.original.Item;
 import org.onosproject.soon.dataset.original.sdhnet.*;
-import org.onosproject.soon.mlmodel.MLModelConfig;
+import org.onosproject.soon.mlmodel.MLAlgorithmConfig;
+//import org.onosproject.soon.mlmodel.MLModelConfig;
+import org.onosproject.soon.mlmodel.config.nn.*;
 import org.onosproject.ui.RequestHandler;
 import org.onosproject.ui.UiMessageHandler;
 import org.onosproject.ui.table.TableModel;
@@ -44,6 +46,7 @@ import static org.onosproject.soon.mlmodel.MLAlgorithmType.FCNNModel;
  */
 public class AlarmPredMessageHandler extends UiMessageHandler {
 
+
     private static final String ALARM_PRED_TRAIN_DATA_REQ = "alarmPredTrainDataRequest";
     private static final String ALARM_PRED_TRAIN_DATA_RESP = "alarmPredTrainDataResponse";
     private static final String ALARM_PRED_TRAIN_TABLES = "alarmPredTrains";
@@ -52,9 +55,6 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
     private static final String ALARM_PRED_TEST_DATA_RESP = "alarmPredTestDataResponse";
     private static final String ALARM_PRED_TEST_TABLES = "alarmPredTests";
 
-    private static final String ALARM_PRED_DATA_REQ = "alarmPredDataRequest";
-    private static final String ALARM_PRED_DATA_RESP = "alarmPredDataResponse";
-    private static final String ALARM_PRED_TABLES = "alarmPreds";
 
     private static final String NO_ALARM_PRED_TRAIN_DATA_ROWS_MESSAGE = "No AlarmPredictionItem found";
     private static final String NO_ALARM_PRED_DATA_ROWS_MESSAGE = "No AlarmPredictionApplicationItem found";
@@ -77,8 +77,7 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
     private static final String[] ALARM_PRED_TRAIN_DATA_COLUMN_IDS = {
             ID, INPUT, ALARM_HAPPEN, TRAIN, DATAID};
 
-    private static final String[] ALARM_PRED_DATA_COLUMN_IDS = {
-            ALARM_SOURCE, LEVEL, NAME, TIME_OCCUR, TIME_FIRST_OCCUR};
+
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -87,7 +86,7 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
         return ImmutableSet.of(
                 new AlarmHistoricalDetailRequestHandler(),
                 new AlarmHistoricalDataRequestHandler(),
-                new AlarmPredTrainDataRequestHandler(),
+//                new AlarmPredTrainDataRequestHandler(),
                 new AlarmPredDataRequestHandler()
         );
     }
@@ -157,7 +156,8 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 
         @Override
         protected void populateTable(TableModel tm, ObjectNode payload) {
-            List<org.onosproject.soon.dataset.original.Item> its = SoonUiComponent.modelServices.get(MLAppType.ORIGINAL_DATA).updateData(offset,limit);
+//            List<org.onosproject.soon.dataset.original.Item> its = SoonUiComponent.modelServices.get(MLAppType.ORIGINAL_DATA).updateData(offset,limit);
+            List<org.onosproject.soon.dataset.original.Item> its = getItems();
             for (org.onosproject.soon.dataset.original.Item it : its) {
                 HistoryAlarmItem tmp = (HistoryAlarmItem) it;
                 populateRow(tm.addRow(), tmp);
@@ -165,6 +165,7 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
             offset += limit;
         }
 
+//        private void populateRow(TableModel.Row row, Item item) {
         private void populateRow(TableModel.Row row, HistoryAlarmItem item) {
             row.cell(LEVEL, item.getLevel())
                     .cell(NAME, item.getName())
@@ -221,10 +222,37 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 /************************* processed dataset for training or testing *****************************************/
 
 
+
 /************************************** fault classifiction app *************************************************/
+
+
 
 /************************************** alarm prediction app *************************************************/
 
+    private static final String ALARM_PRED_DATA_REQ = "alarmPredDataRequest";
+    private static final String ALARM_PRED_DATA_RESP = "alarmPredDataResponse";
+    private static final String ALARM_PRED_TABLES = "alarmPreds";
+
+    private static final String INPUT_NUM = "inputNum";
+    private static final String OUTPUT_NUM = "outputNum";
+    private static final String HIDDEN_LAYER = "hiddenLayer";
+    private static final String ACTIVATION_FUNCTION = "activationFunction";
+    private static final String WEIGHT_INIT = "weightInit";
+    private static final String BIAS_INIT = "biasInit";
+    private static final String LOSS_FUNCTION = "lossFunction";
+    private static final String BATCH_SIZE = "batchSize";
+    private static final String EPOCH = "epoch";
+    private static final String OPTIMIZER = "optimizer";
+    private static final String LEARNING_RATE = "learningRate";
+    private static final String LR_ADJUST = "lrAdjust";
+    private static final String DROP_OUT = "dropout";
+    private static final String APPLIED_RESULT = "AppliedResult";
+
+// todo model config info
+// private static final String[] ALARM_PRED_DATA_COLUMN_IDS = {
+//            INPUT_NUM, OUTPUT_NUM, HIDDEN_LAYER, ACTIVATION_FUNCTION, WEIGHT_INIT, BIAS_INIT,
+//            LOSS_FUNCTION, BATCH_SIZE, EPOCH, OPTIMIZER, LEARNING_RATE, LR_ADJUST, DROP_OUT};
+    private static final String[] ALARM_PRED_DATA_COLUMN_IDS = {APPLIED_RESULT};
     // handler for alarmPred model application table requests
     private final class AlarmPredDataRequestHandler extends TableRequestHandler {
 
@@ -246,92 +274,64 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
             return NO_ROWS_MESSAGE;
         }
 
-	@Override
-	public void process(ObjectNode payload) {
-	    TableModel tm = createTableModel();
-	    this.populateTable(tm, payload);
-	    //String firstCol = JsonUtils.string(payload, FIRST_COL, defaultColumnId());
-	    //String firstDir = JsonUtils.string(payload, FIRST_DIR, ASC);
-	    //String secondCol = JsonUtils.string(payload, SECOND_COL, null);
-	    //String secondDir = JsonUtils.string(payload, SECOND_DIR, null);
-	    //tm.sort(firstCol, sortDir(firstDir), secondCol, sortDir(secondDir));
-	    this.addTableConfigAnnotations(tm, payload);
-	    ObjectNode rootNode = MAPPER.createObjectNode();
-	    rootNode.set(ALARM_PRED_TABLES, TableUtils.generateRowArrayNode(tm));
-	    rootNode.set(ANNOTS, TableUtils.generateAnnotObjectNode(tm));
-	    this.sendMessage(ALARM_PRED_DATA_RESP, rootNode);
-        }
+        @Override
+        public void process(ObjectNode payload) {
+            TableModel tm = createTableModel();
+            this.populateTable(tm, payload);
+            //String firstCol = JsonUtils.string(payload, FIRST_COL, defaultColumnId());
+            //String firstDir = JsonUtils.string(payload, FIRST_DIR, ASC);
+            //String secondCol = JsonUtils.string(payload, SECOND_COL, null);
+            //String secondDir = JsonUtils.string(payload, SECOND_DIR, null);
+            //tm.sort(firstCol, sortDir(firstDir), secondCol, sortDir(secondDir));
+            this.addTableConfigAnnotations(tm, payload);
+            ObjectNode rootNode = MAPPER.createObjectNode();
+            rootNode.set(ALARM_PRED_TABLES, TableUtils.generateRowArrayNode(tm));
+            rootNode.set(ANNOTS, TableUtils.generateAnnotObjectNode(tm));
+            this.sendMessage(ALARM_PRED_DATA_RESP, rootNode);
+            }
 
 
         @Override
         protected void populateTable(TableModel tm, ObjectNode payload) {
-            int id = 1;
-            MLModelConfig item = SoonUiComponent.modelServices.get(MLAppType.ALARM_PREDICTION).getModelConfig(FCNNModel, id,null);
-//            List<Item> items = getItems();
-//            for (Item item: items) {
-                populateRow(tm.addRow(), item);
-//            }
-        }
-
-        private void populateRow(TableModel.Row row, MLModelConfig item) {
-            row.cell(ALARM_SOURCE, item.alarmSource())
-                    .cell(LEVEL, item.level())
-                    .cell(NAME, item.name())
-		            .cell(TIME_OCCUR, item.timeOccur())
-                    .cell(TIME_FIRST_OCCUR, item.timeFirstOccur());
-        }
-    }
-
-
-
-/**
-    // handler for sample item details requests
-    private final class AlarmPreDetailRequestHandler extends RequestHandler {
-
-        private AlarmPreDetailRequestHandler() {
-            super(ALARM_PRE_DETAIL_REQ);
-        }
-
-        @Override
-        public void process(ObjectNode payload) {
-            String id = string(payload, ID, "(none)");
-
-            // SomeService ss = get(SomeService.class);
-            // Item item = ss.getItemDetails(id)
-
-            // fake data for demonstration purposes...
-            Item item = getItem(id);
-
-            ObjectNode rootNode = objectNode();
-            ObjectNode data = objectNode();
-            rootNode.set(DETAILS, data);
-
-            if (item == null) {
-                rootNode.put(RESULT, "Item with id '" + id + "' not found");
-                log.warn("attempted to get item detail for id '{}'", id);
-
-            } else {
-                rootNode.put(RESULT, "Found item with id '" + id + "'");
-
-                data.put(ALARM_SOURCE, "a");//should 
-            	data.put(LEVEL, 1);
-            	data.put(NAME, "panzhihua");
-		        data.put(NUMBER_OCCUR, 5);
-	            data.put(FIRST_OCCUR_TIME, "2018-05-21/08:25:00");
-		        data.put(PROBABILITY_OCCUR, 0.56);
-
-                //data.put(ID, item.id());
-                //data.put(LABEL, item.label());
-                //data.put(CODE, item.code());
-                //data.put(COMMENT, "Some arbitrary comment");
+            //default 情况下，获得默认的结果
+//            int id = 0;
+//            int trainDatasetId = 0;
+//            int recentItemNum = 3;
+//            List<String> item = SoonUiComponent.modelServices.get(MLAppType.ALARM_PREDICTION).getAppliedResult(FCNNModel, id, trainDatasetId, recentItemNum);
+            List<String> item = new ArrayList<>();
+            item.add("1,2,3");
+            item.add("a,b,c");
+            for (String it: item) {
+                populateRow(tm.addRow(), it);
             }
 
-            sendMessage(ALARM_PRE_DETAIL_RESP, rootNode);
+//            int id = 1;
+//TODO MODEL CONFIGURATION INFO
+//            MLAlgorithmConfig item = SoonUiComponent.modelServices.get(MLAppType.ALARM_PREDICTION).getModelConfig(FCNNModel, id,null);
+//
+//            NNAlgorithmConfig it = (NNAlgorithmConfig)item;
+//            //            List<Item> items = getItems();
+////            for (Item item: items) {
+//                populateRow(tm.addRow(), it);
+////            }
+        }
+
+        private void populateRow(TableModel.Row row, String it) {
+            row.cell(APPLIED_RESULT,  it);
+//                    .cell(OUTPUT_NUM, item.getOutputNum())
+//                    .cell(HIDDEN_LAYER, item.getHiddenLayer())
+//                    .cell(ACTIVATION_FUNCTION, item.getActivationFunction())
+//                    .cell(WEIGHT_INIT, item.getWeightInit())
+//                    .cell(BIAS_INIT, item.getBiasInit())
+//                    .cell(LOSS_FUNCTION, item.getLossFunction())
+//                    .cell(BATCH_SIZE, item.getBatchSize())
+//                    .cell(EPOCH, item.getEpoch())
+//                    .cell(OPTIMIZER, item.getOptimizer())
+//                    .cell(LEARNING_RATE, item.getLearningRate())
+//                    .cell(LR_ADJUST, item.getLrAdjust())
+//                    .cell(DROP_OUT, item.getDropout());
         }
     }
-*/
-
-
 
     // ===================================================================
     // NOTE: The code below this line is to create fake data for this
@@ -350,42 +350,22 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 //        return null;
 //    }
 
-//    static int offset=0;
-//    static int limit = 10;
-//    // Produce a list of items.
-//    private static List<Item> getItems() {
-//        List<Item> rtn = Lists.newArrayList();
-//        List<org.onosproject.soon.dataset.original.Item> its = SoonUiComponent.modelServices.get(MLAppType.ALARM_PREDICTION).updateData(offset,limit);
-//        for (org.onosproject.soon.dataset.original.Item it : its) {
-//            AlarmPredictionItem tmp = (AlarmPredictionItem) it;
+    static int offset=0;
+    static int limit = 10;
+    // Produce a list of items.
+    private static List<Item> getItems() {
+        List<Item> rtn = Lists.newArrayList();
+        List<org.onosproject.soon.dataset.original.Item> its = SoonUiComponent.modelServices.get(MLAppType.ORIGINAL_DATA).updateData(offset,limit);
+        for (org.onosproject.soon.dataset.original.Item it : its) {
+//            HistoryAlarmItem tmp = (HistoryAlarmItem) it;
 //            double[] d = tmp.getInput();
-//            rtn.add(new Item(String.valueOf(d[0]), (int)d[1], String.valueOf(d[2]), String.valueOf(d[3]), String.valueOf(d[4])));
-//        }
-//        offset += limit;
-//        return rtn;
-//    }
-/**
-    // Simple model class to provide sample data
-    private static class Item {
-        private final String alarmSource;
-	    private final int level;
-        private final String name;
-        private final String timeOccur;
-	    private final String timeFirstOccur;
-
-        Item(String alarmSource, int level, String name, String timeOccur, String timeFirstOccur) {
-            this.alarmSource = alarmSource;
-            this.level = level;
-            this.name = name;
-            this.timeOccur = timeOccur;
-            this.timeFirstOccur = timeFirstOccur;
+//            rtn.add(new HistoryAlarmItem(tmp.getLevel(), tmp.getName(), tmp.getAlarm_src(),
+//                    tmp.getTp(), tmp.getLocation(),tmp.getHappen_time(),tmp.getClean_time(),
+//                    tmp.getConfirm_time(),tmp.getPath_level()));
+            rtn.add(it);
         }
-
-        String alarmSource() { return alarmSource; }
-	    int level() { return level; }
-        String name() { return name; }
-        String timeOccur() { return timeOccur; }
-	    String timeFirstOccur() { return timeFirstOccur; }
+        offset += limit;
+        return rtn;
     }
-*/
+
 }
