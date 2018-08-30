@@ -1,0 +1,23 @@
+{
+  "Graph": {
+    "vertex" :[
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "edge": [
+      {"srcId": 1, "desId": 2, "metric": 3},
+      {"srcId": 2, "desId": 3, "metric": 4},
+      {"srcId": 1, "desId": 3, "metric": 4},
+      {"srcId": 3, "desId": 4, "metric": 15},
+      {"srcId": 4, "desId": 5, "metric": 3},
+      {"srcId": 5, "desId": 6, "metric": 10},
+      {"srcId": 2, "desId": 6, "metric": 12},
+      {"srcId": 6, "desId": 7, "metric": 2}
+    ]
+  }
+}
