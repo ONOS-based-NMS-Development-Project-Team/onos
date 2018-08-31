@@ -26,6 +26,7 @@ import org.onosproject.soon.dataset.original.sdhnet.*;
 import org.onosproject.soon.mlmodel.MLAlgorithmConfig;
 //import org.onosproject.soon.mlmodel.MLModelConfig;
 import org.onosproject.soon.mlmodel.config.nn.*;
+import org.onosproject.ui.JsonUtils;
 import org.onosproject.ui.RequestHandler;
 import org.onosproject.ui.UiMessageHandler;
 import org.onosproject.ui.table.TableModel;
@@ -36,28 +37,19 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.text.SimpleDateFormat;
 
 import static org.onosproject.soon.mlmodel.MLAlgorithmType.FCNNModel;
+import static org.onosproject.ui.table.TableModel.sortDir;
 
 /**
  * Skeletal ONOS UI Table-View message handler.
  */
 public class AlarmPredMessageHandler extends UiMessageHandler {
 
-
-    private static final String ALARM_PRED_TRAIN_DATA_REQ = "alarmPredTrainDataRequest";
-    private static final String ALARM_PRED_TRAIN_DATA_RESP = "alarmPredTrainDataResponse";
-    private static final String ALARM_PRED_TRAIN_TABLES = "alarmPredTrains";
-
-    private static final String ALARM_PRED_TEST_DATA_REQ = "alarmPredTestDataRequest";
-    private static final String ALARM_PRED_TEST_DATA_RESP = "alarmPredTestDataResponse";
-    private static final String ALARM_PRED_TEST_TABLES = "alarmPredTests";
-
-
-    private static final String NO_ALARM_PRED_TRAIN_DATA_ROWS_MESSAGE = "No AlarmPredictionItem found";
-    private static final String NO_ALARM_PRED_DATA_ROWS_MESSAGE = "No AlarmPredictionApplicationItem found";
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private static final String ID = "id";
     private static final String INPUT = "input";
@@ -74,13 +66,6 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
     private static final String ANNOTS = "annots";
     private static final String RESULT = "result";
 
-    private static final String[] ALARM_PRED_TRAIN_DATA_COLUMN_IDS = {
-            ID, INPUT, ALARM_HAPPEN, TRAIN, DATAID};
-
-
-
-    private final Logger log = LoggerFactory.getLogger(getClass());
-
     @Override
     protected Collection<RequestHandler> createRequestHandlers() {
         return ImmutableSet.of(
@@ -90,7 +75,6 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
                 new AlarmPredDataRequestHandler()
         );
     }
-
 
 /************************************* net dataset *************************************************/
 
@@ -112,6 +96,13 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
     private static final String CLEAN_TIME = "clean_time";
     private static final String CONFIRM_TIME = "confirm_time";
     private static final String PATH_LEVEL = "path_level";
+
+    private static final String FIRST_COL = "firstCol";
+    private static final String FIRST_DIR = "firstDir";
+    private static final String SECOND_COL = "secondCol";
+    private static final String SECOND_DIR = "secondDir";
+
+    private static final String ASC = "asc";
 
     // handler for AlarmHistorical data requests
     private final class AlarmHistoricalDataRequestHandler extends TableRequestHandler {
@@ -139,11 +130,11 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
         public void process(ObjectNode payload) {
             TableModel tm = createTableModel();
             this.populateTable(tm, payload);
-            //String firstCol = JsonUtils.string(payload, FIRST_COL, defaultColumnId());
-            //String firstDir = JsonUtils.string(payload, FIRST_DIR, ASC);
-            //String secondCol = JsonUtils.string(payload, SECOND_COL, null);
-            //String secondDir = JsonUtils.string(payload, SECOND_DIR, null);
-            //tm.sort(firstCol, sortDir(firstDir), secondCol, sortDir(secondDir));
+            String firstCol = JsonUtils.string(payload, FIRST_COL, LEVEL);
+            String firstDir = JsonUtils.string(payload, FIRST_DIR, ASC);
+            String secondCol = JsonUtils.string(payload, SECOND_COL, ALARM_SRC);
+            String secondDir = JsonUtils.string(payload, SECOND_DIR, ASC);
+            tm.sort(firstCol, sortDir(firstDir), secondCol, sortDir(secondDir));
             this.addTableConfigAnnotations(tm, payload);
             ObjectNode rootNode = MAPPER.createObjectNode();
             rootNode.set(ALARM_HIST_TABLES, TableUtils.generateRowArrayNode(tm));
@@ -168,8 +159,8 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 //        private void populateRow(TableModel.Row row, Item item) {
         private void populateRow(TableModel.Row row, HistoryAlarmItem item) {
             row.cell(LEVEL, item.getLevel())
-                    .cell(NAME, item.getName())
                     .cell(ALARM_SRC, item.getAlarm_src())
+                    .cell(NAME, item.getName())
                     .cell(TP, item.getTp())
                     .cell(LOCATION, item.getLocation())
                     .cell(HAPPEN_TIME, formatter.format(item.getHappen_time()));
@@ -204,8 +195,9 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
                 rootNode.put(RESULT, "Found item with id '" + id + "'");
 
                 data.put(LEVEL, it.getLevel());
-                data.put(NAME, it.getName());
                 data.put(ALARM_SRC, it.getAlarm_src());
+                data.put(NAME, it.getName());
+
                 data.put(TP, it.getTp());
                 data.put(LOCATION, it.getLocation());
                 data.put(HAPPEN_TIME, formatter.format(it.getHappen_time()));
@@ -247,6 +239,7 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
     private static final String LR_ADJUST = "lrAdjust";
     private static final String DROP_OUT = "dropout";
     private static final String APPLIED_RESULT = "AppliedResult";
+    private static final String TIME = "time";
 
 // todo model config info
 // private static final String[] ALARM_PRED_DATA_COLUMN_IDS = {
@@ -278,11 +271,11 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
         public void process(ObjectNode payload) {
             TableModel tm = createTableModel();
             this.populateTable(tm, payload);
-            //String firstCol = JsonUtils.string(payload, FIRST_COL, defaultColumnId());
-            //String firstDir = JsonUtils.string(payload, FIRST_DIR, ASC);
-            //String secondCol = JsonUtils.string(payload, SECOND_COL, null);
-            //String secondDir = JsonUtils.string(payload, SECOND_DIR, null);
-            //tm.sort(firstCol, sortDir(firstDir), secondCol, sortDir(secondDir));
+            String firstCol = JsonUtils.string(payload, FIRST_COL, defaultColumnId());
+            String firstDir = JsonUtils.string(payload, FIRST_DIR, ASC);
+            String secondCol = JsonUtils.string(payload, SECOND_COL, null);
+            String secondDir = JsonUtils.string(payload, SECOND_DIR, ASC);
+            tm.sort(firstCol, sortDir(firstDir), secondCol, sortDir(secondDir));
             this.addTableConfigAnnotations(tm, payload);
             ObjectNode rootNode = MAPPER.createObjectNode();
             rootNode.set(ALARM_PRED_TABLES, TableUtils.generateRowArrayNode(tm));
@@ -316,8 +309,14 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 ////            }
         }
 
-        private void populateRow(TableModel.Row row, String it) {
-            row.cell(APPLIED_RESULT,  it);
+        private void populateRow(TableModel.Row row, String item) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+            row.cell(TIME, dateFormat.format(new Date()));
+//                    .cell(APPLIED_RESULT,  item)
+//                    .cell(APPLIED_RESULT,  item)
+//                    .cell(APPLIED_RESULT,  item)
+//                    .cell(APPLIED_RESULT,  item)
+//                    .cell(APPLIED_RESULT,  item)
 //                    .cell(OUTPUT_NUM, item.getOutputNum())
 //                    .cell(HIDDEN_LAYER, item.getHiddenLayer())
 //                    .cell(ACTIVATION_FUNCTION, item.getActivationFunction())
