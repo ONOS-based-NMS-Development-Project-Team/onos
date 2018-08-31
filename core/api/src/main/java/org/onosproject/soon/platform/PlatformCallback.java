@@ -11,6 +11,20 @@ import java.util.List;
 public interface PlatformCallback {
 
     /**
+     * 训练集传输结束时的消息通知。
+     * @param msgId 消息id
+     * @param trainDatasetId 传输的训练集id
+     */
+    void trainDatasetTransEnd(int msgId, int trainDatasetId);
+
+    /**
+     * 测试集传输结束时的消息通知。
+     * @param msgId 消息id
+     * @param testDatasetId 传输的测试集id
+     */
+    void testDatasetTransEnd(int msgId, int testDatasetId);
+
+    /**
      * 训练结束时的消息通知。接收到END_NOTIFY时该函数被触发。
      * 和{@link MLPlatformService#startTrain(int)} 方法是一对
      */
