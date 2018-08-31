@@ -18,7 +18,7 @@ package univ.bupt.soon.mlshow.impl;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import org.onosproject.soon.MLAppType;
+import org.onosproject.soon.foreground.MLAppType;
 import org.onosproject.soon.dataset.original.AlarmPredictionItem;
 
 import org.onosproject.soon.dataset.original.Item;
@@ -269,19 +269,39 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 
         @Override
         public void process(ObjectNode payload) {
+            //处理payload，得到里面的sortParams和setting
+            ObjectNode sortParams = (ObjectNode) payload.path("sortParams");
+            ObjectNode setting = (ObjectNode) payload.path("setting");
+//            String modelId = JsonUtils.string(setting, "modelId", null);
+            if (JsonUtils.string(setting, "modelId", null) == null){
+                //读取setting里的其他参数，进行模型的训练，然后应用模型，获得结果
+
+//            }else if(JsonUtils.string(setting, "modelId", null) == "default"){
+//                //get default model application result
+//                SoonUiComponent.modelServices.get(MLAppType.ALARM_PREDICTION).get(offset,limit);
+
+
+            }else {
+                //modelId为其他值，此时应该是一个数字，进行模型应用，并获得结果
+                String modelId = JsonUtils.string(setting, "modelId", null);
+
+                SoonUiComponent.modelServices.get(MLAppType.ALARM_PREDICTION).startTraining(offset,limit);
+            }
+
+
             TableModel tm = createTableModel();
             this.populateTable(tm, payload);
             String firstCol = JsonUtils.string(payload, FIRST_COL, defaultColumnId());
             String firstDir = JsonUtils.string(payload, FIRST_DIR, ASC);
             String secondCol = JsonUtils.string(payload, SECOND_COL, null);
-            String secondDir = JsonUtils.string(payload, SECOND_DIR, ASC);
+            String secondDir = JsonUtils.string(payload, SECOND_DIR, null);
             tm.sort(firstCol, sortDir(firstDir), secondCol, sortDir(secondDir));
             this.addTableConfigAnnotations(tm, payload);
             ObjectNode rootNode = MAPPER.createObjectNode();
             rootNode.set(ALARM_PRED_TABLES, TableUtils.generateRowArrayNode(tm));
             rootNode.set(ANNOTS, TableUtils.generateAnnotObjectNode(tm));
             this.sendMessage(ALARM_PRED_DATA_RESP, rootNode);
-            }
+        }
 
 
         @Override
