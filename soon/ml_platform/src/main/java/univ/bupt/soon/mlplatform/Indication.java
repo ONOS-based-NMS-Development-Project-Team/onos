@@ -50,7 +50,7 @@ public enum Indication {
     },
     CONTROL_STOP() {
         public String getName() {
-            return "/config/stop";
+            return "/control/stop";
         }
     },
 

@@ -218,12 +218,12 @@
         handlers[curDetailsResp] = curRespDetailsCb;
         wss.bindHandlers(handlers);
         ks.keyBindings({
-            esc: [$scope.selectCallback, lion('qh_hint_esc')],
+            esc: [$scope.selectCallback, 'current alarm details'],
             _helpFormat: ['esc'],
         });
         ks.gestureNotes([
-            [lion('click_row'), lion('qh_hint_click_row')],
-            [lion('scroll_down'), lion('qh_hint_scroll_down')],
+            ['click_row', 'click row'],
+            ['scroll_down', 'scroll down'],
         ]);
     }
 
@@ -232,12 +232,12 @@
         handlers[hisDetailsResp] = hisRespDetailsCb;
         wss.bindHandlers(handlers);
         ks.keyBindings({
-            esc: [$scope.selectCallback, lion('qh_hint_esc')],
+            esc: [$scope.selectCallback, 'historical alarm details'],
             _helpFormat: ['esc'],
         });
         ks.gestureNotes([
-            [lion('click_row'), lion('qh_hint_click_row')],
-            [lion('scroll_down'), lion('qh_hint_scroll_down')],
+            ['click_row', 'click row'],
+            ['scroll_down', 'scroll down'],
         ]);
     }
 
@@ -259,7 +259,7 @@
                 'WebSocketService', 'FnService', 'KeyService', 'PanelService',
                 'IconService', 'UrlFnService', 'DialogService', 'TableBuilderService','LionService',
                 function(_$log_,_$scope_, $http, $timeout, $cookieStore, _wss_, _fs_, _ks_, _ps_, _is_,
-                         ufs, ds, tbs, _ls_){
+                         ufs, ds, _tbs_, _ls_){
             $log = _$log_;
             $scope = _$scope_;
             wss = _wss_;
@@ -267,7 +267,9 @@
             ks = _ks_;
             ps = _ps_;
             is = _is_;
+            tbs = _tbs_;
             ls = _ls_;
+
 
             //button tips
             $scope.collapseSidebarTip = 'collapse the sidebar';
