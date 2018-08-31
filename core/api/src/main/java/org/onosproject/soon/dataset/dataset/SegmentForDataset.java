@@ -15,8 +15,10 @@ public class SegmentForDataset {
     private boolean isPartOfDataset;
     // 该对象在该id数据集中的序列下标。如果该对象就是完整的数据集本身，则值必须为0
     private int index;
-    // 数据内容
-    private List<List<Double>> datas;
+    // 数据输入内容
+    private List<List<Double>> input;
+    // 数据输出内容
+    private List<List<Double>> output;
 
 
     public boolean isTrainData() {
@@ -51,14 +53,21 @@ public class SegmentForDataset {
         this.index = index;
     }
 
-    public List<List<Double>> getDatas() {
-        return datas;
+    public List<List<Double>> getInput() {
+        return input;
     }
 
-    public void setDatas(List<List<Double>> datas) {
-        this.datas = datas;
+    public void setInput(List<List<Double>> input) {
+        this.input = input;
     }
 
+    public List<List<Double>> getOutput() {
+        return output;
+    }
+
+    public void setOutput(List<List<Double>> output) {
+        this.output = output;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -73,7 +82,8 @@ public class SegmentForDataset {
                 .append(datasetId, that.datasetId)
                 .append(isPartOfDataset, that.isPartOfDataset)
                 .append(index, that.index)
-                .append(datas, that.datas)
+                .append(input, that.input)
+                .append(output, that.output)
                 .isEquals();
     }
 
@@ -84,7 +94,8 @@ public class SegmentForDataset {
                 .append(datasetId)
                 .append(isPartOfDataset)
                 .append(index)
-                .append(datas)
+                .append(input)
+                .append(output)
                 .toHashCode();
     }
 }

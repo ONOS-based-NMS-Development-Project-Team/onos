@@ -41,58 +41,49 @@ public interface ModelControlService {
      *
      * @param trainDatasetId 为模型modelId设置使用的训练集
      * @param modelId
-     * @return
+     * @return 发送设定训练集的消息id。如果失败，则返回-1
      */
-    Pair<Integer, Integer> setDataset(int modelId, int trainDatasetId);
+    int setDataset(int modelId, int trainDatasetId);
 
 
     /**
      * 开始进行模型训练
-     * @param type 机器学习算法类型
      * @param modelId 算法的指定配置参数的实现
-     * @param trainDatasetId 训练数据集的id
-     * @param testDatasetIds 测试集id的集合。表示在多少个测试集上进行测试。如果为null，表示不进行测试。
      * @return Pair.Left表示是否开始成功。如果当前模型已经处于训练状态，则返回false。Pair.Right表示发送的训练开始消息的msgId
      */
-    Pair<Boolean, Integer> startTraining(MLAlgorithmType type, int modelId, int trainDatasetId, List<Integer> testDatasetIds);
+    Pair<Boolean, Integer> startTraining(int modelId);
 
     /**
      * 中断模型的训练过程
-     * @param type 机器学习算法类型
      * @param modelId 算法的指定配置参数的实现
-     * @param trainDatasetId 训练数据集的id
      * @return Pair.Left表示是否终端成功。如果当前模型不可中断，则返回false。Pair.Right表示发送的训练开始消息的msgId
      */
-    Pair<Boolean, Integer> stopTraining(MLAlgorithmType type, int modelId, int trainDatasetId);
+    Pair<Boolean, Integer> stopTraining(int modelId);
 
     /**
      * 请求指定模型应用的结果
-     * @param type 算法类型
      * @param modelId 模型id
-     * @param trainDatasetId 训练集id
      * @param recentItemNum 将模型应用于最近发生的几次数据中去
      * @return 发送消息的msgId
      */
-    Pair<Boolean, Integer> applyModel(MLAlgorithmType type, int modelId, int trainDatasetId, int recentItemNum);
+    Pair<Boolean, Integer> applyModel(int modelId, int recentItemNum);
 
 
     /**
      * 请求删除指定模型
-     * @param type 算法类型
      * @param modelId 模型id
      * @return 发送消息的msgId
      */
-    Pair<Boolean, Integer> deleteModel(MLAlgorithmType type, int modelId);
+    Pair<Boolean, Integer> deleteModel(int modelId);
 
 
     /**
      * 获取模型在测试集上的评估结果
-     * @param type 算法类型
-     * @param id 模型id
+     * @param modelId 模型id
      * @param testDatasetId 测试集id
      * @return 发送消息的msgId
      */
-    Pair<Boolean, Integer> getModelEvaluation(MLAlgorithmType type, int id, int testDatasetId);
+    Pair<Boolean, Integer> getModelEvaluation(int modelId, int testDatasetId);
 
 
 
@@ -110,11 +101,10 @@ public interface ModelControlService {
 
     /**
      * 获取模型配置
-     * @param type 机器学习算法类型
      * @param modelId 模型id
      * @return 返回指定模型的配置
      */
-    MLAlgorithmConfig getModelConfig(MLAlgorithmType type, int modelId);
+    MLAlgorithmConfig getModelConfig(int modelId);
 
 
     /**
