@@ -130,4 +130,25 @@ public interface MLPlatformService {
      */
     int deleteTestDataset(int websocketId, int testDataId);
 
+    /**
+     * 查询平台，目前是否在远端已经存在id为trainDatasetId的训练集
+     * @param trainDatasetId 训练集id
+     * @return 是否存在
+     */
+    boolean containTrainId(int trainDatasetId);
+
+    /**
+     * 查询平台，目前是否在远端已经存在id为testDatasetId的测试集
+     * @param testDatasetId 测试集id
+     * @return 是否存在
+     */
+    boolean containTestId(int testDatasetId);
+
+    /**
+     * 查询平台，目前是否在远端已经存在id为modelId的模型
+     * @param modelId 模型id
+     * @return 是否存在
+     */
+    boolean containModelId(int modelId);
+
 }
