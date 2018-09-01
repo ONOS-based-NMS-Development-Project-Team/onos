@@ -149,8 +149,30 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
         @Override
         protected void populateTable(TableModel tm, ObjectNode payload) {
 //            List<org.onosproject.soon.dataset.original.Item> its = SoonUiComponent.modelServices.get(MLAppType.ORIGINAL_DATA).updateData(offset,limit);
-            List<org.onosproject.soon.dataset.original.Item> its = getItems();
-            for (org.onosproject.soon.dataset.original.Item it : its) {
+            List<org.onosproject.soon.dataset.original.sdhnet.HistoryAlarmItem> its = new ArrayList<>();
+            HistoryAlarmItem a = new HistoryAlarmItem();
+            HistoryAlarmItem b = new HistoryAlarmItem();
+            a.setLevel("a");
+            a.setName("aa");
+            a.setAlarm_src("aaa");
+            a.setTp("aaaa");
+            a.setLocation("aaaaa");
+            a.setHappen_time(new Date());
+            a.setHappen_time(new Date());
+            a.setHappen_time(new Date());
+            b.setPath_level("aaaaaa");
+            b.setLevel("b");
+            b.setName("bb");
+            b.setAlarm_src("bbb");
+            b.setTp("bbbb");
+            b.setLocation("bbbbb");
+            b.setHappen_time(new Date());
+            b.setHappen_time(new Date());
+            b.setHappen_time(new Date());
+            b.setPath_level("bbbbbb");
+            its.add(a);
+            its.add(b);
+            for (HistoryAlarmItem it : its) {
                 HistoryAlarmItem tmp = (HistoryAlarmItem) it;
                 populateRow(tm.addRow(), tmp);
             }
@@ -274,7 +296,9 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 
         @Override
         public void process(ObjectNode payload) {
-            int msgid;
+//            TableModel tm = createTableModel();
+//            this.populateTable(tm, payload);
+            int msgid = 1;
             //处理payload，得到里面的sortParams和setting
             ObjectNode sortParams = (ObjectNode) payload.path("sortParams");
             ObjectNode setting = (ObjectNode) payload.path("setting");
@@ -291,6 +315,7 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
                 msgid = pair.getRight();
                 if(pair.getKey() == true){
                     APModelIdMsgIdValue.get(modelIdInt).put(msgid, null);
+
                 }else{
                     //调用应用结果方法，返回值.left为false，说明调用方法没有成功
                     log.info("在告警预测app中，调用方法applyModel()失败");
@@ -299,10 +324,18 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
                     APModelIdMsgIdValue.remove(modelIdInt);
                 }
             }
+            //todo 为了测试，延时5秒后在 APModelIdMsgIdValue.get(modelIdInt).get(msgid) 赋值
+//
+//            APModelIdMsgIdValue.get(modelIdInt).get(msgid).add("abcdefg");
+//            APModelIdMsgIdValue.get(modelIdInt).get(msgid).add("hijklmn");
+
             if( APModelIdMsgIdValue.get(modelIdInt).get(msgid) != null){
                 List<String> applyResult = APModelIdMsgIdValue.get(modelIdInt).get(msgid);
+
                 TableModel tm = createTableModel();
-                this.populateTable(tm, payload, modelIdInt, applyResult);
+                for (String it: applyResult) {
+                    populateRow(tm.addRow(), it, modelIdInt);
+                }
                 String firstCol = JsonUtils.string(sortParams, FIRST_COL, defaultColumnId());
                 String firstDir = JsonUtils.string(sortParams, FIRST_DIR, ASC);
                 String secondCol = JsonUtils.string(sortParams, SECOND_COL, null);
@@ -312,6 +345,7 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
                 ObjectNode rootNode = MAPPER.createObjectNode();
                 rootNode.set(ALARM_PRED_TABLES, TableUtils.generateRowArrayNode(tm));
                 rootNode.set(ANNOTS, TableUtils.generateAnnotObjectNode(tm));
+                APModelIdMsgIdValue.remove(modelIdInt);
                 this.sendMessage(ALARM_PRED_DATA_RESP, rootNode);
             }
 
@@ -319,18 +353,16 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 
 
         @Override
-        protected void populateTable(TableModel tm, ObjectNode payload, int modelIdInt, List<String> applyResult) {
+        protected void populateTable(TableModel tm, ObjectNode payload) {
             //default 情况下，获得默认的结果
 //            int id = 0;
 //            int trainDatasetId = 0;
 //            int recentItemNum = 3;
 //            List<String> item = SoonUiComponent.modelServices.get(MLAppType.ALARM_PREDICTION).getAppliedResult(FCNNModel, id, trainDatasetId, recentItemNum);
-            List<String> item = new ArrayList<>();
-            item.add("1,2,3");
-            item.add("a,b,c");
-            for (String it: applyResult) {
-                populateRow(tm.addRow(), it, modelIdInt);
-            }
+//            List<String> item = new ArrayList<>();
+//            item.add("1,2,3");
+//            item.add("a,b,c");
+//
 
 //            int id = 1;
 //TODO MODEL CONFIGURATION INFO
@@ -346,8 +378,8 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
         private void populateRow(TableModel.Row row, String it, int modelIdInt) {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             row.cell(TIME, dateFormat.format(new Date()))
-                    .cell(APPLIED_RESULT,  it)
-                    .cell(MODEL_ID,  modelIdInt);
+                    .cell(APPLIED_RESULT, it)
+                    .cell(MODEL_ID, modelIdInt);
 //                    .cell(OUTPUT_NUM, item.getOutputNum())
 //                    .cell(HIDDEN_LAYER, item.getHiddenLayer())
 //                    .cell(ACTIVATION_FUNCTION, item.getActivationFunction())
