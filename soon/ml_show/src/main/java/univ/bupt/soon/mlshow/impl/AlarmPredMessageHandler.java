@@ -18,6 +18,9 @@ package univ.bupt.soon.mlshow.impl;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.tuple.Pair;
+import org.onosproject.soon.MonitorData;
+import org.onosproject.soon.foreground.ForegroundCallback;
 import org.onosproject.soon.foreground.MLAppType;
 import org.onosproject.soon.dataset.original.AlarmPredictionItem;
 
@@ -35,10 +38,8 @@ import org.onosproject.ui.table.TableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.net.URI;
+import java.util.*;
 import java.text.SimpleDateFormat;
 
 import static org.onosproject.soon.mlmodel.MLAlgorithmType.FCNNModel;
@@ -240,16 +241,20 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
     private static final String DROP_OUT = "dropout";
     private static final String APPLIED_RESULT = "AppliedResult";
     private static final String TIME = "time";
+    private static final String MODEL_ID = "modelId";
 
 // todo model config info
 // private static final String[] ALARM_PRED_DATA_COLUMN_IDS = {
 //            INPUT_NUM, OUTPUT_NUM, HIDDEN_LAYER, ACTIVATION_FUNCTION, WEIGHT_INIT, BIAS_INIT,
 //            LOSS_FUNCTION, BATCH_SIZE, EPOCH, OPTIMIZER, LEARNING_RATE, LR_ADJUST, DROP_OUT};
     private static final String[] ALARM_PRED_DATA_COLUMN_IDS = {APPLIED_RESULT};
+
     // handler for alarmPred model application table requests
-    private final class AlarmPredDataRequestHandler extends TableRequestHandler {
+    private final class AlarmPredDataRequestHandler extends TableRequestHandler implements ForegroundCallback {
 
         private static final String NO_ROWS_MESSAGE = "No AlarmPredictionApplication found";
+
+        Map<Integer, Map<Integer,List<String>>> APModelIdMsgIdValue = new HashMap<>();
 
         private AlarmPredDataRequestHandler() {
             super(ALARM_PRED_DATA_REQ, ALARM_PRED_DATA_RESP, ALARM_PRED_TABLES);
@@ -269,43 +274,52 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 
         @Override
         public void process(ObjectNode payload) {
+            int msgid;
             //处理payload，得到里面的sortParams和setting
             ObjectNode sortParams = (ObjectNode) payload.path("sortParams");
             ObjectNode setting = (ObjectNode) payload.path("setting");
-//            String modelId = JsonUtils.string(setting, "modelId", null);
-            if (JsonUtils.string(setting, "modelId", null) == null){
-                //读取setting里的其他参数，进行模型的训练，然后应用模型，获得结果
-
-//            }else if(JsonUtils.string(setting, "modelId", null) == "default"){
-//                //get default model application result
-//                SoonUiComponent.modelServices.get(MLAppType.ALARM_PREDICTION).get(offset,limit);
-
-
-            }else {
-                //modelId为其他值，此时应该是一个数字，进行模型应用，并获得结果
-                String modelId = JsonUtils.string(setting, "modelId", null);
-
-                SoonUiComponent.modelServices.get(MLAppType.ALARM_PREDICTION).startTraining(offset,limit);
+            //读取setting里的modelId，然后应用模型，获得结果
+            String modelId = JsonUtils.string(setting, "modelId", null);
+            String recentItemNum = JsonUtils.string(setting, "recentItemNum", null);
+            int modelIdInt = Integer.valueOf(modelId).intValue();
+            int recentItemNumInt = Integer.valueOf(recentItemNum).intValue();
+            //如果map中包含
+            if(APModelIdMsgIdValue.containsKey(modelId) == false){
+                APModelIdMsgIdValue.put(modelIdInt, new HashMap<>());
+                //此处调用应用结果方法，pair.left为是否调用成功，pair.right为该操作的msgId
+                Pair<Boolean, Integer> pair = SoonUiComponent.modelServices.get(MLAppType.ALARM_PREDICTION).applyModel(modelIdInt, recentItemNumInt);
+                msgid = pair.getRight();
+                if(pair.getKey() == true){
+                    APModelIdMsgIdValue.get(modelIdInt).put(msgid, null);
+                }else{
+                    //调用应用结果方法，返回值.left为false，说明调用方法没有成功
+                    log.info("在告警预测app中，调用方法applyModel()失败");
+                    //todo 获取不到modelId
+                    //删除map中的数据，前台刷新时，会重新发送请求
+                    APModelIdMsgIdValue.remove(modelIdInt);
+                }
+            }
+            if( APModelIdMsgIdValue.get(modelIdInt).get(msgid) != null){
+                List<String> applyResult = APModelIdMsgIdValue.get(modelIdInt).get(msgid);
+                TableModel tm = createTableModel();
+                this.populateTable(tm, payload, modelIdInt, applyResult);
+                String firstCol = JsonUtils.string(sortParams, FIRST_COL, defaultColumnId());
+                String firstDir = JsonUtils.string(sortParams, FIRST_DIR, ASC);
+                String secondCol = JsonUtils.string(sortParams, SECOND_COL, null);
+                String secondDir = JsonUtils.string(sortParams, SECOND_DIR, null);
+                tm.sort(firstCol, sortDir(firstDir), secondCol, sortDir(secondDir));
+                this.addTableConfigAnnotations(tm, payload);
+                ObjectNode rootNode = MAPPER.createObjectNode();
+                rootNode.set(ALARM_PRED_TABLES, TableUtils.generateRowArrayNode(tm));
+                rootNode.set(ANNOTS, TableUtils.generateAnnotObjectNode(tm));
+                this.sendMessage(ALARM_PRED_DATA_RESP, rootNode);
             }
 
-
-            TableModel tm = createTableModel();
-            this.populateTable(tm, payload);
-            String firstCol = JsonUtils.string(payload, FIRST_COL, defaultColumnId());
-            String firstDir = JsonUtils.string(payload, FIRST_DIR, ASC);
-            String secondCol = JsonUtils.string(payload, SECOND_COL, null);
-            String secondDir = JsonUtils.string(payload, SECOND_DIR, null);
-            tm.sort(firstCol, sortDir(firstDir), secondCol, sortDir(secondDir));
-            this.addTableConfigAnnotations(tm, payload);
-            ObjectNode rootNode = MAPPER.createObjectNode();
-            rootNode.set(ALARM_PRED_TABLES, TableUtils.generateRowArrayNode(tm));
-            rootNode.set(ANNOTS, TableUtils.generateAnnotObjectNode(tm));
-            this.sendMessage(ALARM_PRED_DATA_RESP, rootNode);
         }
 
 
         @Override
-        protected void populateTable(TableModel tm, ObjectNode payload) {
+        protected void populateTable(TableModel tm, ObjectNode payload, int modelIdInt, List<String> applyResult) {
             //default 情况下，获得默认的结果
 //            int id = 0;
 //            int trainDatasetId = 0;
@@ -314,8 +328,8 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
             List<String> item = new ArrayList<>();
             item.add("1,2,3");
             item.add("a,b,c");
-            for (String it: item) {
-                populateRow(tm.addRow(), it);
+            for (String it: applyResult) {
+                populateRow(tm.addRow(), it, modelIdInt);
             }
 
 //            int id = 1;
@@ -329,14 +343,11 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 ////            }
         }
 
-        private void populateRow(TableModel.Row row, String item) {
+        private void populateRow(TableModel.Row row, String it, int modelIdInt) {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-            row.cell(TIME, dateFormat.format(new Date()));
-//                    .cell(APPLIED_RESULT,  item)
-//                    .cell(APPLIED_RESULT,  item)
-//                    .cell(APPLIED_RESULT,  item)
-//                    .cell(APPLIED_RESULT,  item)
-//                    .cell(APPLIED_RESULT,  item)
+            row.cell(TIME, dateFormat.format(new Date()))
+                    .cell(APPLIED_RESULT,  it)
+                    .cell(MODEL_ID,  modelIdInt);
 //                    .cell(OUTPUT_NUM, item.getOutputNum())
 //                    .cell(HIDDEN_LAYER, item.getHiddenLayer())
 //                    .cell(ACTIVATION_FUNCTION, item.getActivationFunction())
@@ -349,6 +360,49 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 //                    .cell(LEARNING_RATE, item.getLearningRate())
 //                    .cell(LR_ADJUST, item.getLrAdjust())
 //                    .cell(DROP_OUT, item.getDropout());
+        }
+
+        @Override
+        public void operationFailure(int msgId, String description) {
+
+        }
+
+        @Override
+        public void appliedModelResult(int msgId, List<Item> input, List<String> output) {
+            //TODO 将输出的结果赋值，找不到modelId
+//            APModelIdMsgIdValue.get()put(msgId, output);
+
+
+        }
+
+        @Override
+        public void modelEvaluation(int msgId, String result) {
+
+        }
+
+        @Override
+        public void trainDatasetTransEnd(int msgId, int trainDatasetId) {
+
+        }
+
+        @Override
+        public void testDatasetTransEnd(int msgId, int testDatasetId) {
+
+        }
+
+        @Override
+        public void ResultUrl(int msgId, URI uri) {
+
+        }
+
+        @Override
+        public void trainEnd(int msgId) {
+
+        }
+
+        @Override
+        public void intermediateResult(int msgId, MonitorData monitorData) {
+
         }
     }
 
