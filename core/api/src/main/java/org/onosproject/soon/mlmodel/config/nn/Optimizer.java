@@ -5,6 +5,12 @@ package org.onosproject.soon.mlmodel.config.nn;
  * 优化器
  */
 public enum Optimizer {
+    SGD() {
+        @Override
+        public String getName() {
+            return "sgd";
+        }
+    },
     ADAMSGD() {
         @Override
         public String getName() {

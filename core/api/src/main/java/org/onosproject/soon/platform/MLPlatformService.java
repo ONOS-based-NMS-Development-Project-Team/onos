@@ -111,6 +111,14 @@ public interface MLPlatformService {
     int applyModel(int websocketId, List<List<Double>> input);
 
     /**
+     * 评估模型，得到结果
+     * @param websocketId
+     * @param testDatasetId
+     * @return
+     */
+    int evalModel(int websocketId, int testDatasetId);
+
+    /**
      * 在远端删除该模型
      * @return 发送消息的编号
      */
