@@ -126,7 +126,9 @@
         historicalAlarmSearchByValue = ['','$','level','alarmSource','name','type','location','pathLevel'],
         historicalAlarmSearchByText = ['Search By','All Fields','level','alarmSource','name','type','location','path level'],
         modelDetailsPropOrder = ['applicationType','modelId','algorithmType','modelState','trainDataSetId','testDataSetId','modelAccuracy'],
-        annParams = ['inputNum','outputNum',''];
+        modelDetailsPropOrderText = ['application type','model id','algorithm type','model state','train data set id','test data set id','model accuracy'],
+        annParams = ['inputNum','outputNum','hiddenLayer','activationFunction','weightInit','biasInit','lossFunction','batchSize','epoch','optimizer','learningRate','lrAdjust','dropout'];
+        annParamsText = ['input num','output num','hidden layer neurons number','activation function','weight init','bias init','loss function','batch size','epoch','optimizer','learning rate','learning rate adjust','dropout'];
 
 
     function whichSubPage(){
@@ -385,15 +387,15 @@
 
     function populateModelDetailsMiddle(detailsPanel,data){
         var table = detailsPanel.select('.middle-table').append('tBody');
-        modelDetailsPropOrder.forEach(function (prop) {
-            addProp(table,prop,data[prop]);
+        modelDetailsPropOrder.forEach(function (prop,i) {
+            addProp(table,modelDetailsPropOrderText[i],data[prop]);
         });
-        function addProp(table,prop,value) {
+        function addProp(table,propName,value) {
             var tr = table.append('tr');
             function addCell(cls,txt) {
                 tr.append('td').classed(cls).text(txt);
             }
-            addCell('label',prop+':');
+            addCell('label',propName+':');
             addCell('value',value);
         }
     }
@@ -401,6 +403,18 @@
     function populateModelDetailsBottom(detailsPanel,data) {
         var bottom = detailsPanel.select('.bottom');
         bottom.append('h4').text('algorithm parameters');
+        var table = bottom.append('table').classed('bottom-table',true).append('tBody');
+        annParams.forEach(function (para,i) {
+            addProp(table,annParamsText[i],data[para]);
+        });
+        function addProp(table,paraName,value) {
+            var tr = table.append('tr');
+            function addCell(cls,txt) {
+                tr.append('td').classed(cls).text(txt);
+            }
+            addCell('label',paraName+':');
+            addCell('value',value);
+        }
     }
 
     function populateModelDetails() {
