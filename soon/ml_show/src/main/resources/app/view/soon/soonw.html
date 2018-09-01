@@ -1,0 +1,84 @@
+<div id="ov-soon">
+    <div class="tabular-header">
+        <h2>
+            alarmPre
+        </h2>
+        <div class="ctrl-btns">
+            <div class="refresh" ng-class="{active: autoRefresh}"
+                 icon icon-size="42" icon-id="refresh"
+                 tooltip tt-msg="autoRefreshTip"
+                 ng-click="toggleRefresh()"></div>
+
+            <div class="separator"></div>
+
+            <div icon icon-size="42" icon-id="play"
+                 ng-click="alarmPreShow(true)"
+                 tooltip tt-msg="activateTip"
+                 ng-class="alarmPreShow">
+            </div>
+            <div icon icon-size="42" icon-id="stop"
+                 ng-click="alarmPreShow(false)"
+                 tooltip tt-msg="deactivateTip"
+                 ng-class="alarmPreShowStop">
+            </div>
+            <div icon icon-size="42" icon-id="plus"
+                 ng-click="alarmPreSettingShow()"
+                 tooltip tt-msg="settingTip"
+                 ng-class="alarmPreSetting">
+            </div>
+        </div>
+
+        <div class="search">
+            <input type="text" ng-model="queryTxt" placeholder="Search"/>
+            <select ng-model="queryBy">
+                <option value="" disabled>Search By</option>
+                <option value="$">All Fields</option>
+                <option value="timeOccur">timeOccur</option>
+                <option value="alarmPreSource">alarmPreSource</option>
+                <option value="timeFirstOccur">timeFirstOccur</option>
+                <option value="level">level</option>
+
+            </select>
+        </div>
+
+
+    </div>
+
+    <div class="summary-list" onos-table-resize>
+        <div class="table-header" onos-sortable-header>
+            <table>
+                <tr>
+                    <td colId="timeOccur" sortable col-width="140px"> timeOccur </td>
+                    <td colId="alarmPreSource" sortable col-width="140px"> alarmPreSource </td>
+                    <td colId="level" col-width="140px"> level </td>
+                    <td colId="name" col-width="140px"> name </td>
+                    <td colId="timeFirstOccur" col-width="140px"> timeFirstOccur </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="table-body">
+            <table onos-flash-changes id-prop="id">
+                <tr ng-if="!tableData.length" class="no-data">
+                    <td colspan="5">
+                        {{annots.no_rows_msg}}
+                    </td>
+                </tr>
+
+                <tr ng-repeat="alarmPre in tableData | filter:queryFilter track by $index"
+                    ng-class="{selected: alarmPre.id === selId}"
+                    ng-repeat-complete row-id="{{alarmPre.id}}">
+                    <td>{{alarmPre.timeOccur}}</td>
+                    <td>{{alarmPre.alarmPreSource}}</td>
+                    <td>{{alarmPre.level}}</td>
+                    <td>{{alarmPre.name}}</td>
+                    <td>{{alarmPre.timeFirstOccur}}</td>
+                </tr>
+            </table>
+        </div>
+
+    </div>
+
+    <alarm-setting-panel></alarm-setting-panel>
+
+</div>

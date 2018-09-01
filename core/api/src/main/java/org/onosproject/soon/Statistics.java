@@ -1,7 +1,7 @@
 package org.onosproject.soon;
 
 import com.google.common.base.Objects;
-import org.onosproject.soon.mlmodel.MLModelConfig;
+import org.onosproject.soon.mlmodel.MLAlgorithmConfig;
 
 import java.util.List;
 import java.util.Map;
@@ -14,12 +14,11 @@ public class Statistics {
     private Map<Integer, Integer> trainDataset;
     // 数据集，Pair.Left表示测试集的id，Pair.Right表示测试集的size
     private Map<Integer, Integer> testDataset;
-    // 模型的统计结果
-    private List<MLModelConfig> modelConfigs;
-
+    // 模型的统计结果. Map.key表示模型id,Map.value表示模型配置
+    private Map<Integer, MLAlgorithmConfig> modelConfigs;
 
     public Statistics(Map<Integer, Integer> trainDataset, Map<Integer, Integer> testDataset,
-                      List<MLModelConfig> modelConfigs) {
+                      Map<Integer, MLAlgorithmConfig> modelConfigs) {
         this.trainDataset = trainDataset;
         this.testDataset = testDataset;
         this.modelConfigs = modelConfigs;
@@ -41,11 +40,11 @@ public class Statistics {
         this.testDataset = testDataset;
     }
 
-    public List<MLModelConfig> getModelConfigs() {
+    public Map<Integer, MLAlgorithmConfig> getModelConfigs() {
         return modelConfigs;
     }
 
-    public void setModelConfigs(List<MLModelConfig> modelConfigs) {
+    public void setModelConfigs(Map<Integer, MLAlgorithmConfig> modelConfigs) {
         this.modelConfigs = modelConfigs;
     }
 

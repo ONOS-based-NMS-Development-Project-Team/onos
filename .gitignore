@@ -40,3 +40,4 @@ sonar-project.properties
 out/
 
 bazel-*
+dataset/

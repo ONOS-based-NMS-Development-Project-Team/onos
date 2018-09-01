@@ -1,0 +1,52 @@
+/*
+	ONOS GUI --SOON View  --css file
+ */
+
+.soon-left{
+    float:left;
+    width:20%;
+}
+.soon-right{
+    width:80%;
+    float:right;
+}
+#alarmPred{
+    display: none;
+}
+#faultClassification{
+    display: none;
+}
+#modelLibrary{
+    display: none;
+}
+#dataSet{
+    display: none;
+}
+#alarmPredDataSet{
+    display: none;
+}
+#faultClassificationDataSet{
+    display: none;
+}
+#historicalAlarm{
+    display: block;
+}
+#currentAlarm{
+    display: none;
+}
+#performance{
+    display: none;
+}
+#soon-view div.ctrl-btns img {
+    width:42px;
+    height:42px;
+}
+#ov-soon h2 {
+}
+#ov-soon div.tabular-header div.ctrl-btns{
+    top:55px;
+    right:20px;
+}
+#rawDataSearchBy option{
+    font-weight: lighter;
+}

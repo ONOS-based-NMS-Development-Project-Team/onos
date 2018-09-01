@@ -25,32 +25,6 @@
         <welcome-file>index.html</welcome-file>
     </welcome-file-list>
 
-    <!--
-    -->
-    <!--<security-constraint>-->
-        <!--<web-resource-collection>-->
-            <!--<web-resource-name>Secured</web-resource-name>-->
-            <!--<url-pattern>/index.html</url-pattern>-->
-        <!--</web-resource-collection>-->
-        <!--<web-resource-collection>-->
-            <!--<web-resource-name>Secured API</web-resource-name>-->
-            <!--<url-pattern>/rs/applications/*</url-pattern>-->
-        <!--</web-resource-collection>-->
-        <!--<auth-constraint>-->
-            <!--<role-name>admin</role-name>-->
-        <!--</auth-constraint>-->
-        <!--&lt;!&ndash;-->
-        <!--<user-data-constraint>-->
-            <!--<transport-guarantee>CONFIDENTIAL</transport-guarantee>-->
-        <!--</user-data-constraint>-->
-        <!--&ndash;&gt;-->
-    <!--</security-constraint>-->
-
-    <!--<security-role>-->
-        <!--<role-name>admin</role-name>-->
-    <!--</security-role>-->
-
-
     <servlet>
         <servlet-name>SOON Web Socket Service</servlet-name>
         <servlet-class>univ.bupt.soon.mlplatform.SoonWebSocketServlet</servlet-class>
