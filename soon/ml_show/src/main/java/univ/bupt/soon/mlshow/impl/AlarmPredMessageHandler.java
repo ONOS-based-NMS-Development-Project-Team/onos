@@ -95,9 +95,9 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 /************************************* net dataset *************************************************/
 
 /************************ alarmHistoricalData of net dataset *********************************/
-    private static final String ALARM_HIST_DATA_REQ = "alarmHistoricalDataRequest";
-    private static final String ALARM_HIST_DATA_RESP = "alarmHistoricalDataResponse";
-    private static final String ALARM_HIST_TABLES = "alarmHistoricals";
+    private static final String ALARM_HIST_DATA_REQ = "historicalAlarmDataRequest";
+    private static final String ALARM_HIST_DATA_RESP = "historicalAlarmDataResponse";
+    private static final String ALARM_HIST_TABLES = "hiatoricalAlarms";
 
     private static final String ALARM_HIST_DETAILS_REQ = "alarmHistoricalDetailsRequest";
     private static final String ALARM_HIST_DETAILS_RESP = "alarmHistoricalDetailsResponse";
@@ -138,7 +138,7 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
         @Override
         public void process(ObjectNode payload) {
             TableModel tm = createTableModel();
-            this.populateTable(tm, payload);
+                    this.populateTable(tm, payload);
             //String firstCol = JsonUtils.string(payload, FIRST_COL, defaultColumnId());
             //String firstDir = JsonUtils.string(payload, FIRST_DIR, ASC);
             //String secondCol = JsonUtils.string(payload, SECOND_COL, null);
