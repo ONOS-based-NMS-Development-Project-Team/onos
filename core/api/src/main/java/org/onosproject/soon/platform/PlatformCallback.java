@@ -3,6 +3,7 @@ package org.onosproject.soon.platform;
 
 import org.onosproject.soon.MonitorData;
 
+import java.net.URI;
 import java.util.List;
 
 /**
@@ -34,7 +35,7 @@ public interface PlatformCallback {
      * 获取到URL的通知。接收到URL_NOTIFY时该函数被触发。
      * 和{@link MLPlatformService#queryURL(int)}方法是一对
      */
-    void ResultUrl(int msgId);
+    void ResultUrl(int msgId, URI uri);
 
 
     /**
@@ -48,7 +49,15 @@ public interface PlatformCallback {
      * 模型应用结果。接收到MODEL_APPLY_NOTIFY时该函数被触发。
      * @param results 应用结果
      */
-    void applyResult(int msgId, List<Double> results);
+    void applyResult(int msgId, List<List<Double>> results);
+
+    /**
+     * 模型评估结果。
+     * @param msgId 消息id
+     * @param testDatasetId 测试集id
+     * @param results 原数据标签
+     */
+    void evalResult(int msgId, int testDatasetId, List<List<Double>> results);
 
 
     /**

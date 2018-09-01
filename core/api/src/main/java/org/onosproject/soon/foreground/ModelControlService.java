@@ -113,6 +113,13 @@ public interface ModelControlService {
      */
     Statistics getAppStatics();
 
+    /**
+     * 请求训练结束后的URL路径
+     * @param modelId
+     * @return
+     */
+    Pair<Boolean, Integer> queryURL(int modelId);
+
 
     /**××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××**/
     /******************************************** 数据库查询方法 ********************************************************/
@@ -141,11 +148,10 @@ public interface ModelControlService {
     List<Item> updateData(int offset, int limit);
 
 
-    /**
-     * 直接在tableName表上使用sql语句查询
-     * @param sql sql语句
-     * @param tableName 数据库的表名
-     * @return 查询结果
-     */
-    List<Item> updateData(String sql, String tableName);
+//    /**
+//     * 直接在tableName表上使用sql语句查询
+//     * @param sql sql语句
+//     * @return 查询结果
+//     */
+//    List<Item> updateData(String sql);
 }
