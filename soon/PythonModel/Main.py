@@ -3,6 +3,7 @@ import tensorflow as tf
 from xmlProcessor import analyzeXml_list, analyzeXml_dict
 from ReadFile import read_data, read_parameters
 import numpy as np
+import websocket11
 from xmlProcessor import generate_xml_dict
 
 

@@ -1,18 +1,17 @@
+from websocket_server import WebsocketServer
 import json
-import websocket
 import numpy as np
 from ReadFile import read_parameters
 from NeurosNetwork import NeurosNetwork
-import websocket_server
-import socket
 
 
-def on_message(ws, message):
-    # print(message)
+def on_message(ws, client, message):
+    print("message", message)
     msg_id, label, content = message.split('\n', 2)
     if is_json(content):
         content = json.loads(content)
     else:
+        print("hehe")
         content = content
     if label == "/config/train":
         global data_train_dict
@@ -66,12 +65,12 @@ def on_message(ws, message):
             dict = {"loss":lossdict[i],"remainingTime":0,"precision":0}
             json_str = json.dumps(dict)
             string = msg_id + '\n' + '/notify/process' + '\n' + json_str
-            ws.send(string)
+            ws.send_message(client,string)
         print("transported loss end")
         end = 'train_end'
         end_str = json.dumps(end)
         end = str(msg_id)+'\n'+'/notify/train_end'+'\n'+end_str
-        ws.send(end)
+        ws.send_message(client,end)
     elif label == "/apply":
         print("model input:")
         print(content)
@@ -80,31 +79,16 @@ def on_message(ws, message):
         prediction = str(prediction)
         json_pred = json.dumps(prediction)
         pred = str(msg_id) + '\n' + '/notify/apply' + '\n' + json_pred
-        ws.send(pred)
+        ws.send_message(client,pred)
     elif label == "/get/uri":
         print("cal_tensorboard")
         tensor_link = 'www.cctv.com'
         json_tblink = json.dumps(tensor_link)
         tb_link = str(msg_id) + '\n' + '/notify/apply' + '\n' + json_tblink
-        ws.send(tb_link)
+        ws.send_message(client,tb_link)
     else:
         print("others")
 
-
-
-
-def on_error(ws, error):
-    print(error)
-
-
-def on_close(ws):
-    print("closed")
-
-
-def on_open(ws):
-    # ws.send("hello,Im python")
-    # ws.send()
-    print("OK")
 
 def is_json(myjson):
     try:
@@ -114,26 +98,21 @@ def is_json(myjson):
     return True
 
 
-if __name__ == '__main__':
-    data_train_list = []
-    data_test_list = []
-    data_train_dict = {}
-    data_test_dict = {}
-    model_para = []
-    train_id = 0
-    websocket.enableTrace(True)
-    host = "ws://10.108.69.165:8181/onos/soon/soon"
-    ws = websocket.WebSocketApp(host, on_open=on_open,on_message=on_message, on_error=on_error, on_close=on_close)
-    # process = "/notify/process\n{'loss':0.5}"
-    # ws.send(process)
+def new_client(client, server):
+    print("given id %d" % client['id'])
+    # server.send_message_to_all("hello")
 
-    # server = socket.socket()
-    # server.bind(("localhost", 8000))
-    # server.listen(5)
-    # flag = True
-    # while flag:
-    #     conn, addr = server.accept()
-    #     print("conn", conn, "\naddr", addr)
-    #     flag = False
-    websocket
-    ws.run_forever()
+def message_received(client, server, message):
+    # print(message)
+    on_message(server,client,message)
+
+
+if __name__ == '__main__':
+    port = 9999
+    server = WebsocketServer(port=9999, host='10.117.63.234')
+    server.set_fn_new_client(new_client)
+    # server.set_fn_client_left()
+    server.set_fn_message_received(message_received)
+    server.run_forever()
+
+
