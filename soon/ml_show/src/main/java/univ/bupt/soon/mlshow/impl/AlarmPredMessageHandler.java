@@ -18,7 +18,10 @@ package univ.bupt.soon.mlshow.impl;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import org.onosproject.soon.MLAppType;
+import org.apache.commons.lang3.tuple.Pair;
+import org.onosproject.soon.MonitorData;
+import org.onosproject.soon.foreground.ForegroundCallback;
+import org.onosproject.soon.foreground.MLAppType;
 import org.onosproject.soon.dataset.original.AlarmPredictionItem;
 
 import org.onosproject.soon.dataset.original.Item;
@@ -26,6 +29,7 @@ import org.onosproject.soon.dataset.original.sdhnet.*;
 import org.onosproject.soon.mlmodel.MLAlgorithmConfig;
 //import org.onosproject.soon.mlmodel.MLModelConfig;
 import org.onosproject.soon.mlmodel.config.nn.*;
+import org.onosproject.ui.JsonUtils;
 import org.onosproject.ui.RequestHandler;
 import org.onosproject.ui.UiMessageHandler;
 import org.onosproject.ui.table.TableModel;
@@ -34,30 +38,19 @@ import org.onosproject.ui.table.TableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.net.URI;
+import java.util.*;
 import java.text.SimpleDateFormat;
 
 import static org.onosproject.soon.mlmodel.MLAlgorithmType.FCNNModel;
+import static org.onosproject.ui.table.TableModel.sortDir;
 
 /**
  * Skeletal ONOS UI Table-View message handler.
  */
 public class AlarmPredMessageHandler extends UiMessageHandler {
 
-
-    private static final String ALARM_PRED_TRAIN_DATA_REQ = "alarmPredTrainDataRequest";
-    private static final String ALARM_PRED_TRAIN_DATA_RESP = "alarmPredTrainDataResponse";
-    private static final String ALARM_PRED_TRAIN_TABLES = "alarmPredTrains";
-
-    private static final String ALARM_PRED_TEST_DATA_REQ = "alarmPredTestDataRequest";
-    private static final String ALARM_PRED_TEST_DATA_RESP = "alarmPredTestDataResponse";
-    private static final String ALARM_PRED_TEST_TABLES = "alarmPredTests";
-
-
-    private static final String NO_ALARM_PRED_TRAIN_DATA_ROWS_MESSAGE = "No AlarmPredictionItem found";
-    private static final String NO_ALARM_PRED_DATA_ROWS_MESSAGE = "No AlarmPredictionApplicationItem found";
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private static final String ID = "id";
     private static final String INPUT = "input";
@@ -74,13 +67,6 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
     private static final String ANNOTS = "annots";
     private static final String RESULT = "result";
 
-    private static final String[] ALARM_PRED_TRAIN_DATA_COLUMN_IDS = {
-            ID, INPUT, ALARM_HAPPEN, TRAIN, DATAID};
-
-
-
-    private final Logger log = LoggerFactory.getLogger(getClass());
-
     @Override
     protected Collection<RequestHandler> createRequestHandlers() {
         return ImmutableSet.of(
@@ -91,13 +77,12 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
         );
     }
 
-
 /************************************* net dataset *************************************************/
 
 /************************ alarmHistoricalData of net dataset *********************************/
-    private static final String ALARM_HIST_DATA_REQ = "historicalAlarmDataRequest";
-    private static final String ALARM_HIST_DATA_RESP = "historicalAlarmDataResponse";
-    private static final String ALARM_HIST_TABLES = "hiatoricalAlarms";
+    private static final String ALARM_HIST_DATA_REQ = "alarmHistoricalDataRequest";
+    private static final String ALARM_HIST_DATA_RESP = "alarmHistoricalDataResponse";
+    private static final String ALARM_HIST_TABLES = "alarmHistoricals";
 
     private static final String ALARM_HIST_DETAILS_REQ = "alarmHistoricalDetailsRequest";
     private static final String ALARM_HIST_DETAILS_RESP = "alarmHistoricalDetailsResponse";
@@ -112,6 +97,13 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
     private static final String CLEAN_TIME = "clean_time";
     private static final String CONFIRM_TIME = "confirm_time";
     private static final String PATH_LEVEL = "path_level";
+
+    private static final String FIRST_COL = "firstCol";
+    private static final String FIRST_DIR = "firstDir";
+    private static final String SECOND_COL = "secondCol";
+    private static final String SECOND_DIR = "secondDir";
+
+    private static final String ASC = "asc";
 
     // handler for AlarmHistorical data requests
     private final class AlarmHistoricalDataRequestHandler extends TableRequestHandler {
@@ -138,12 +130,12 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
         @Override
         public void process(ObjectNode payload) {
             TableModel tm = createTableModel();
-                    this.populateTable(tm, payload);
-            //String firstCol = JsonUtils.string(payload, FIRST_COL, defaultColumnId());
-            //String firstDir = JsonUtils.string(payload, FIRST_DIR, ASC);
-            //String secondCol = JsonUtils.string(payload, SECOND_COL, null);
-            //String secondDir = JsonUtils.string(payload, SECOND_DIR, null);
-            //tm.sort(firstCol, sortDir(firstDir), secondCol, sortDir(secondDir));
+            this.populateTable(tm, payload);
+            String firstCol = JsonUtils.string(payload, FIRST_COL, LEVEL);
+            String firstDir = JsonUtils.string(payload, FIRST_DIR, ASC);
+            String secondCol = JsonUtils.string(payload, SECOND_COL, ALARM_SRC);
+            String secondDir = JsonUtils.string(payload, SECOND_DIR, ASC);
+            tm.sort(firstCol, sortDir(firstDir), secondCol, sortDir(secondDir));
             this.addTableConfigAnnotations(tm, payload);
             ObjectNode rootNode = MAPPER.createObjectNode();
             rootNode.set(ALARM_HIST_TABLES, TableUtils.generateRowArrayNode(tm));
@@ -157,8 +149,30 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
         @Override
         protected void populateTable(TableModel tm, ObjectNode payload) {
 //            List<org.onosproject.soon.dataset.original.Item> its = SoonUiComponent.modelServices.get(MLAppType.ORIGINAL_DATA).updateData(offset,limit);
-            List<org.onosproject.soon.dataset.original.Item> its = getItems();
-            for (org.onosproject.soon.dataset.original.Item it : its) {
+            List<org.onosproject.soon.dataset.original.sdhnet.HistoryAlarmItem> its = new ArrayList<>();
+            HistoryAlarmItem a = new HistoryAlarmItem();
+            HistoryAlarmItem b = new HistoryAlarmItem();
+            a.setLevel("a");
+            a.setName("aa");
+            a.setAlarm_src("aaa");
+            a.setTp("aaaa");
+            a.setLocation("aaaaa");
+            a.setHappen_time(new Date());
+            a.setHappen_time(new Date());
+            a.setHappen_time(new Date());
+            b.setPath_level("aaaaaa");
+            b.setLevel("b");
+            b.setName("bb");
+            b.setAlarm_src("bbb");
+            b.setTp("bbbb");
+            b.setLocation("bbbbb");
+            b.setHappen_time(new Date());
+            b.setHappen_time(new Date());
+            b.setHappen_time(new Date());
+            b.setPath_level("bbbbbb");
+            its.add(a);
+            its.add(b);
+            for (HistoryAlarmItem it : its) {
                 HistoryAlarmItem tmp = (HistoryAlarmItem) it;
                 populateRow(tm.addRow(), tmp);
             }
@@ -168,8 +182,8 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 //        private void populateRow(TableModel.Row row, Item item) {
         private void populateRow(TableModel.Row row, HistoryAlarmItem item) {
             row.cell(LEVEL, item.getLevel())
-                    .cell(NAME, item.getName())
                     .cell(ALARM_SRC, item.getAlarm_src())
+                    .cell(NAME, item.getName())
                     .cell(TP, item.getTp())
                     .cell(LOCATION, item.getLocation())
                     .cell(HAPPEN_TIME, formatter.format(item.getHappen_time()));
@@ -204,8 +218,9 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
                 rootNode.put(RESULT, "Found item with id '" + id + "'");
 
                 data.put(LEVEL, it.getLevel());
-                data.put(NAME, it.getName());
                 data.put(ALARM_SRC, it.getAlarm_src());
+                data.put(NAME, it.getName());
+
                 data.put(TP, it.getTp());
                 data.put(LOCATION, it.getLocation());
                 data.put(HAPPEN_TIME, formatter.format(it.getHappen_time()));
@@ -246,17 +261,22 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
     private static final String LEARNING_RATE = "learningRate";
     private static final String LR_ADJUST = "lrAdjust";
     private static final String DROP_OUT = "dropout";
-    private static final String APPLIED_RESULT = "AppliedResult";
+    private static final String APPLIED_RESULT = "alarmHappen";
+    private static final String TIME = "time";
+    private static final String MODEL_ID = "modelId";
 
 // todo model config info
 // private static final String[] ALARM_PRED_DATA_COLUMN_IDS = {
 //            INPUT_NUM, OUTPUT_NUM, HIDDEN_LAYER, ACTIVATION_FUNCTION, WEIGHT_INIT, BIAS_INIT,
 //            LOSS_FUNCTION, BATCH_SIZE, EPOCH, OPTIMIZER, LEARNING_RATE, LR_ADJUST, DROP_OUT};
-    private static final String[] ALARM_PRED_DATA_COLUMN_IDS = {APPLIED_RESULT};
+    private static final String[] ALARM_PRED_DATA_COLUMN_IDS = {TIME,APPLIED_RESULT,MODEL_ID};
+
     // handler for alarmPred model application table requests
-    private final class AlarmPredDataRequestHandler extends TableRequestHandler {
+    private final class AlarmPredDataRequestHandler extends TableRequestHandler implements ForegroundCallback {
 
         private static final String NO_ROWS_MESSAGE = "No AlarmPredictionApplication found";
+
+        Map<Integer, Map<Integer,List<String>>> APModelIdMsgIdValue = new HashMap<>();
 
         private AlarmPredDataRequestHandler() {
             super(ALARM_PRED_DATA_REQ, ALARM_PRED_DATA_RESP, ALARM_PRED_TABLES);
@@ -276,19 +296,58 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 
         @Override
         public void process(ObjectNode payload) {
-            TableModel tm = createTableModel();
-            this.populateTable(tm, payload);
-            //String firstCol = JsonUtils.string(payload, FIRST_COL, defaultColumnId());
-            //String firstDir = JsonUtils.string(payload, FIRST_DIR, ASC);
-            //String secondCol = JsonUtils.string(payload, SECOND_COL, null);
-            //String secondDir = JsonUtils.string(payload, SECOND_DIR, null);
-            //tm.sort(firstCol, sortDir(firstDir), secondCol, sortDir(secondDir));
-            this.addTableConfigAnnotations(tm, payload);
-            ObjectNode rootNode = MAPPER.createObjectNode();
-            rootNode.set(ALARM_PRED_TABLES, TableUtils.generateRowArrayNode(tm));
-            rootNode.set(ANNOTS, TableUtils.generateAnnotObjectNode(tm));
-            this.sendMessage(ALARM_PRED_DATA_RESP, rootNode);
+//            TableModel tm = createTableModel();
+//            this.populateTable(tm, payload);
+            int msgid = 2;
+            //处理payload，得到里面的sortParams和setting
+                ObjectNode setting = (ObjectNode) payload.path("setting");
+            //读取setting里的modelId，然后应用模型，获得结果
+            String modelId = JsonUtils.string(setting, "modelId", null);
+            String recentItemNum = JsonUtils.string(setting, "recentItemNum", null);
+            int modelIdInt = Integer.valueOf(modelId).intValue();
+                int recentItemNumInt = Integer.valueOf(recentItemNum).intValue();
+            //如果map中包含
+            if(APModelIdMsgIdValue.containsKey(modelId) == false){
+                    APModelIdMsgIdValue.put(modelIdInt, new HashMap<>());
+                //此处调用应用结果方法，pair.left为是否调用成功，pair.right为该操作的msgId
+                //Pair<Boolean, Integer> pair = SoonUiComponent.modelServices.get(MLAppType.ALARM_PREDICTION).applyModel(modelIdInt, recentItemNumInt);
+                Pair<Boolean, Integer> pair = Pair.of(true,2);
+                msgid = pair.getRight();
+                if(pair.getKey() == true){
+                    APModelIdMsgIdValue.get(modelIdInt).put(msgid,new ArrayList<>());
+                }else{
+                    //调用应用结果方法，返回值.left为false，说明调用方法没有成功
+                    log.info("在告警预测app中，调用方法applyModel()失败");
+                    //todo 获取不到modelId
+                    //删除map中的数据，前台刷新时，会重新发送请求
+                    APModelIdMsgIdValue.remove(modelIdInt);
+                }
             }
+            //todo 为了测试，延时5秒后在 APModelIdMsgIdValue.get(modelIdInt).get(msgid) 赋值
+
+            APModelIdMsgIdValue.get(modelIdInt).get(msgid).add("abcdefg");
+
+            if( APModelIdMsgIdValue.get(modelIdInt).get(msgid) != null){
+                List<String> applyResult = APModelIdMsgIdValue.get(modelIdInt).get(msgid);
+
+                TableModel tm = createTableModel();
+                for (String it: applyResult) {
+                    populateRow(tm.addRow(), it, modelIdInt);
+                }
+                String firstCol = JsonUtils.string(payload, FIRST_COL, defaultColumnId());
+                String firstDir = JsonUtils.string(payload, FIRST_DIR, ASC);
+                String secondCol = JsonUtils.string(payload, SECOND_COL, null);
+                String secondDir = JsonUtils.string(payload, SECOND_DIR, null);
+                tm.sort(firstCol, sortDir(firstDir), secondCol, sortDir(secondDir));
+                this.addTableConfigAnnotations(tm, payload);
+                ObjectNode rootNode = MAPPER.createObjectNode();
+                rootNode.set(ALARM_PRED_TABLES, TableUtils.generateRowArrayNode(tm));
+                rootNode.set(ANNOTS, TableUtils.generateAnnotObjectNode(tm));
+                APModelIdMsgIdValue.remove(modelIdInt);
+                this.sendMessage(ALARM_PRED_DATA_RESP, rootNode);
+            }
+
+        }
 
 
         @Override
@@ -298,12 +357,10 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 //            int trainDatasetId = 0;
 //            int recentItemNum = 3;
 //            List<String> item = SoonUiComponent.modelServices.get(MLAppType.ALARM_PREDICTION).getAppliedResult(FCNNModel, id, trainDatasetId, recentItemNum);
-            List<String> item = new ArrayList<>();
-            item.add("1,2,3");
-            item.add("a,b,c");
-            for (String it: item) {
-                populateRow(tm.addRow(), it);
-            }
+//            List<String> item = new ArrayList<>();
+//            item.add("1,2,3");
+//            item.add("a,b,c");
+//
 
 //            int id = 1;
 //TODO MODEL CONFIGURATION INFO
@@ -316,8 +373,11 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 ////            }
         }
 
-        private void populateRow(TableModel.Row row, String it) {
-            row.cell(APPLIED_RESULT,  it);
+        private void populateRow(TableModel.Row row, String it, int modelIdInt) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+            row.cell(TIME, dateFormat.format(new Date()))
+                    .cell(APPLIED_RESULT, it)
+                    .cell(MODEL_ID, modelIdInt);
 //                    .cell(OUTPUT_NUM, item.getOutputNum())
 //                    .cell(HIDDEN_LAYER, item.getHiddenLayer())
 //                    .cell(ACTIVATION_FUNCTION, item.getActivationFunction())
@@ -330,6 +390,49 @@ public class AlarmPredMessageHandler extends UiMessageHandler {
 //                    .cell(LEARNING_RATE, item.getLearningRate())
 //                    .cell(LR_ADJUST, item.getLrAdjust())
 //                    .cell(DROP_OUT, item.getDropout());
+        }
+
+        @Override
+        public void operationFailure(int msgId, String description) {
+
+        }
+
+        @Override
+        public void appliedModelResult(int msgId, List<Item> input, List<String> output) {
+            //TODO 将输出的结果赋值，找不到modelId
+//            APModelIdMsgIdValue.get()put(msgId, output);
+
+
+        }
+
+        @Override
+        public void modelEvaluation(int msgId, String result) {
+
+        }
+
+        @Override
+        public void trainDatasetTransEnd(int msgId, int trainDatasetId) {
+
+        }
+
+        @Override
+        public void testDatasetTransEnd(int msgId, int testDatasetId) {
+
+        }
+
+        @Override
+        public void ResultUrl(int msgId, URI uri) {
+
+        }
+
+        @Override
+        public void trainEnd(int msgId) {
+
+        }
+
+        @Override
+        public void intermediateResult(int msgId, MonitorData monitorData) {
+
         }
     }
 

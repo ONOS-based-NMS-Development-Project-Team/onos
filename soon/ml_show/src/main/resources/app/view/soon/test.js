@@ -98,8 +98,8 @@
         },
         defaultAppliPayloadParams = {
             setting: {
-                modelId: '',
-                recentItemNum: ''
+                modelId: '1',
+                recentItemNum: '1'
             }
         },
         defaultAlarmPredDataSetPayloadParams = {
@@ -127,7 +127,7 @@
         historicalAlarmSearchByText = ['Search By','All Fields','level','alarmSource','name','type','location','path level'],
         modelDetailsPropOrder = ['applicationType','modelId','algorithmType','modelState','trainDataSetId','testDataSetId','modelAccuracy'],
         modelDetailsPropOrderText = ['application type','model id','algorithm type','model state','train data set id','test data set id','model accuracy'],
-        annParams = ['inputNum','outputNum','hiddenLayer','activationFunction','weightInit','biasInit','lossFunction','batchSize','epoch','optimizer','learningRate','lrAdjust','dropout'];
+        annParams = ['inputNum','outputNum','hiddenLayer','activationFunction','weightInit','biasInit','lossFunction','batchSize','epoch','optimizer','learningRate','lrAdjust','dropout'],
         annParamsText = ['input num','output num','hidden layer neurons number','activation function','weight init','bias init','loss function','batch size','epoch','optimizer','learning rate','learning rate adjust','dropout'];
 
 
@@ -139,6 +139,9 @@
         if(d3.select('#faultClassification').style('display') === 'block'){
             subPageLocate = 'faultClassification';
         }
+        if(d3.select('#modelLibrary').style('display') === 'block'){
+                   subPageLocate = 'modelLibrary';
+                }
         if(d3.select('#rawData').style('display') === 'block'){
             subPageLocate = 'rawData';
         }
