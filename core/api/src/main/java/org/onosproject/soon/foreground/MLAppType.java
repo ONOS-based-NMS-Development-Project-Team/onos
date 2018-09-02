@@ -4,11 +4,25 @@ package org.onosproject.soon.foreground;
  * 机器学习应用对应的类型。一个app module中可能包含多个机器学习应用。
  */
 public enum MLAppType {
-    // 获取原始网络数据，不进行机器学习应用
-    ORIGINAL_DATA() {
+    // 获取原始网络的历史告警数据
+    ORIGINAL_HISTORY_ALARM_DATA() {
         @Override
         public String getName() {
-            return "original_data";
+            return "original_history_alarm_data";
+        }
+    },
+    // 获取原始网络的当前告警数据
+    ORIGINAL_CURRENT_ALARM_DATA() {
+        @Override
+        public String getName() {
+            return "original_current_alarm_data";
+        }
+    },
+    // 获取原始网络的性能数据
+    ORIGINAL_PERFORMANCE_DATA() {
+        @Override
+        public String getName() {
+            return "original_performance_data";
         }
     },
     // 告警预测应用

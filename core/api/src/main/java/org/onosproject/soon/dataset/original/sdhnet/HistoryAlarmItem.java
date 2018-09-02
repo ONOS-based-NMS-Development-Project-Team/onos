@@ -2,6 +2,7 @@ package org.onosproject.soon.dataset.original.sdhnet;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.onosproject.soon.dataset.original.Item;
 
 import java.util.Date;
 
@@ -26,7 +27,7 @@ import java.util.Date;
  * ALTER TABLE public.his_alarms
  *   OWNER TO postgres;
  */
-public class HistoryAlarmItem {
+public class HistoryAlarmItem implements Item {
 
     private String level;
     private String name;

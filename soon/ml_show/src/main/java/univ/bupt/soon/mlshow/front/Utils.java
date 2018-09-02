@@ -1,4 +1,4 @@
-package univ.bupt.soon.mlshow.impl;
+package univ.bupt.soon.mlshow.front;
 
 import java.text.SimpleDateFormat;
 
@@ -42,12 +42,12 @@ public class Utils {
     // 历史数据返回条目
     public static final String LEVEL = "level";
     public static final String NAME = "name";
-    public static final String ALARM_SRC = "alarm_src";
-    public static final String TP = "tp";
+    public static final String ALARM_SRC = "alarmSource";
+    public static final String TP = "type";
     public static final String LOCATION = "location";
-    public static final String HAPPEN_TIME = "happen_time";
-    public static final String CLEAN_TIME = "clean_time";
-    public static final String CONFIRM_TIME = "confirm_time";
-    public static final String PATH_LEVEL = "path_level";
+    public static final String HAPPEN_TIME = "happenTime";
+    public static final String CLEAN_TIME = "cleanTime";
+    public static final String CONFIRM_TIME = "confirmTime";
+    public static final String PATH_LEVEL = "pathLevel";
 
 }

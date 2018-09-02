@@ -1,4 +1,4 @@
-package univ.bupt.soon.mlshow.impl.handler;
+package univ.bupt.soon.mlshow.front.handler;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -12,7 +12,7 @@ import org.onosproject.ui.table.TableRequestHandler;
 import org.onosproject.ui.table.TableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import univ.bupt.soon.mlshow.impl.SoonUiComponent;
+import univ.bupt.soon.mlshow.front.SoonUiComponent;
 
 import java.net.URI;
 import java.text.SimpleDateFormat;
@@ -72,50 +72,7 @@ public class AlarmPredDataRequestHandler extends TableRequestHandler implements 
 
     @Override
     public void process(ObjectNode payload) {
-        int msgid = 1;
-        //处理payload，得到里面的sortParams和setting
-        ObjectNode setting = (ObjectNode) payload.path("setting");
-        //读取setting里的modelId，然后应用模型，获得结果
-        String modelId = JsonUtils.string(setting, "modelId", null);
-        String recentItemNum = JsonUtils.string(setting, "recentItemNum", null);
-        int modelIdInt = Integer.parseInt(modelId);
-        int recentItemNumInt = Integer.parseInt(recentItemNum);
-        //如果map中包含
-        if(!APModelIdMsgIdValue.containsKey(modelIdInt)){
-            APModelIdMsgIdValue.put(modelIdInt, new HashMap<>());
-            //此处调用应用结果方法，pair.left为是否调用成功，pair.right为该操作的msgId
-            Pair<Boolean, Integer> pair = SoonUiComponent.modelServices.get(MLAppType.ALARM_PREDICTION).applyModel(modelIdInt, recentItemNumInt);
-            msgid = pair.getRight();
-            if(pair.getKey()){
-                APModelIdMsgIdValue.get(modelIdInt).put(msgid, null);
-            }else{
-                //调用应用结果方法，返回值.left为false，说明调用方法没有成功
-                log.info("在告警预测app中，调用方法applyModel()失败");
-                //todo 获取不到modelId
-                //删除map中的数据，前台刷新时，会重新发送请求
-                APModelIdMsgIdValue.remove(modelIdInt);
-            }
-        }
 
-        if (APModelIdMsgIdValue.get(modelIdInt).get(msgid) != null) {
-            List<String> applyResult = APModelIdMsgIdValue.get(modelIdInt).get(msgid);
-
-            TableModel tm = createTableModel();
-            for (String it: applyResult) {
-                populateRow(tm.addRow(), it, modelIdInt);
-            }
-            String firstCol = JsonUtils.string(payload, FIRST_COL, defaultColumnId());
-            String firstDir = JsonUtils.string(payload, FIRST_DIR, ASC);
-            String secondCol = JsonUtils.string(payload, SECOND_COL, null);
-            String secondDir = JsonUtils.string(payload, SECOND_DIR, null);
-            tm.sort(firstCol, sortDir(firstDir), secondCol, sortDir(secondDir));
-            this.addTableConfigAnnotations(tm, payload);
-            ObjectNode rootNode = MAPPER.createObjectNode();
-            rootNode.set(ALARM_PRED_TABLES, TableUtils.generateRowArrayNode(tm));
-            rootNode.set(ANNOTS, TableUtils.generateAnnotObjectNode(tm));
-            APModelIdMsgIdValue.remove(modelIdInt);
-            this.sendMessage(ALARM_PRED_DATA_RESP, rootNode);
-        }
 
     }
 

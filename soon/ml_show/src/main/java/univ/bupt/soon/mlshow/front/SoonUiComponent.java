@@ -1,15 +1,12 @@
-package univ.bupt.soon.mlshow.impl;
+package univ.bupt.soon.mlshow.front;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 import org.apache.felix.scr.annotations.*;
 import org.onosproject.cluster.ClusterService;
 import org.onosproject.mastership.MastershipAdminService;
 import org.onosproject.net.device.DeviceProviderRegistry;
-import org.onosproject.net.device.DeviceProviderService;
 import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.link.LinkProviderRegistry;
-import org.onosproject.net.link.LinkProviderService;
 import org.onosproject.net.topology.TopologyProviderRegistry;
 import org.onosproject.soon.foreground.MLAppRegistry;
 import org.onosproject.soon.foreground.MLAppType;
@@ -20,10 +17,9 @@ import org.onosproject.ui.UiMessageHandlerFactory;
 import org.onosproject.ui.UiView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import univ.bupt.soon.mlshow.demonet.TopoReport;
+import univ.bupt.soon.mlshow.original.HistoryAlarmDataAccess;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * SOON的UI展示。
@@ -78,6 +74,10 @@ public class SoonUiComponent implements MLAppRegistry {
     @Activate
     protected void activate() {
         uiExtensionService.register(extension);
+        // 注册历史告警的服务
+        HistoryAlarmDataAccess hisAlarmService = new HistoryAlarmDataAccess();
+        register(hisAlarmService, hisAlarmService.getServiceName());
+
         // 拓扑注入服务
 //        topoReport = new TopoReport();
 //        devProService = deviceProviderRegistry.register(topoReport);
@@ -98,6 +98,10 @@ public class SoonUiComponent implements MLAppRegistry {
         uiExtensionService.unregister(extension);
 //        deviceProviderRegistry.unregister(topoReport);
 //        linkProviderRegistry.unregister(topoReport);
+        // 注销所有ModelControlService服务
+        for (MLAppType type : MLMessageHandler.modelServices.keySet()) {
+            unregister(type);
+        }
         log.info("Stopped");
     }
 

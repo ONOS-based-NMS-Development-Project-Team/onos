@@ -3,6 +3,7 @@ package org.onosproject.soon.dataset.original.sdhnet;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.onosproject.soon.dataset.original.Item;
 
 import java.util.Date;
 
@@ -34,7 +35,7 @@ import java.util.Date;
  * COMMENT ON CONSTRAINT board_const ON public.performance IS '单板外键约束';
  * COMMENT ON CONSTRAINT node_const ON public.performance IS '节点的外键依赖';
  */
-public class PerformanceItem {
+public class PerformanceItem implements Item {
 
     private String node;
     private String board;

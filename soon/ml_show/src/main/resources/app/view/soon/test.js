@@ -34,6 +34,7 @@
         currentAlarmReq = 'alarmCurrentDataRequest',
         historicalAlarmReq = 'alarmHistoricalDataRequest',
         performanceReq = 'performanceDataRequest',
+        pHistoricalAlarm = 'historical-alarm-table',
         pModelDetailsPanelName = 'modelLibrary-details-panel',
         pCurName = 'currentAlarm-details-panel',
         pHisName = 'historicalAlarm-details-panel',
@@ -127,7 +128,7 @@
         historicalAlarmSearchByText = ['Search By','All Fields','level','alarmSource','name','type','location','path level'],
         modelDetailsPropOrder = ['applicationType','modelId','algorithmType','modelState','trainDataSetId','testDataSetId','modelAccuracy'],
         modelDetailsPropOrderText = ['application type','model id','algorithm type','model state','train data set id','test data set id','model accuracy'],
-        annParams = ['inputNum','outputNum','hiddenLayer','activationFunction','weightInit','biasInit','lossFunction','batchSize','epoch','optimizer','learningRate','lrAdjust','dropout'];
+        annParams = ['inputNum','outputNum','hiddenLayer','activationFunction','weightInit','biasInit','lossFunction','batchSize','epoch','optimizer','learningRate','lrAdjust','dropout'],
         annParamsText = ['input num','output num','hidden layer neurons number','activation function','weight init','bias init','loss function','batch size','epoch','optimizer','learning rate','learning rate adjust','dropout'];
 
 
@@ -242,19 +243,17 @@
     function buildAllTable(){
         $scope.payloadParams = defaultAppliPayloadParams;
         createTable('alarmPred',null,defaultAlarmPredSortParams);
-        createTable('faultClassification',null,defaultFaultClassificationSortParams);
-        $scope.payloadParams = defaultAlarmPredDataSetPayloadParams;
-        createTable('alarmPredDataSet',null,defaultAlarmPredDataSetSortParams);
-        $scope.payloadParams = defaultFaultClassificationDataSetPayloadParams;
-        createTable('faultClassificationDataSet',null,defaultFaultClassificationDataSetSortParams);
-        $scope.payloadParams = {};
-        createTable('modelLibrary',modelSelCb,defaultModelLibrarySortParams);
-        modelDetails();
-        createTable('currentAlarm',curAlarmSelCb,defaultAlarmSortParams);
-        curAlarmDetails();
-        createTable('historicalAlarm',hisAlarmSelCb,defaultAlarmSortParams);
-        hisAlarmDetails();
-        createTable('performance',null,defaultPerformanceSortParams);
+        //createTable('faultClassification',null,defaultFaultClassificationSortParams);
+        //$scope.payloadParams = defaultAlarmPredDataSetPayloadParams;
+        //createTable('alarmPredDataSet',null,defaultAlarmPredDataSetSortParams);
+        //$scope.payloadParams = defaultFaultClassificationDataSetPayloadParams;
+        //createTable('faultClassificationDataSet',null,defaultFaultClassificationDataSetSortParams);
+        //$scope.payloadParams = {};
+       // createTable('modelLibrary',modelSelCb,defaultModelLibrarySortParams);
+        //modelDetails();
+       // createTable('currentAlarm',curAlarmSelCb,defaultAlarmSortParams);
+        //hisAlarmDetails();
+       // createTable('performance',null,defaultPerformanceSortParams);
     }
 
     function modelSelCb ($event,row) {
@@ -668,5 +667,20 @@
                     })
                 };
             }])
+        .directive('historicalAlarmTable',
+            ['$rootScope','$window','$timeout','TableBuilderService','KeyService',
+            function ($rootscope,$window,$timeout,tbs,ks) {
+                return {
+                    scope:true,
+                    templateUrl:'historicalTable.html',
+                    link: function(scope){
+                    tbs.buildTable({
+                        scope:scope,
+                        tag:'historicalAlarm',
+                        sortParams:defaultAlarmSortParams
+                    })
+                },
+            };}]);
+
 
 }());

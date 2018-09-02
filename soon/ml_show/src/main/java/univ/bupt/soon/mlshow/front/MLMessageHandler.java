@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package univ.bupt.soon.mlshow.impl;
+package univ.bupt.soon.mlshow.front;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -22,9 +22,9 @@ import org.onosproject.soon.foreground.MLAppType;
 import org.onosproject.soon.foreground.ModelControlService;
 import org.onosproject.ui.RequestHandler;
 import org.onosproject.ui.UiMessageHandler;
-import univ.bupt.soon.mlshow.impl.handler.AlarmHistoricalDataRequestHandler;
-import univ.bupt.soon.mlshow.impl.handler.AlarmHistoricalDetailRequestHandler;
-import univ.bupt.soon.mlshow.impl.handler.AlarmPredDataRequestHandler;
+import univ.bupt.soon.mlshow.front.handler.AlarmHistoricalDataRequestHandler;
+import univ.bupt.soon.mlshow.front.handler.AlarmHistoricalDetailRequestHandler;
+import univ.bupt.soon.mlshow.front.handler.AlarmPredDataRequestHandler;
 
 import java.util.*;
 
@@ -38,9 +38,11 @@ public class MLMessageHandler extends UiMessageHandler {
 
     @Override
     protected Collection<RequestHandler> createRequestHandlers() {
+        AlarmHistoricalDataRequestHandler ahdrh = new AlarmHistoricalDataRequestHandler();
+        ahdrh.setService(modelServices.get(MLAppType.ORIGINAL_HISTORY_ALARM_DATA));
         return ImmutableSet.of(
                 new AlarmHistoricalDetailRequestHandler(),
-                new AlarmHistoricalDataRequestHandler(),
+                ahdrh,
                 new AlarmPredDataRequestHandler()
         );
     }
