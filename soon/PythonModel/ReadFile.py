@@ -19,7 +19,7 @@ def read_parameters(dict):
     bias = dict["biasInit"]
     weight = dict['weightInit']
     activation_function = dict['activationFunction']
-    if activation_function == "relu":
+    if activation_function == 'relu':
         activation_function = tf.nn.relu
     epoch = dict['epoch']
     learning_rate = dict["learningRate"]
@@ -28,14 +28,14 @@ def read_parameters(dict):
     hlayer_neurons = dict["hiddenLayer"]
     hiddenNum = len(hlayer_neurons)
     lossFunction = dict["lossFunction"]
-    if lossFunction == "mseloss":
+    if lossFunction == 'mseloss':
         lossFunction = tf.reduce_mean
     batchSize = dict["batchSize"]
     optimizer = dict["optimizer"]
-    if optimizer == "nestrov":
+    if optimizer == 'sgd':
         optimizer = tf.train.GradientDescentOptimizer
     lrAdjust = dict["lrAdjust"]
-    if lrAdjust == "linear":
+    if lrAdjust == 'constant':
         lrAdjust = tf.train.exponential_decay
     dropout = dict["dropout"]
 

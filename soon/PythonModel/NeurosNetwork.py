@@ -32,12 +32,12 @@ class NeurosNetwork(object):
         self.reconstruction = self._output_Layer()
         with tf.name_scope('loss'):
             # self.loss = tf.reduce_mean(tf.reduce_sum(tf.square(self.y - self.reconstruction), reduction_indices=[1]))
-            diff = tf.nn.softmax_cross_entropy_with_logits(logits=self.y, labels=self.reconstruction)
+            diff = tf.nn.softmax_cross_entropy_with_logits(logits=self.reconstruction, labels=self.y)
             with tf.name_scope('total'):
                 self.loss = self.lossFunction(diff)
         tf.summary.scalar('loss', self.loss)
         with tf.name_scope('train'):
-            self.optimizer = self.optimizerFunction(self.learingrate).minimize(self.loss)
+            self.optimizer = self.optimizerFunction(self.learning_rate).minimize(self.loss)
         with tf.name_scope('accuracy'):
             with tf.name_scope('correct_prediction'):
                 correct_prediction = tf.equal(tf.argmax(self.y, 1), tf.argmax(self.reconstruction, 1))
