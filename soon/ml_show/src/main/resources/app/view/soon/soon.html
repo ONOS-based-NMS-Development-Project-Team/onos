@@ -1,64 +1,64 @@
 <div id="ov-soon">
     <div class="soon-left">
         <div class="soon-left-logo-container">
-            <span class="soon-left-logo" ng-click="OvSoonCtrl.defaultSubPage()">
-                <img class="soon-logo" src="data/img/soonLogo.png">
+            <span class="soon-left-logo" ng-click="defaultSubPage()">
+                <img class="soon-logo" src="app/view/soon/soonLogo.png">
             </span>
         </div>
         <div class="soon-left-content-container">
             <ul class="soon-left-content" id="soonContent">
                 <li>
                    <div class="soon-left-content-item-container">
-                       <p ng-click="OvSoonCtrl.navTo()">
+                       <p ng-click="navTo($event)">
                            alarm predict
                        </p>
                    </div>
                 </li>
                 <li>
                     <div class="soon-left-content-item-container">
-                        <p ng-click="OvSoonCtrl.navTo()">
+                        <p ng-click="navTo($event)">
                             fault classification
                         </p>
                     </div>
                 </li>
                 <li>
                     <div class="soon-left-content-item-container">
-                        <p ng-click="OvSoonCtrl.navTo()">
+                        <p ng-click="navTo($event)">
                             fault locate
                         </p>
                     </div>
                 </li>
                 <li>
                     <div class="soon-left-content-item-container">
-                        <p ng-click="OvSoonCtrl.navTo()">
+                        <p ng-click="navTo($event)">
                             traffic predict
                         </p>
                     </div>
                 </li>
                 <li>
                     <div class="soon-left-content-item-container">
-                        <p ng-click="OvSoonCtrl.navTo()">
+                        <p ng-click="navTo($event)">
                             service reroute
                         </p>
                     </div>
                 </li>
                 <li>
                     <div class="soon-left-content-item-container">
-                        <p ng-click="OvSoonCtrl.navTo()">
+                        <p ng-click="navTo($event)">
                             model library
                         </p>
                     </div>
                 </li>
                 <li>
                     <div class="soon-left-content-item-container">
-                        <p ng-click="OvSoonCtrl.navTo()">
+                        <p ng-click="navTo($event)">
                             raw data
                         </p>
                     </div>
                 </li>
                 <li>
                     <div class="soon-left-content-item-container">
-                        <p ng-click="OvSoonCtrl.navTo()">
+                        <p ng-click="navTo($event)">
                             data set
                         </p>
                     </div>
@@ -66,11 +66,11 @@
             </ul>
         </div>
         <div class="soon-left-splitter-container">
-            <div class="soon-left-splitter" tooltip tt-msg="collapseSidebarTip" ng-click="OvSoonCtrl.collapseSidebar()"></div>
+            <div class="soon-left-splitter" tooltip tt-msg="collapseSidebarTip" ng-click="collapseSidebar()"></div>
         </div>
     </div>
     <div class="soon-right" id="soon-view">
-        <div class="alarm-predict" id="alarmPred" hidden>
+        <div class="alarm-predict" id="alarmPred">
             <div class="tabular-header">
                 <h2>
                     alarm predict
@@ -78,45 +78,45 @@
                 <div class="ctrl-btns">
                     <div class="refresh" ng-class="{active: autoRefresh}"
                         icon icon-size="42" icon-id="refresh"
-                        tooltip tt-message="autoRefreshTip"
+                        tooltip tt-msg="autoRefreshTip"
                         ng-click="toggleRefresh()"></div>
 
                     <div class="separator"></div>
 
                     <div class="functionStart"
-                         tooltip tt-message="alarmPredStartTip"
+                         tooltip tt-msg="alarmPredStartTip"
                          ng-click="alarmPredShow(true)">
-                        <img src="data/img/functionStart.png" class="ctrl-imgs">
+                        <img src="app/view/soon/functionStart.png" class="ctrl-imgs">
                     </div>
                     <div class="functionStop"
-                         tooltip tt-message="alarmPredStopTip"
+                         tooltip tt-msg="alarmPredStopTip"
                          ng-click="alarmPredShow(false)">
-                        <img src="data/img/functionStop.png" class="ctrl-imgs">
+                        <img src="app/view/soon/functionStop.png" class="ctrl-imgs">
                     </div>
                     <div class="showRawData"
-                         tooltip tt-message="showRawDataTip"
-                         ng-click="showRawData()">
-                        <img src="data/img/showRawData.png" class="ctrl-imgs">
+                         tooltip tt-msg="showRawDataTip"
+                         ng-click="showRawDataPerformance()">
+                        <img src="app/view/soon/showRawData.png" class="ctrl-imgs">
                     </div>
                     <div class="showTrainDataSet"
-                         tooltip tt-message="showTrainDataSetTip"
+                         tooltip tt-msg="showTrainDataSetTip"
                          ng-click="showTrainDataSet()">
-                        <img src="data/img/showTrainDataSet.png" class="ctrl-imgs">
+                        <img src="app/view/soon/showTrainDataSet.png" class="ctrl-imgs">
                     </div>
                     <div class="showTestDataSet"
-                         tooltip tt-message="showTestDataSetTip"
+                         tooltip tt-msg="showTestDataSetTip"
                          ng-click="showTestDataSet()">
-                        <img src="data/img/showTestDataSet.png" class="ctrl-imgs">
+                        <img src="app/view/soon/showTestDataSet.png" class="ctrl-imgs">
                     </div>
                     <div class="showModelInformation"
-                         tooltip tt-message="showModelInformationTip"
+                         tooltip tt-msg="showModelInformationTip"
                          ng-click="showModelInformation()">
-                        <img src="data/img/showModelInformation.png" class="ctrl-imgs">
+                        <img src="app/view/soon/showModelInformation.png" class="ctrl-imgs">
                     </div>
                     <div class="alarmPredSetting"
-                         tooltip tt-message="alarmPredSettingTip"
+                         tooltip tt-msg="alarmPredSettingTip"
                          ng-click="alarmPredSetting()">
-                        <img src="data/img/setting.png" class="ctrl-imgs">
+                        <img src="app/view/soon/setting.png" class="ctrl-imgs">
                     </div>
                 </div>
                 <div class="search">
@@ -125,7 +125,7 @@
                         <option value="" disabled>Search By</option>
                         <option value="$">All Fields</option>
                         <option value="time">time</option>
-                        <option value="alarmOccur">alarm occur</option>
+                        <option value="alarmHappen">alarm happen</option>
                         <option value="modelId">model id</option>
                         <option value="trainDataSetId">train data set id</option>
                         <option value="testDataSetId">test data set id</option>
@@ -138,7 +138,7 @@
                     <table>
                         <tr>
                             <td colId="time" sortable col-width="140px"> time </td>
-                            <td colId="alarmOccur" sortable col-width="140px"> alarm occur </td>
+                            <td colId="alarmHappen" sortable col-width="140px"> alarm happen </td>
                             <td colId="modelId" sortable col-width="140px"> model id </td>
                             <td colId="trainDataSetId" sortable col-width="140px"> train data set id </td>
                             <td colId="testDataSetId" sortable col-width="140px"> test data set id </td>
@@ -160,7 +160,7 @@
                             ng-class="{selected: alarmPred.id === selId}"
                             ng-repeat-complete row-id="{{alarmPred.id}}">
                             <td>{{alarmPred.time}}</td>
-                            <td>{{alarmPred.alarmOccur}}</td>
+                            <td>{{alarmPred.alarmHappen}}</td>
                             <td>{{alarmPred.modelId}}</td>
                             <td>{{alarmPred.trainDataSetId}}</td>
                             <td>{{alarmPred.testDataSetId}}</td>
@@ -170,53 +170,53 @@
                 </div>
             </div>
         </div>
-        <div class="alarm-classification" id="faultClassification" hidden>
+        <div class="fault-classification" id="faultClassification" >
             <div class="tabular-header">
                 <h2>
-                    alarm classification
+                    fault classification
                 </h2>
                 <div class="ctrl-btns">
                     <div class="refresh" ng-class="{active: autoRefresh}"
                          icon icon-size="42" icon-id="refresh"
-                         tooltip tt-message="autoRefreshTip"
+                         tooltip tt-msg="autoRefreshTip"
                          ng-click="toggleRefresh()"></div>
 
                     <div class="separator"></div>
 
                     <div class="functionStart"
-                         tooltip tt-message="faultClassificationStartTip"
+                         tooltip tt-msg="faultClassificationStartTip"
                          ng-click="faultClassificationShow(true)">
-                        <img src="data/img/functionStart.png" class="ctrl-imgs">
+                        <img src="app/view/soon/functionStart.png" class="ctrl-imgs">
                     </div>
                     <div class="functionStop"
-                         tooltip tt-message="faultClassificationStopTip"
+                         tooltip tt-msg="faultClassificationStopTip"
                          ng-click="faultClassificationShow(false)">
-                        <img src="data/img/functionStop.png" class="ctrl-imgs">
+                        <img src="app/view/soon/functionStop.png" class="ctrl-imgs">
                     </div>
                     <div class="showRawData"
-                         tooltip tt-message="showRawDataTip"
+                         tooltip tt-msg="showRawDataTip"
                          ng-click="showRawData()">
-                        <img src="data/img/showRawData.png" class="ctrl-imgs">
+                        <img src="app/view/soon/showRawData.png" class="ctrl-imgs">
                     </div>
                     <div class="showTrainDataSet"
-                         tooltip tt-message="showTrainDataSetTip"
+                         tooltip tt-msg="showTrainDataSetTip"
                          ng-click="showTrainDataSet()">
-                        <img src="data/img/showTrainDataSet.png" class="ctrl-imgs">
+                        <img src="app/view/soon/showTrainDataSet.png" class="ctrl-imgs">
                     </div>
                     <div class="showTestDataSet"
-                         tooltip tt-message="showTestDataSetTip"
+                         tooltip tt-msg="showTestDataSetTip"
                          ng-click="showTestDataSet()">
-                        <img src="data/img/showTestDataSet.png" class="ctrl-imgs">
+                        <img src="app/view/soon/showTestDataSet.png" class="ctrl-imgs">
                     </div>
                     <div class="showModelInformation"
-                         tooltip tt-message="showModelInformationTip"
+                         tooltip tt-msg="showModelInformationTip"
                          ng-click="showModelInformation()">
-                        <img src="data/img/showModelInformation.png" class="ctrl-imgs">
+                        <img src="app/view/soon/showModelInformation.png" class="ctrl-imgs">
                     </div>
                     <div class="faultClassificationSetting"
-                         tooltip tt-message="faultClassificationSettingTip"
+                         tooltip tt-msg="faultClassificationSettingTip"
                          ng-click="faultClassificationSetting()">
-                        <img src="data/img/setting.png" class="ctrl-imgs">
+                        <img src="app/view/soon/setting.png" class="ctrl-imgs">
                     </div>
                 </div>
                 <div class="search">
@@ -270,39 +270,111 @@
                 </div>
             </div>
         </div>
-        <div class="raw-data" id="rawData">
+        <div class="model-library" id="modelLibrary">
             <div class="tabular-header">
                 <h2>
-                    raw data
+                    model library
                 </h2>
                 <div class="ctrl-btns">
                     <div class="refresh" ng-class="{active: autoRefresh}"
                          icon icon-size="42" icon-id="refresh"
-                         tooltip tt-message="autoRefreshTip"
+                         tooltip tt-msg="autoRefreshTip"
                          ng-click="toggleRefresh()"></div>
 
                     <div class="separator"></div>
 
-                    <div class="showHistoricalAlarm"
-                         tooltip tt-message="showHistoricalAlarmTip"
-                         ng-click="showHistoricalAlarm()">
-                        <img src="data/img/showHistoricalAlarm.png" class="ctrl-imgs">
-                    </div>
-                    <div class="showCurrentAlarm"
-                         tooltip tt-message="showCurrentAlarmTip"
-                         ng-click="showCurrentAlarm()">
-                        <img src="data/img/showCurrentAlarm.png" class="ctrl-imgs">
-                    </div>
-                    <div class="showPerformanceData"
-                         tooltip tt-message="showPerformanceDataTip"
-                         ng-click="showPerformanceData()">
-                        <img src="data/img/showPerformanceData.png" class="ctrl-imgs">
+                    <div class="modelLibrarySetting"
+                         tooltip tt-msg="modelLibrarySettingTip"
+                         ng-click="modelLibrarySetting()">
+                        <img src="app/view/soon/setting.png" class="ctrl-imgs">
                     </div>
                 </div>
                 <div class="search">
                     <input type="text" ng-model="queryTxt" placeholder="Search"/>
                     <select ng-model="queryBy">
+                        <option value="" disabled>Search By</option>
+                        <option value="$">All Fields</option>
+                        <option value="applicationType">application type</option>
+                        <option value="modelId">model id</option>
+                        <option value="algorithmType">algorithm type</option>
+                        <option value="trainDataSetId"><t></t>rain data set id</option>
+                        <option value="testDataSetId">test data set id</option>
+                        <option value="modelState">model state</option>
+                        <option value="modelAccuracy">model accuracy</option>
                     </select>
+                </div>
+            </div>
+            <div class="summary-list" onos-table-resize>
+                <div class="table-header" onos-sortable-header>
+                    <table>
+                        <tr>
+                            <td colId="applicationType" sortable col-width="140px">application type</td>
+                            <td colId="modelId" sortable col-width="140px">model id</td>
+                            <td colId="algorithmType" sortable col-width="140px">algorithm type</td>
+                            <td colId="trainDataSetId" sortable col-width="140px">train data set id</td>
+                            <td colId="testDataSetId" sortable col-width="140px">test data set id</td>
+                            <td colId="modelState" sortable col-width="140px">model state</td>
+                            <td colId="modelAccuracy" sortable col-width="140px">model accuracy</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="table-body">
+                    <table onos-flash-changes id-prop="id">
+                        <tr ng-if="!tableData.length" class="no-data">
+                            <td colspan="7">
+                                {{annots.no_rows_msg}}
+                            </td>
+                        </tr>
+
+                        <tr ng-repeat="modelLibrary in tableData | filter:queryFilter track by $index"
+                            ng-click="selectCallback($event,modelLibrary)"
+                            ng-class="{selected: modelLibrary.modelId === selId}"
+                            ng-repeat-complete row-id="{{modelLibrary.modelId}}">
+                            <td>{{alarmPred.applicationType}}</td>
+                            <td>{{alarmPred.modelId}}</td>
+                            <td>{{alarmPred.algorithmType}}</td>
+                            <td>{{alarmPred.trainDataSetId}}</td>
+                            <td>{{alarmPred.testDataSetId}}</td>
+                            <td>{{alarmPred.modelState}}</td>
+                            <td>{{alarmPred.modelAccuracy}}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="raw-data" id="rawData">
+            <div class="tabular-header">
+                <h2>
+
+                </h2>
+                <div class="ctrl-btns">
+                    <div class="refresh" ng-class="{active: autoRefresh}"
+                         icon icon-size="42" icon-id="refresh"
+                         tooltip tt-msg="autoRefreshTip"
+                         ng-click="toggleRefresh()"></div>
+
+                    <div class="separator"></div>
+
+                    <div class="showHistoricalAlarm"
+                         tooltip tt-msg="showHistoricalAlarmTip"
+                         ng-click="showHistoricalAlarm()">
+                        <img src="app/view/soon/showHistoricalAlarm.png" class="ctrl-imgs">
+                    </div>
+                    <div class="showCurrentAlarm"
+                         tooltip tt-msg="showCurrentAlarmTip"
+                         ng-click="showCurrentAlarm()">
+                        <img src="app/view/soon/showCurrentAlarm.png" class="ctrl-imgs">
+                    </div>
+                    <div class="showPerformanceData"
+                         tooltip tt-msg="showPerformanceDataTip"
+                         ng-click="showPerformanceData()">
+                        <img src="app/view/soon/showPerformanceData.png" class="ctrl-imgs">
+                    </div>
+                </div>
+                <div class="search">
+                    <input type="text" ng-model="queryTxt" placeholder="Search"/>
+                    <select ng-model="queryBy" id="rawDataSearchBy"></select>
                 </div>
             </div>
             <div class="raw-data-subpage" id="historicalAlarm">
@@ -343,7 +415,7 @@
                     </div>
                 </div>
             </div>
-            <div class="raw-data-subpage" id="currentAlarm" hidden>
+            <div class="raw-data-subpage" id="currentAlarm" >
                 <div class="summary-list" onos-table-resize>
                     <div class="table-header" onos-sortable-header>
                         <table>
@@ -381,7 +453,7 @@
                     </div>
                 </div>
             </div>
-            <div class="raw-data-subpage" id="performance" hidden>
+            <div class="raw-data-subpage" id="performance" >
                 <div class="summary-list" onos-table-resize>
                     <div class="table-header" onos-sortable-header>
                         <table>
@@ -394,7 +466,7 @@
                                 <td colId="endTime" sortable col-width="100px"> end time </td>
                                 <td colId="maxVal" sortable col-width="100px"> max value </td>
                                 <td colId="curVal" sortable col-width="100px"> current value </td>
-                                <td colId="minCul" sortable col-width="100px"> min value </td>
+                                <td colId="minVal" sortable col-width="100px"> min value </td>
                             </tr>
                         </table>
                     </div>
@@ -426,7 +498,7 @@
                 </div>
             </div>
         </div>
-        <div class="data-set" id="dataSet" hidden>
+        <div class="data-set" id="dataSet" >
             <div class="tabular-header">
                 <h2>
                     data set
@@ -434,25 +506,31 @@
                 <div class="ctrl-btns">
                     <div class="refresh" ng-class="{active: autoRefresh}"
                          icon icon-size="42" icon-id="refresh"
-                         tooltip tt-message="autoRefreshTip"
+                         tooltip tt-msg="autoRefreshTip"
                          ng-click="toggleRefresh()"></div>
 
                     <div class="separator"></div>
 
                     <div class="deleteDataSet"
-                         tooltip tt-message="deleteDataSetTip"
+                         tooltip tt-msg="deleteDataSetTip"
                          ng-click="deleteDataSet()">
-                        <img src="data/img/delete.png" class="ctrl-imgs">
+                        <img src="app/view/soon/delete.png" class="ctrl-imgs">
                     </div>
                     <div class="dataSetShowSelect"
-                         tooltip tt-message="dataSetShowSelectTip"
+                         tooltip tt-msg="dataSetShowSelectTip"
                          ng-click="dataSetShowSelect()">
-                        <img src="data/img/showSelect.png" class="ctrl-imgs">
+                        <img src="app/view/soon/dataSetShowSelect.png" class="ctrl-imgs">
                     </div>
                 </div>
                 <div class="search">
                     <input type="text" ng-model="queryTxt" placeholder="Search"/>
                     <select ng-model="queryBy">
+                        <option value="" disabled>Search By</option>
+                        <option value="$">All Fields</option>
+                        <option value="id">id</option>
+                        <option value="alarmHappen" id="dataSetSearchBy">alarm happen</option>
+                        <option value="dataSetId">data set id</option>
+                        <option value="dataSetType">data set type</option>
                     </select>
                 </div>
             </div>
@@ -464,6 +542,7 @@
                                 <td colId="id" sortable col-width="100px"> data id </td>
                                 <td colId="alarmHappen" sortable col-width="100px"> alarm happen </td>
                                 <td colId="dataSetId" sortable col-width="100px"> data set id </td>
+                                <td colId="dataSetType" sortable col-width="100px"> data set Type </td>
                                 <td colId="input" sortable col-width="400px"> input </td>
                             </tr>
                         </table>
@@ -484,6 +563,7 @@
                                 <td>{{alarmPred.id}}</td>
                                 <td>{{alarmPred.alarmHappen}}</td>
                                 <td>{{alarmPred.dataSetId}}</td>
+                                <td>{{alarmPred.dataSetType}}</td>
                                 <td>{{alarmPred.input}}</td>
                             </tr>
                         </table>
@@ -498,6 +578,7 @@
                                 <td colId="id" sortable col-width="100px"> data id </td>
                                 <td colId="faultType" sortable col-width="100px"> fault type </td>
                                 <td colId="dataSetId" sortable col-width="100px"> data set id </td>
+                                <td colId="dataSetType" sortable col-width="100px"> data set Type </td>
                                 <td colId="input" sortable col-width="400px"> input </td>
                             </tr>
                         </table>
@@ -518,6 +599,7 @@
                                 <td>{{alarmPred.id}}</td>
                                 <td>{{alarmPred.faultType}}</td>
                                 <td>{{alarmPred.dataSetId}}</td>
+                                <td>{{alarmPred.dataSetType}}</td>
                                 <td>{{alarmPred.input}}</td>
                             </tr>
                         </table>

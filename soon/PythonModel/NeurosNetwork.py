@@ -4,30 +4,46 @@ import tensorflow as tf
 class NeurosNetwork(object):
 
     def __init__(self,input_layer_neurosNums,output_layer_neurosNums,hidden_layer_nums,
-                 leraning_rate,epoch,activation_function = tf.nn.relu,hidden_layer_neurosNums=[]):
+                 leraning_rate,epoch,batch_size,optimizerFunction=tf.train.GradientDescentOptimizer,
+                 lrAdjust = tf.train.exponential_decay,activation_function=tf.nn.relu,dropout=0.0,
+                 lossFunction = tf.reduce_mean,hidden_layer_neurosNums=[]):
         self.input_layer_neurosNums = input_layer_neurosNums
         self.output_layer_neurosNums = output_layer_neurosNums
         self.hidden_layer_nums = hidden_layer_nums
-        self.learingrate = leraning_rate
+        self.batch_size = batch_size
+        self.lossFunction = lossFunction
+        self.optimizerFunction = optimizerFunction
+        self.lrAdjust = lrAdjust
+        self.dropout = dropout
+        self.global_step = tf.Variable(0, trainable=False)
+        initial_learning_rate = leraning_rate
         self.epoch = epoch
+        self.learning_rate = tf.train.exponential_decay(initial_learning_rate, global_step=self.global_step,
+                                                        decay_steps=self.epoch/self.batch_size,decay_rate=0.8)
         self.activation_function = activation_function
         self.hidden_layer_neurosNums = hidden_layer_neurosNums
         network_weights = self._initialize_weights()
         self.weights = network_weights
-        # 网络结构
+        # network structure
         self.x = tf.placeholder(tf.float32, [None,self.input_layer_neurosNums])
         self.y = tf.placeholder(tf.float32, [None,self.output_layer_neurosNums])
         self.hidden = self._layer()
-        # 最后一层数据复原不再需要激活函数
+        # last layer without activationFunction
         self.reconstruction = self._output_Layer()
         with tf.name_scope('loss'):
             # self.loss = tf.reduce_mean(tf.reduce_sum(tf.square(self.y - self.reconstruction), reduction_indices=[1]))
             diff = tf.nn.softmax_cross_entropy_with_logits(logits=self.y, labels=self.reconstruction)
             with tf.name_scope('total'):
-                self.loss = tf.reduce_mean(diff)
+                self.loss = self.lossFunction(diff)
         tf.summary.scalar('loss', self.loss)
         with tf.name_scope('train'):
-            self.optimizer = tf.train.GradientDescentOptimizer(self.learingrate).minimize(self.loss)
+            self.optimizer = self.optimizerFunction(self.learingrate).minimize(self.loss)
+        with tf.name_scope('accuracy'):
+            with tf.name_scope('correct_prediction'):
+                correct_prediction = tf.equal(tf.argmax(self.y, 1), tf.argmax(self.reconstruction, 1))
+            with tf.name_scope('accuracy'):
+                self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+        tf.summary.scalar('accuracy', self.accuracy)
         init = tf.global_variables_initializer()
         self.merged = tf.summary.merge_all()
         self.sess = tf.Session()
@@ -76,7 +92,6 @@ class NeurosNetwork(object):
                     tf.summary.histogram('out', out)
             return out
 
-    # 输出层
     def _output_Layer(self):
         l = self.hidden_layer_nums+1
         with tf.name_scope('Outputlayer'):
@@ -93,20 +108,20 @@ class NeurosNetwork(object):
 
 
 
-    # 用一条batch数据进行训练并返回当前损失loss
+    # one batch return current loss
     def partial_fit(self, X, Y):
         loss, opt = self.sess.run([self.loss, self.optimizer], feed_dict = {self.x:X, self.y:Y})
         return loss
 
-    # 训练完毕进行测试
+    # train end verify
     def verify(self, X):
         return self.sess.run(self.reconstruction, feed_dict={self.x:X})
 
-    # 获取训练后的参数
+    # get parameter
     def getWeights(self):
         return self.sess.run(self.weights)
 
-    # 参数值统计
+
     def variable_summaries(self, var):
         with tf.name_scope('summaries'):
             mean = tf.reduce_mean(var)
@@ -118,13 +133,29 @@ class NeurosNetwork(object):
             tf.summary.scalar('min', tf.reduce_min(var))
             tf.summary.histogram('histogram', var)
 
-    # 训练过程
+    # training process
     def traingResult(self, X, Y):
-        train_writter = tf.summary.FileWriter('/home/mahaoli/anaconda3/envs/ttt/Project', self.sess.graph)
+        train_writter = tf.summary.FileWriter('/home/mahaoli/anaconda3/envs/ttt/Project/train', self.sess.graph)
+        loss_list = []
         for i in range(self.epoch):
-            value, opt = self.sess.run([self.merged, self.optimizer], feed_dict={self.x: X, self.y: Y})
+            value, opt = self.sess.run([self.merged, self.optimizer], feed_dict={self.x: X, self.y: Y, self.global_step:i})
             if i % 10 == 0:
                 # print(i, self.sess.run(self.loss, feed_dict={self.x: X, self.y: Y}))
                 train_writter.add_summary(value, i)
             if i % 100 == 0:
-                print(i, self.sess.run(self.loss, feed_dict={self.x: X, self.y: Y}))
+                loss = self.sess.run(self.loss, feed_dict={self.x: X, self.y: Y})
+                print(i, loss)
+                loss_list.append(loss)
+        return loss_list
+
+    # testing process
+    def testResult(self, X, Y):
+        test_writter = tf.summary.FileWriter('/home/mahaoli/anaconda3/envs/ttt/Project/test', self.sess.graph)
+        acc_list = []
+        for i in range(100):
+            if i % 10 == 0:
+                value, acc = self.sess.run([self.merged, self.accuracy], feed_dict={self.x:X, self.y:Y})
+                test_writter.add_summary(value, i)
+                acc_list.append(acc)
+                print('Accuracy at step %s: %s' % (i, acc))
+        return acc_list
