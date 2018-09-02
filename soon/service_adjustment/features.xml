@@ -19,6 +19,7 @@
              description="Prediction based service adjustment application developed by BUPT team">
         <feature>onos-api</feature>
         <bundle>wrap:mvn:org.jgrapht/jgrapht-core/1.0.1</bundle>
+        <bundle>mvn:org.postgresql/postgresql/42.2.4</bundle>
         <bundle>mvn:univ.bupt.soon.servadj/service-adjustment/0.1-SNAPSHOT</bundle>
     </feature>
 </features>

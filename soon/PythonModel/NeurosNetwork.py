@@ -135,7 +135,7 @@ class NeurosNetwork(object):
 
     # training process
     def traingResult(self, X, Y):
-        train_writter = tf.summary.FileWriter('/home/mahaoli/anaconda3/envs/mhl/Project/train', self.sess.graph)
+        train_writter = tf.summary.FileWriter('/home/yby/train', self.sess.graph)
         loss_list = []
         for i in range(self.epoch):
             value, opt = self.sess.run([self.merged, self.optimizer], feed_dict={self.x: X, self.y: Y, self.global_step:i})
@@ -150,7 +150,7 @@ class NeurosNetwork(object):
 
     # testing process
     def testResult(self, X, Y):
-        test_writter = tf.summary.FileWriter('/home/mahaoli/anaconda3/envs/mhl/Project/test', self.sess.graph)
+        test_writter = tf.summary.FileWriter('/home/yby/test', self.sess.graph)
         acc_list = []
         for i in range(100):
             if i % 10 == 0:

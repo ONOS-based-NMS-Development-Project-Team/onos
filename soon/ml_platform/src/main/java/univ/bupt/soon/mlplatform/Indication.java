@@ -55,6 +55,17 @@ public enum Indication {
     },
 
     /** 3. 模型应用  **/
+    // 模型评估
+    MODEL_EVAL() {
+        public String getName() {
+            return "/eval";
+        }
+    },
+    MODEL_EVAL_NOTIFY() {
+        public String getName() {
+            return "/notify/eval";
+        }
+    },
     // 应用模型
     MODEL_APPLY() {
         public String getName() {
@@ -118,6 +129,18 @@ public enum Indication {
 
 
     /** 7. 训练结束提示  **/
+    // 接收测试集传输结束提示
+    END_TEST_DATASET_NOTIFY() {
+        public String getName() {
+            return "/notify/test_dataset_end";
+        }
+    },
+    // 接收训练集传输结束提示
+    END_TRAIN_DATASET_NOTIFY() {
+        public String getName() {
+            return "/notify/train_dataset_end";
+        }
+    },
     // 接收训练结束提示信息
     END_NOTIFY() {
         public String getName() {

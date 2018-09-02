@@ -17,9 +17,6 @@ public class ComputePath extends Thread {
     public BlockingQueue<Service> serviceBlockingQueue;
     public SimpleWeightedGraph<Vertex, SimpleEdge> graph;
 
-//    public ComputePath(BlockingQueue<org.apache.felix.scr.annotations.Service> servicesToComputePath, SimpleWeightedGraph<Vertex, SimpleEdge> graph) {
-//
-//    }
 
     public ComputePath(BlockingQueue<Service> bq, SimpleWeightedGraph graph) {
         this.serviceBlockingQueue = bq;

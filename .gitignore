@@ -41,3 +41,4 @@ out/
 
 bazel-*
 dataset/
+soon/resources/ml_platform.properties

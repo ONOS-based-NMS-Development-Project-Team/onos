@@ -2,22 +2,22 @@ package univ.bupt.soon.mlplatform;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import org.eclipse.jetty.websocket.WebSocket;
-import org.onosproject.soon.ClassMapping;
 import org.onosproject.soon.MonitorData;
 import org.onosproject.soon.dataset.dataset.SegmentForDataset;
-import org.onosproject.soon.dataset.original.Item;
 import org.onosproject.soon.mlmodel.MLAlgorithmConfig;
 import org.onosproject.soon.mlmodel.MLAlgorithmType;
 import org.onosproject.soon.mlmodel.config.nn.*;
+import org.onosproject.soon.platform.PlatformCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import univ.bupt.soon.mlplatform.pojo.TransNNAlgorithmConfig;
 
 import java.io.*;
-import java.util.ArrayList;
+import java.net.URI;
 import java.util.List;
 
 
@@ -28,8 +28,11 @@ public class SoonWebsocket implements WebSocket.OnTextMessage, WebSocket.OnContr
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
+    int modelId = -1; // 该websocket连接对应的modelId
+
     final int id;  // websocket连接的标识符
     int msgId = 0; // websocket连接中消息的索引。
+    PlatformCallback pcb = null;  // 该websocket的回调接口
     Connection conn = null;
     ChannelState state = ChannelState.CONFIGURING; // 初始化为配置状态
     static ObjectMapper mapper = new ObjectMapper();  // JSON转换
@@ -61,48 +64,68 @@ public class SoonWebsocket implements WebSocket.OnTextMessage, WebSocket.OnContr
                 case END_NOTIFY:
                     // 训练结束提示
                     state = ChannelState.COMPLETED;
-                    // 结束后，发送模型应用请求
-                    List<List<Double>> d = Lists.newArrayList();
-                    d.add(Lists.newArrayList(3.5, 4.2, 1.2));
-                    state.applyModel(this, conn, d);
-                    // TODO 通知训练结束
+                    // 通知训练结束
+                    pcb.trainingEnd(msgId);
                     break;
                 case URL_NOTIFY:
                     // 得到TensorBoard的URL
-                    // TODO 通知URL获取
-                    String url = content;
+                    // 通知URL获取
+                    URI uri = URI.create(content);
+                    pcb.ResultUrl(msgId, uri);
                     break;
                 case PROCESS_NOTIFY:
                     // 得到训练过程消息参数
                     try {
                         MonitorData md = (MonitorData)mapper.readValue(content, monitorDataCls);
-                        log.info(md.getDescription());
-                        // TODO 通知训练进度
+                        // 通知训练进度
+                        pcb.intermediateResult(msgId, md);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                     break;
                 case EXCEPTION_CONFIG_NOTIFY:
                     // 异常配置消息参数
+                    // 通知配置异常，状态改为CONFIGURING
                     state = ChannelState.CONFIGURING;
-                    log.info(content);
-                    // TODO 通知配置异常，状态改为CONFIGURING
+                    pcb.configException(msgId, content);
                     break;
                 case EXCEPTION_RUN_NOTIFY:
                     // 异常运行参数
+                    // 通知运行异常，状态改为STOPPED
                     state = ChannelState.STOPPED;
-                    log.info(content);
-                    // TODO 通知运行异常，状态改为STOPPED
+                    pcb.runningException(msgId, content);
                     break;
                 case MODEL_APPLY_NOTIFY:
                     // 模型应用结果通知
                     try {
-                        List<Double> results = mapper.readValue(content, new TypeReference<List<Double>>(){});
-                        log.info(results.toString());
-                        // TODO 通知应用结果
+                        List<List<Double>> results = mapper.readValue(content, new TypeReference<List<List<Double>>>() {});
+                        pcb.applyResult(msgId, results);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                    break;
+                case MODEL_EVAL_NOTIFY:
+                    // 模型评估结果通知
+                    // content第一行表示测试集id,第二行表示结果
+                    try {
+                        String[] res = content.split("\n", 2);
+                        int testDatasetId = Integer.parseInt(res[0]);
+                        List<List<Double>> results = mapper.readValue(res[1], new TypeReference<List<List<Double>>>() {
+                        });
+                        pcb.evalResult(msgId, testDatasetId, results);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case END_TRAIN_DATASET_NOTIFY:
+                    // 某个训练集传输完成通知
+                    // content表示训练集id
+                    pcb.trainDatasetTransEnd(msgId, Integer.parseInt(content));
+                    break;
+                case END_TEST_DATASET_NOTIFY:
+                    // 某个测试集传输完成通知
+                    // content表示测试集id
+                    pcb.testDatasetTransEnd(msgId, Integer.parseInt(content));
                     break;
                 default:
                     throw new RuntimeException();
@@ -117,8 +140,6 @@ public class SoonWebsocket implements WebSocket.OnTextMessage, WebSocket.OnContr
     @Override
     public void onOpen(Connection connection) {
         conn = connection;
-        // 开启测试
-        test(this);
         log.info("new websocket connection {} opened!", id);
     }
 
@@ -170,7 +191,7 @@ public class SoonWebsocket implements WebSocket.OnTextMessage, WebSocket.OnContr
 
             @Override
             boolean sendTrainDatasetId(SoonWebsocket sw, Connection conn, int id) {
-                String content = Indication.CONFIG_TRAIN_DATASET_ID.getName()+"\n";
+                String content = Indication.CONFIG_TRAIN_DATASET_ID.getName()+"\n"+id;
                 return sendMessage(sw, conn, content);
             }
 
@@ -253,6 +274,13 @@ public class SoonWebsocket implements WebSocket.OnTextMessage, WebSocket.OnContr
             @Override
             boolean applyModel(SoonWebsocket sw, Connection conn, List<List<Double>> input) {
                 return sendObjectMessage(sw, conn, Indication.MODEL_APPLY, input);
+            }
+
+            @Override
+            boolean evalModel(SoonWebsocket sw, Connection conn, int testDataId) {
+                String content = Indication.MODEL_EVAL.getName()+"\n"+testDataId;
+                boolean succ = sendMessage(sw, conn, content);
+                return succ;
             }
 
             @Override
@@ -393,6 +421,18 @@ public class SoonWebsocket implements WebSocket.OnTextMessage, WebSocket.OnContr
             return false;
         }
 
+        /**
+         * 在测试集上评估模型的效果.只有COMPLETED状态下才能使用该方法
+         * @param sw
+         * @param conn
+         * @param testDataId
+         * @return
+         */
+        boolean evalModel(SoonWebsocket sw, Connection conn, int testDataId) {
+            log.info("当前处在{}状态，无法进行模型在测试集{}上的评估！！！", sw.state, testDataId);
+            return false;
+        }
+
 
         /**
          * 通过连接conn发送消息content给对端
@@ -403,6 +443,7 @@ public class SoonWebsocket implements WebSocket.OnTextMessage, WebSocket.OnContr
         boolean sendMessage(SoonWebsocket sw, Connection conn, String content) {
             try {
                 sw.msgId = sw.msgId+1;
+                log.info("message size is "+content.length());
                 conn.sendMessage(sw.msgId+"\n"+content);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -431,42 +472,44 @@ public class SoonWebsocket implements WebSocket.OnTextMessage, WebSocket.OnContr
     }
 
 
-    /**
-     * 做简单的最小集测试
-     */
-    private void test(SoonWebsocket ws) {
-        try {
-            // 模型id
-            ws.state.sendMLType(ws, ws.conn, MLAlgorithmType.FCNNModel);
-
-            // 发送数据集
-            SegmentForDataset sfd = new SegmentForDataset();
-            double i = 1.1;
-            List<List<Double>> datas = Lists.newArrayList();
-            for (int j = 0; j < 3; j++) {
-                List<Double> doubles = Lists.newArrayList(i, i + 1.1, i + 2.2);
-                i += 10;
-                datas.add(doubles);
-            }
-            sfd.setDatas(datas);
-            sfd.setTrainData(true);
-            ws.state.sendTrainData(ws, ws.conn, sfd);
-            sfd.setTrainData(false);
-            ws.state.sendTestData(ws, ws.conn, sfd);
-
-            // 发送模型参数
-            NNAlgorithmConfig nnconfig = new NNAlgorithmConfig(MLAlgorithmType.FCNNModel, 30, 7,
-                    Lists.newArrayList(1, 2, 3), ActivationFunction.RELU, ParamInit.DEFAULT, ParamInit.CONSTANT0,
-                    LossFunction.MSELOSS, 64, 100, Optimizer.NESTROV,
-                    1e-4, LRAdjust.LINEAR, 0.0);
-            ws.state.sendMLConfig(ws, ws.conn, nnconfig);
-
-            // 开始训练
-            ws.state.startTrain(ws, ws.conn);
-
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//    /**
+//     * 做简单的最小集测试
+//     */
+//    private void test(SoonWebsocket ws) {
+//        try {
+//            // 模型id
+//            ws.state.sendMLType(ws, ws.conn, MLAlgorithmType.FCNNModel);
+//            monitorDataCls = NNMonitorData.class;
+//            modelConfigCls = NNAlgorithmConfig.class;
+//
+//            // 发送数据集
+//            SegmentForDataset sfd = new SegmentForDataset();
+//            double i = 1.1;
+//            List<List<Double>> datas = Lists.newArrayList();
+//            for (int j = 0; j < 3; j++) {
+//                List<Double> doubles = Lists.newArrayList(i, i + 1.1, i + 2.2);
+//                i += 10;
+//                datas.add(doubles);
+//            }
+//            sfd.setDatas(datas);
+//            sfd.setTrainData(true);
+//            ws.state.sendTrainData(ws, ws.conn, sfd);
+//            sfd.setTrainData(false);
+//            ws.state.sendTestData(ws, ws.conn, sfd);
+//
+//            // 发送模型参数
+//            NNAlgorithmConfig nnconfig = new NNAlgorithmConfig(MLAlgorithmType.FCNNModel, 30, 7,
+//                    Lists.newArrayList(1, 2, 3), ActivationFunction.RELU, ParamInit.DEFAULT, ParamInit.CONSTANT0,
+//                    LossFunction.MSELOSS, 64, 100, Optimizer.NESTROV,
+//                    1e-4, LRAdjust.LINEAR, 0.0);
+//            ws.state.sendMLConfig(ws, ws.conn, nnconfig);
+//
+//            // 开始训练
+//            ws.state.startTrain(ws, ws.conn);
+//
+//        }catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
 }

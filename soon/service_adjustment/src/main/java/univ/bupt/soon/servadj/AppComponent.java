@@ -32,7 +32,7 @@ import java.util.concurrent.BlockingQueue;
 /**
  * Skeletal ONOS application component.
  */
-@Component(immediate = true)
+
 public class AppComponent {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
