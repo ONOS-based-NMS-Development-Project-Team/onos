@@ -1,7 +1,9 @@
-package univ.bupt.soon.mlshow.impl.handler;
+package univ.bupt.soon.mlshow.front.handler;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.onosproject.soon.dataset.original.Item;
 import org.onosproject.soon.dataset.original.sdhnet.HistoryAlarmItem;
+import org.onosproject.soon.foreground.ModelControlService;
 import org.onosproject.ui.JsonUtils;
 import org.onosproject.ui.table.TableModel;
 import org.onosproject.ui.table.TableRequestHandler;
@@ -12,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import static univ.bupt.soon.mlshow.impl.Utils.*;
+import static univ.bupt.soon.mlshow.front.Utils.*;
 
 import static org.onosproject.ui.table.TableModel.sortDir;
 
@@ -21,17 +23,22 @@ import static org.onosproject.ui.table.TableModel.sortDir;
   */
 public class AlarmHistoricalDataRequestHandler extends TableRequestHandler {
 
-    private static final String ALARM_HIST_DATA_REQ = "alarmHistoricalDataRequest";
-    private static final String ALARM_HIST_DATA_RESP = "alarmHistoricalDataResponse";
-    private static final String ALARM_HIST_TABLES = "alarmHistoricals";
+    private static final String ALARM_HIST_DATA_REQ = "historicalAlarmDataRequest";
+    private static final String ALARM_HIST_DATA_RESP = "historicalAlarmDataResponse";
+    private static final String ALARM_HIST_TABLES = "historicalAlarms";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
+    private ModelControlService service;
     // 数据库查询的时候定位查询数据的地方。返回数据在[offset, offset+limit)区间
     static int offset = 0;
     static int limit = 10;
 
     public AlarmHistoricalDataRequestHandler() {
         super(ALARM_HIST_DATA_REQ, ALARM_HIST_DATA_RESP, ALARM_HIST_TABLES);
+    }
+
+    public void setService(ModelControlService service) {
+        this.service = service;
     }
 
     @Override
@@ -65,32 +72,9 @@ public class AlarmHistoricalDataRequestHandler extends TableRequestHandler {
 
     @Override
     protected void populateTable(TableModel tm, ObjectNode payload) {
-        List<HistoryAlarmItem> its = new ArrayList<>();
-        HistoryAlarmItem a = new HistoryAlarmItem();
-        HistoryAlarmItem b = new HistoryAlarmItem();
-        a.setLevel("a");
-        a.setName("aa");
-        a.setAlarm_src("aaa");
-        a.setTp("aaaa");
-        a.setLocation("aaaaa");
-        a.setHappen_time(new Date());
-        a.setHappen_time(new Date());
-        a.setHappen_time(new Date());
-        b.setPath_level("aaaaaa");
-        b.setLevel("b");
-        b.setName("bb");
-        b.setAlarm_src("bbb");
-        b.setTp("bbbb");
-        b.setLocation("bbbbb");
-        b.setHappen_time(new Date());
-        b.setHappen_time(new Date());
-        b.setHappen_time(new Date());
-        b.setPath_level("bbbbbb");
-        its.add(a);
-        its.add(b);
-        for (HistoryAlarmItem it : its) {
-            HistoryAlarmItem tmp = (HistoryAlarmItem) it;
-            populateRow(tm.addRow(), tmp);
+        List<Item> its = service.updateData(offset, limit);
+        for (Item it : its) {
+            populateRow(tm.addRow(), (HistoryAlarmItem)it);
         }
         offset += limit;
     }
