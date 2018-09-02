@@ -378,42 +378,8 @@
                 </div>
             </div>
             <div class="raw-data-subpage" id="historicalAlarm">
-                <div class="summary-list" onos-table-resize>
-                    <div class="table-header" onos-sortable-header>
-                        <table>
-                            <tr>
-                                <td colId="level" sortable col-width="140px"> level </td>
-                                <td colId="alarmSource" sortable col-width="140px"> alarm source </td>
-                                <td colId="name" sortable col-width="140px"> name </td>
-                                <td colId="type" sortable col-width="140px"> type </td>
-                                <td colId="location" sortable col-width="140px"> location </td>
-                                <td colId="pathLevel" sortable col-width="140px"> path level </td>
-                            </tr>
-                        </table>
-                    </div>
+                <historical-alarm-table></historical-alarm-table>
 
-                    <div class="table-body">
-                        <table onos-flash-changes id-prop="id">
-                            <tr ng-if="!tableData.length" class="no-data">
-                                <td colspan="6">
-                                    {{annots.no_rows_msg}}
-                                </td>
-                            </tr>
-
-                            <tr ng-repeat="historicalAlarm in tableData | filter:queryFilter track by $index"
-                                ng-click="selectCallback($event,historicalAlarm)"
-                                ng-class="{selected: historicalAlarm.id === selId}"
-                                ng-repeat-complete row-id="{{historicalAlarm.id}}">
-                                <td>{{alarmPred.level}}</td>
-                                <td>{{alarmPred.alarmSource}}</td>
-                                <td>{{alarmPred.name}}</td>
-                                <td>{{alarmPred.type}}</td>
-                                <td>{{alarmPred.location}}</td>
-                                <td>{{alarmPred.pathLevel}}</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
             </div>
             <div class="raw-data-subpage" id="currentAlarm" >
                 <div class="summary-list" onos-table-resize>

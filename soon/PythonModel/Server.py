@@ -1,43 +1,50 @@
+import asyncio
+import websockets
 import json
-import websocket
+import threading
 import numpy as np
 from ReadFile import read_parameters
 from NeurosNetwork import NeurosNetwork
-import websocket_server
-import socket
 
+import sys
+import pydevd
+# 设置调试
+# sys.path.append('pycharm-debug.egg')
+# pydevd.settrace('localhost', port=31235, stdoutToServer=True, stderrToServer=True)
 
-def on_message(ws, message):
-    # print(message)
+async def on_message(ws, message):
+
     msg_id, label, content = message.split('\n', 2)
+    print(label)
     if is_json(content):
         content = json.loads(content)
     else:
         content = content
     if label == "/config/train":
         global data_train_dict
-        # global data_list
+        with open("/home/mahaoli/data.json", 'w') as f:
+            f.write(100 * str(content))
+            f.close()
+        data_train_dict = {}
         data_train_id = content["datasetId"]
-        # dataTrainInput = content["input"]
-        # dataTrainOutput = content["output"]
+        print("trainID:",data_train_id)
         data_train_dict[data_train_id] = content
         # data_list.append(data_train_dict)
-        print(data_train_dict)
     elif label == "/config/model":
+        print(label)
+        print(content)
         global model_para
         model_para = read_parameters(content)
         print(model_para)
     elif label == "/config/train/id":
         global train_id
         train_id = content
-        print("train_id")
+        print("needID:",train_id)
     elif label == "/config/test":
-        global data_test_list
         global data_test_dict
+        data_test_dict = {}
         data_test_id = content["datasetId"]
-        dataTestSet = content["datas"]
-        data_test_dict[data_test_id] = dataTestSet
-        data_test_list.append(dataTestSet)
+        data_test_dict[data_test_id] = content
         print("test_dataSet")
     elif label == "/control/start":
         inputNum = model_para[0]
@@ -55,56 +62,43 @@ def on_message(ws, message):
         global networks
         networks = NeurosNetwork(inputNum,outputNum,hiddenNum,learningRate,epoch,batchSize,optimiezer
                                  ,lrAdjust,axtivationFunction,dropout,lossFunction,hiddenLayer)
-        dataTrainId = data_train_dict[train_id]
-        x = dataTrainId["input"]
-        y = data_train_dict["output"]
+        dataTrainSet = data_train_dict[train_id]
+        x = dataTrainSet["input"]
+        y = dataTrainSet["output"]
         X = np.mat(x)
         Y = np.mat(y)
         networks.traingResult(X, Y)
-        lossdict = networks.networks.traingResult(X, Y)
+        lossdict = networks.traingResult(X, Y)
         for i in range(len(lossdict)):
-            dict = {"loss":lossdict[i],"remainingTime":0,"precision":0}
+            a = lossdict[i].tolist()
+            dict = {"loss":a,"remainingTime":0,"precision":0}
             json_str = json.dumps(dict)
             string = msg_id + '\n' + '/notify/process' + '\n' + json_str
-            ws.send(string)
+            await ws.send(string)
         print("transported loss end")
         end = 'train_end'
         end_str = json.dumps(end)
         end = str(msg_id)+'\n'+'/notify/train_end'+'\n'+end_str
-        ws.send(end)
+        await ws.send(end)
     elif label == "/apply":
         print("model input:")
         print(content)
         pred_X = np.mat(content)
         prediction = networks.verify(pred_X)
-        prediction = str(prediction)
+        prediction_json = prediction.tolist()
+        prediction = str(prediction_json)
         json_pred = json.dumps(prediction)
         pred = str(msg_id) + '\n' + '/notify/apply' + '\n' + json_pred
-        ws.send(pred)
+        await ws.send(pred)
     elif label == "/get/uri":
         print("cal_tensorboard")
         tensor_link = 'www.cctv.com'
         json_tblink = json.dumps(tensor_link)
         tb_link = str(msg_id) + '\n' + '/notify/apply' + '\n' + json_tblink
-        ws.send(tb_link)
+        await ws.send(tb_link)
     else:
         print("others")
 
-
-
-
-def on_error(ws, error):
-    print(error)
-
-
-def on_close(ws):
-    print("closed")
-
-
-def on_open(ws):
-    # ws.send("hello,Im python")
-    # ws.send()
-    print("OK")
 
 def is_json(myjson):
     try:
@@ -114,26 +108,24 @@ def is_json(myjson):
     return True
 
 
-if __name__ == '__main__':
-    data_train_list = []
-    data_test_list = []
-    data_train_dict = {}
-    data_test_dict = {}
-    model_para = []
-    train_id = 0
-    websocket.enableTrace(True)
-    host = "ws://10.108.69.165:8181/onos/soon/soon"
-    ws = websocket.WebSocketApp(host, on_open=on_open,on_message=on_message, on_error=on_error, on_close=on_close)
-    # process = "/notify/process\n{'loss':0.5}"
-    # ws.send(process)
+def new_client(client, server):
+    print("given id %d" % client['id'])
+    # server.send_message_to_all("hello")
 
-    # server = socket.socket()
-    # server.bind(("localhost", 8000))
-    # server.listen(5)
-    # flag = True
-    # while flag:
-    #     conn, addr = server.accept()
-    #     print("conn", conn, "\naddr", addr)
-    #     flag = False
-    websocket
-    ws.run_forever()
+def message_received(client, server, message):
+    # print(message)
+    on_message(server, client, message)
+
+
+async def handler(websocket, path):
+    while True:
+        message = await websocket.recv()
+        on_message(websocket, message)
+
+if __name__ == '__main__':
+    start_server = websockets.serve(ws_handler=handler, host='10.117.63.234', port=9999, max_size=100*1024*1024)
+    asyncio.get_event_loop().run_until_complete(start_server)
+    asyncio.get_event_loop().run_forever()
+
+
+

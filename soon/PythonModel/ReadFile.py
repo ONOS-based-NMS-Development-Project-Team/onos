@@ -1,4 +1,4 @@
-import xmlProcessor
+import tensorflow as tf
 import hashlib
 def read_data(data_list):
     listData = []
@@ -16,26 +16,32 @@ def read_data(data_list):
 
 
 def read_parameters(dict):
-    bias = dict["bias"]
-    weight = dict['weight']
+    bias = dict["biasInit"]
+    weight = dict['weightInit']
     activation_function = dict['activationFunction']
-    epoch = int(dict['epoch'])
-    learning_rate = float(dict['learningRate'])
-    inputlayer_nnumber = int(dict['neuronsNumberInputLayer'])
-    outlayer_nnumber = int(dict['neuronsNumberOutputLayer'])
-    hlayer_neurons = dict['neuronsNumberHiddenLayer']
-    hidden_layer_neurons_list = []
-    n = len(hlayer_neurons)
-    i = 0
-    l = 1
-    while i < n and l < n:
-        hidden_layer_neurons_list.append(int(hlayer_neurons[l]))
-        i += 1
-        l = 3 * i + 1
-    hidden_layer_number = int(dict['numberHiddenLayer'])
+    if activation_function == 'relu':
+        activation_function = tf.nn.relu
+    epoch = dict['epoch']
+    learning_rate = dict["learningRate"]
+    inputlayer_nnumber = dict["inputNum"]
+    outlayer_nnumber = dict["outputNum"]
+    hlayer_neurons = dict["hiddenLayer"]
+    hiddenNum = len(hlayer_neurons)
+    lossFunction = dict["lossFunction"]
+    if lossFunction == 'mseloss':
+        lossFunction = tf.reduce_mean
+    batchSize = dict["batchSize"]
+    optimizer = dict["optimizer"]
+    if optimizer == 'sgd':
+        optimizer = tf.train.GradientDescentOptimizer
+    lrAdjust = dict["lrAdjust"]
+    if lrAdjust == 'constant':
+        lrAdjust = tf.train.exponential_decay
+    dropout = dict["dropout"]
 
-    return [bias, weight, activation_function, epoch, learning_rate, inputlayer_nnumber, outlayer_nnumber,
-           hidden_layer_neurons_list, hidden_layer_number]
+    return [inputlayer_nnumber,outlayer_nnumber,hiddenNum,learning_rate,epoch,
+            batchSize,optimizer,lrAdjust,activation_function,dropout,
+            lossFunction,hlayer_neurons]
 
 def MD5_Value(filename):
     md5_value = hashlib.md5()
