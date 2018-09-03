@@ -8,6 +8,9 @@ import org.onosproject.net.device.DeviceProviderRegistry;
 import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.link.LinkProviderRegistry;
 import org.onosproject.net.topology.TopologyProviderRegistry;
+import org.onosproject.soon.dataset.original.sdhnet.CurrentAlarmItem;
+import org.onosproject.soon.dataset.original.sdhnet.HistoryAlarmItem;
+import org.onosproject.soon.dataset.original.sdhnet.PerformanceItem;
 import org.onosproject.soon.foreground.MLAppRegistry;
 import org.onosproject.soon.foreground.MLAppType;
 import org.onosproject.soon.foreground.ModelControlService;
@@ -17,7 +20,7 @@ import org.onosproject.ui.UiMessageHandlerFactory;
 import org.onosproject.ui.UiView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import univ.bupt.soon.mlshow.original.HistoryAlarmDataAccess;
+import univ.bupt.soon.mlshow.original.OriginalDataAccess;
 
 import java.util.List;
 
@@ -75,8 +78,14 @@ public class SoonUiComponent implements MLAppRegistry {
     protected void activate() {
         uiExtensionService.register(extension);
         // 注册历史告警的服务
-        HistoryAlarmDataAccess hisAlarmService = new HistoryAlarmDataAccess();
+        OriginalDataAccess hisAlarmService = new OriginalDataAccess("his_alarms", MLAppType.ORIGINAL_HISTORY_ALARM_DATA, HistoryAlarmItem.class);
         register(hisAlarmService, hisAlarmService.getServiceName());
+        // 注册当前告警的服务
+        OriginalDataAccess curAlarmService = new OriginalDataAccess("cur_alarms", MLAppType.ORIGINAL_CURRENT_ALARM_DATA, CurrentAlarmItem.class);
+        register(curAlarmService, curAlarmService.getServiceName());
+        // 注册性能记录的服务
+        OriginalDataAccess performanceService = new OriginalDataAccess("performance", MLAppType.ORIGINAL_PERFORMANCE_DATA, PerformanceItem.class);
+        register(performanceService, performanceService.getServiceName());
 
         // 拓扑注入服务
 //        topoReport = new TopoReport();

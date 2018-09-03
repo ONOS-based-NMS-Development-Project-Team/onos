@@ -2,9 +2,7 @@ package univ.bupt.soon.mlshow.original;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.onosproject.soon.Statistics;
-import org.onosproject.soon.dataset.DatabaseAdapter;
 import org.onosproject.soon.dataset.original.Item;
-import org.onosproject.soon.dataset.original.sdhnet.HistoryAlarmItem;
 import org.onosproject.soon.foreground.ForegroundCallback;
 import org.onosproject.soon.foreground.MLAppType;
 import org.onosproject.soon.foreground.ModelControlService;
@@ -16,23 +14,27 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 
 /**
- * 从电网采集到的历史告警数据的相关查询
+ * 从电网采集到的数据的相关查询
  */
-public class HistoryAlarmDataAccess implements ModelControlService {
+public class OriginalDataAccess implements ModelControlService {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     // 数据库查询类
     private OriginalDatabaseAdapter query = new OriginalDatabaseAdapter();
     // 应用类型
-    private MLAppType type = MLAppType.ORIGINAL_HISTORY_ALARM_DATA;
+    private final MLAppType type;
     // 数据库中的表名
-    private final String tableName = "his_alarms";
+    private final String tableName;
+    // 表中数据对应的类
+    private final Class itemClass;
 
-    public HistoryAlarmDataAccess() {
+    public OriginalDataAccess(String tableName, MLAppType type, Class itemClass) {
+        this.tableName = tableName;
+        this.type = type;
+        this.itemClass = itemClass;
         if (query.connect()) {
             log.info("create OriginalDataAccess instance successfully");
         } else {
@@ -110,6 +112,6 @@ public class HistoryAlarmDataAccess implements ModelControlService {
     @Override
     public List<Item> updateData(int offset, int limit) {
         // 查询数据
-        return query.queryData("*", " offset "+offset+" limit "+limit, tableName, HistoryAlarmItem.class);
+        return query.queryData("*", " offset "+offset+" limit "+limit, tableName, itemClass);
     }
 }
