@@ -71,53 +71,53 @@ public class PlatformImpl implements MLPlatformService {
     public static int sockId = 0;
 
 
-    /**
-     * 做简单的最小集测试
-     */
-    private void test() {
-        try {
-            // 新建连接
-            URI uri = URI.create("ws://10.117.63.234");
-            int wsId = addWebsocketConnection(uri);
-
-            // 请求训练集id、测试集id、模型id
-            int trainId = requestNewTrainDatasetId(wsId);
-            int modelId = requestNewModelId(wsId, MLAlgorithmType.FCNNModel);
-            int testId  = requestNewTestDatasetId(wsId);
-
-            // 发送数据集
-            SegmentForDataset sfd = new SegmentForDataset();
-            double i = 1.1;
-            List<List<Double>> datas = Lists.newArrayList();
-            for (int j = 0; j < 3; j++) {
-                List<Double> doubles = Lists.newArrayList(i, i + 1.1, i + 2.2);
-                i += 10;
-                datas.add(doubles);
-            }
-            sfd.setDatas(datas);
-            sfd.setTrainData(true);
-            int trainMsgId = sendTrainData(wsId, sfd);
-            sfd.setTrainData(false);
-            int testMsgId = sendTestData(wsId, sfd);
-
-            // 发送模型参数
-            NNAlgorithmConfig nnconfig = new NNAlgorithmConfig(MLAlgorithmType.FCNNModel, 30, 7,
-                    Lists.newArrayList(1, 2, 3), ActivationFunction.RELU, ParamInit.DEFAULT, ParamInit.CONSTANT0,
-                    LossFunction.MSELOSS, 64, 100, Optimizer.NESTROV,
-                    1e-4, LRAdjust.LINEAR, 0.0);
-            int configMsgId = sendMLConfig(wsId, nnconfig);
-
-            // 开始训练
-            int startMsgId = startTrain(wsId);
-
-            log.info("训练集id：{}\n 测试集id：{}\n 模型id：{}\n 训练集消息id：{}\n 测试集消息id：{}\n 配置消息id：{}\n 开始训练id：{}\n ",
-                    trainId, testId, modelId, trainMsgId, testMsgId, configMsgId, startMsgId);
-
-
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//    /**
+//     * 做简单的最小集测试
+//     */
+//    private void test() {
+//        try {
+//            // 新建连接
+//            URI uri = URI.create("ws://10.117.63.234");
+//            int wsId = addWebsocketConnection(uri);
+//
+//            // 请求训练集id、测试集id、模型id
+//            int trainId = requestNewTrainDatasetId(wsId);
+//            int modelId = requestNewModelId(wsId, MLAlgorithmType.FCNNModel);
+//            int testId  = requestNewTestDatasetId(wsId);
+//
+//            // 发送数据集
+//            SegmentForDataset sfd = new SegmentForDataset();
+//            double i = 1.1;
+//            List<List<Double>> datas = Lists.newArrayList();
+//            for (int j = 0; j < 3; j++) {
+//                List<Double> doubles = Lists.newArrayList(i, i + 1.1, i + 2.2);
+//                i += 10;
+//                datas.add(doubles);
+//            }
+//            sfd.setDatas(datas);
+//            sfd.setTrainData(true);
+//            int trainMsgId = sendTrainData(wsId, sfd);
+//            sfd.setTrainData(false);
+//            int testMsgId = sendTestData(wsId, sfd);
+//
+//            // 发送模型参数
+//            NNAlgorithmConfig nnconfig = new NNAlgorithmConfig(MLAlgorithmType.FCNNModel, 30, 7,
+//                    Lists.newArrayList(1, 2, 3), ActivationFunction.RELU, ParamInit.DEFAULT, ParamInit.CONSTANT0,
+//                    LossFunction.MSELOSS, 64, 100, Optimizer.NESTROV,
+//                    1e-4, LRAdjust.LINEAR, 0.0);
+//            int configMsgId = sendMLConfig(wsId, nnconfig);
+//
+//            // 开始训练
+//            int startMsgId = startTrain(wsId);
+//
+//            log.info("训练集id：{}\n 测试集id：{}\n 模型id：{}\n 训练集消息id：{}\n 测试集消息id：{}\n 配置消息id：{}\n 开始训练id：{}\n ",
+//                    trainId, testId, modelId, trainMsgId, testMsgId, configMsgId, startMsgId);
+//
+//
+//        }catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     @Activate
     protected void activate() {
@@ -134,6 +134,7 @@ public class PlatformImpl implements MLPlatformService {
     public int addWebsocketConnection(URI uri) {
         try {
             WebSocketClient client = new WebSocketClient();
+            client.setMaxTextMessageSize(100 * 1024 * 1024);
             sockId++;
             SoonWebsocket websocket = new SoonWebsocket(sockId);
             Future<WebSocket.Connection> future = client.open(uri, websocket);
@@ -152,6 +153,7 @@ public class PlatformImpl implements MLPlatformService {
     public boolean registerCallback(int websocketId, PlatformCallback platformCallback) {
         if (socks.containsKey(websocketId) && !callbacks.containsKey(websocketId)) {
             callbacks.put(websocketId, platformCallback);
+            socks.get(websocketId).pcb = platformCallback;  // 注入回调对象
             return true;
         } else {
             return false;
@@ -200,6 +202,7 @@ public class PlatformImpl implements MLPlatformService {
                 // 如果能发送
                 modelId++;
                 modelIdSet.add(modelId);
+                ws.modelId = modelId;
                 return modelId;
             } else {
                 return -1;
@@ -298,10 +301,23 @@ public class PlatformImpl implements MLPlatformService {
     }
 
     @Override
+    public int evalModel(int websocketId, int testDatasetId) {
+        SoonWebsocket ws = socks.get(websocketId);
+        if (ws!=null && ws.conn.isOpen()) {
+            if ( ws.state.evalModel(ws, ws.conn, testDatasetId)) {
+                return ws.msgId;
+            }
+        }
+        return -1;
+
+    }
+
+    @Override
     public int deleteModel(int websocketId) {
         SoonWebsocket ws = socks.get(websocketId);
         if (ws!=null && ws.conn.isOpen()) {
             if (ws.state.deleteModel(ws, ws.conn)) {
+                modelIdSet.remove(ws.modelId);
                 return ws.msgId;
             }
         }
@@ -313,6 +329,7 @@ public class PlatformImpl implements MLPlatformService {
         SoonWebsocket ws = socks.get(websocketId);
         if (ws!=null && ws.conn.isOpen()) {
             if (ws.state.deleteTrainDataset(ws, ws.conn, trainDatasetId)) {
+                trainDatasetIdSet.remove(trainDatasetId);
                 return ws.msgId;
             }
         }
@@ -324,9 +341,34 @@ public class PlatformImpl implements MLPlatformService {
         SoonWebsocket ws = socks.get(websocketId);
         if (ws!=null && ws.conn.isOpen()) {
             if (ws.state.deleteTestDataset(ws, ws.conn, testDatasetId)) {
+                testDatasetIdSet.remove(testDatasetId);
                 return ws.msgId;
             }
         }
         return -1;
+    }
+
+    @Override
+    public boolean containTrainId(int trainDatasetId) {
+        if (trainDatasetIdSet.contains(trainDatasetId)) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean containTestId(int testDatasetId) {
+        if (testDatasetIdSet.contains(testDatasetId)) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean containModelId(int modelId) {
+        if (modelIdSet.contains(modelId)) {
+            return true;
+        }
+        return false;
     }
 }
