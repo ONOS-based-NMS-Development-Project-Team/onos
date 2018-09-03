@@ -6,7 +6,7 @@
     'use strict';
 
     //ingected references
-    var $log,$scope,$cookieStore,$interval,wss,ps,fs,ks,ls,is,ds,tbs,sts;
+    var $log,$scope,$cookieStore,$interval,wss,ps,fs,ks,ls,is,ds,tbs,mtbs;
 
     //internal state
     var pStartY,
@@ -235,8 +235,11 @@
         $log.log('navigate to '+p+'sub page');
     }
 
-    function createTable(scope,tableScope,tableTag,selCb,idKey,){
-        sts.mlBuildTable({
+<<<<<<< HEAD
+=======
+    function createTable(scope,tableScope,tableTag,selCb,idKey){
+        mtbs.mlBuildTable({
+>>>>>>> bceaafab662f4c068f68027769e1bcff5624e675
             scope: scope,
             tableScope:tableScope,
             tag: tableTag,
@@ -246,17 +249,17 @@
     }
 
     function buildAllTable(){
-        createTable($scope,$scope.alarmPred,'alarmPred',null,null);
-        createTable($scope,$scope.faultClassification,'faultClassification',null,null);
-        createTable($scope,$scope.alarmPredDataSet,'alarmPredDataSet',null,null);
-        createTable($scope,$scope.faultClassificationDataSet,'faultClassificationDataSet',null,null);
-        createTable($scope,$scope.modelLibrary,'modelLibrary',modelSelCb,'modelId');
-        modelDetails();
-        createTable($scope,$scope.historicalAlarm,'historicalAlarm',hisAlarmSelCb(),'level');
-        modelDetails();
-        createTable($scope,$scope.currentAlarm,'currentAlarm',curAlarmSelCb,'level');
-        hisAlarmDetails();
-        createTable($scope,$scope.performance,'performance',null,'node');
+        //createTable($scope,$scope.alarmPred,'alarmPred',null,null);
+        //createTable($scope,$scope.faultClassification,'faultClassification',null,null);
+        //createTable($scope,$scope.alarmPredDataSet,'alarmPredDataSet',null,null);
+        //createTable($scope,$scope.faultClassificationDataSet,'faultClassificationDataSet',null,null);
+        //createTable($scope,$scope.modelLibrary,'modelLibrary',null,'modelId');
+        //modelDetails();
+        createTable($scope,$scope.historicalAlarm,'historicalAlarm',null,'level');
+        //modelDetails();
+        //createTable($scope,$scope.currentAlarm,'currentAlarm',null,'level');
+        //hisAlarmDetails();
+        //createTable($scope,$scope.performance,'performance',null,'node');
     }
 
     function modelSelCb ($event,row) {
@@ -264,7 +267,7 @@
             wss.sendEvent(curDetailsReq,{id:row.modelId});
         }
         else{
-            $scope.hideModelLibraryDetailsPanel();
+            //$scope.hideModelLibraryDetailsPanel();
         }
     }
 
@@ -273,7 +276,7 @@
             wss.sendEvent(curDetailsReq,{id:row.id});
         }
         else{
-            $scope.hideCurAlarmDetailsPanel();
+            //$scope.hideCurAlarmDetailsPanel();
         }
     }
 
@@ -282,7 +285,7 @@
             wss.sendEvent(hisDetailsReq,{id:row.id});
         }
         else{
-            $scope.hideHisAlarmDetailsPanel();
+           //$scope.hideHisAlarmDetailsPanel();
         }
     }
 
@@ -447,9 +450,9 @@
         .controller('OvSoonCtrl',
             ['$log','$scope','$http','$timeout','$cookieStore',
                 'WebSocketService', 'FnService', 'KeyService', 'PanelService',
-                'IconService', 'UrlFnService', 'DialogService', 'LionService','SoonTableService',
+                'IconService', 'UrlFnService', 'DialogService', 'LionService','MLTableBuilderService',
                 function(_$log_,_$scope_, $http, $timeout, $cookieStore, _wss_, _fs_, _ks_, _ps_, _is_,
-                         ufs, ds, _ls_,_sts_){
+                         ufs, ds, _ls_,_mtbs_){
             $log = _$log_;
             $scope = _$scope_;
             wss = _wss_;
@@ -459,7 +462,7 @@
             is = _is_;
             //tbs = _tbs_;
             ls = _ls_;
-            sts = _sts_;
+            mtbs = _mtbs_;
 
 
             //button tips
