@@ -1,15 +1,11 @@
 /*
- BUPT SOON MACHINE LEANING MULITIPLE TABLE
- */
-
-/*
- ONOS GUI -- Widget --  soon Table Builder Service
+ ONOS GUI -- Widget -- Table Builder Service
  */
 (function () {
     'use strict';
 
     // injected refs
-    var $log, $interval, fs, wss, ls,$scope;
+    var $log, $interval, fs, wss, ls;
 
     // constants
     var refreshInterval = 2000;
@@ -34,7 +30,7 @@
     //   other user interaction) additional parameters / state can be passed
     //   to the server in the data request.
 
-    function buildTable(o) {
+    function mlBuildTable(o) {
         var handlers = {},
             root = o.tag + 's',
             req = o.tag + 'DataRequest',
@@ -43,48 +39,44 @@
             onResp = fs.isF(o.respCb),
             idKey = o.idKey || 'id',
             oldTableData = [],
-            refreshPromise;
-
-        o.scope.tableData = [];
-        o.scope.changedData = [];
-        o.scope.sortParams = o.sortParams || {};
-        o.scope.autoRefresh = true;
-        o.scope.autoRefreshTip = o.lion_toggle_auto_refresh || 'Toggle auto refresh';
+            refreshPromise,
+            annots = o.tableScope.annots,
+            selIdML = o.tableScope.selId,
+            tableData = o.tableScope.tableData,
+            changedData = o.tableScope.changedData,
+            sortParams = o.tableScope.sortParams;
 
         // === websocket functions --------------------
 
         // === Table Data Response
         function tableDataResponseCb(data) {
             ls.stop();
-            o.scope.tableData = data[root];
-            o.scope.annots = data.annots;
+            tableData = data[root];
+            annots = data.annots;
             onResp && onResp();
 
             // checks if data changed for row flashing
-            if (!angular.equals(o.scope.tableData, oldTableData)) {
-                o.scope.changedData = [];
+            if (!angular.equals(tableData, oldTableData)) {
+                changedData = [];
                 // only flash the row if the data already exists
                 if (oldTableData.length) {
-                    angular.forEach(o.scope.tableData, function (item) {
+                    angular.forEach(tableData, function (item) {
                         if (!fs.containsObj(oldTableData, item)) {
-                            o.scope.changedData.push(item);
+                            changedData.push(item);
                         }
                     });
                 }
-                angular.copy(o.scope.tableData, oldTableData);
+                angular.copy(tableData, oldTableData);
             }
-            function apply(){
-                $scope.$apply();
-            }
-            apply();
+            o.scope.$apply();
         }
         handlers[resp] = tableDataResponseCb;
         wss.bindHandlers(handlers);
 
         // === Table Data Request
         function requestTableData() {
-            var sortParams = o.scope.sortParams,
-                pp = fs.isO(o.scope.payloadParams),
+            var sortParams = sortParams,
+                pp = fs.isO(o.tableScope.payloadParams),
                 payloadParams = pp || {},
                 p = angular.extend({}, sortParams, payloadParams, o.query);
 
@@ -102,7 +94,7 @@
         // === Row Selected
         function rowSelectionCb($event, selRow) {
             var selId = selRow[idKey];
-            o.scope.selId = (o.scope.selId === selId) ? null : selId;
+            selIdML = (selIdML === selId) ? null : selId;
             onSel && onSel($event, selRow);
         }
         o.scope.selectCallback = rowSelectionCb;
@@ -111,7 +103,7 @@
         function fetchDataIfNotWaiting() {
             if (!ls.waiting()) {
                 if (fs.debugOn('widget')) {
-                    $log.debug('Refreshing ' + root + ' page');
+                    $log.debug('Refreshing ' + root + ' subPage');
                 }
                 requestTableData();
             }
@@ -129,31 +121,25 @@
         }
 
         function toggleRefresh() {
-            o.scope.autoRefresh = !o.scope.autoRefresh;
-            o.scope.autoRefresh ? startRefresh() : stopRefresh();
+            o.tableScope.autoRefresh = !o.tableScope.autoRefresh;
+            o.tableScope.autoRefresh ? startRefresh() : stopRefresh();
         }
-        o.scope.toggleRefresh = toggleRefresh;
+        o.tableScope.toggleRefresh = toggleRefresh;
 
         // === Cleanup on destroyed scope
-        function on(){
-            $scope.$on('$destroy', function () {
-                wss.unbindHandlers(handlers);
-                stopRefresh();
-                ls.stop();
-            });
-        }
-        on();
+        o.scope.$on('$destroy', function () {
+            wss.unbindHandlers(handlers);
+            stopRefresh();
+            ls.stop();
+        });
 
         requestTableData();
         startRefresh();
 
-        return {
-            forceRefesh: requestTableData,
-        };
     }
 
-    angular.module('onosWidget')
-        .factory('TableBuilderService',
+    angular.module('ovSoon')
+        .factory('MLTableBuilderService',
             ['$log', '$interval', 'FnService', 'WebSocketService',
                 'LoadingService',
 
@@ -165,7 +151,7 @@
                     ls = _ls_;
 
                     return {
-                        buildTable: buildTable,
+                        mlBuildTable: mlBuildTable,
                     };
                 }]);
 

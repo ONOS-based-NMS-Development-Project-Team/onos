@@ -6,7 +6,7 @@
     'use strict';
 
     //ingected references
-    var $log,$scope,$cookieStore,wss,ps,fs,ks,ls,is,ds,tbs;
+    var $log,$scope,$cookieStore,$interval,wss,ps,fs,ks,ls,is,ds,tbs,mtbs;
 
     //internal state
     var pStartY,
@@ -17,7 +17,8 @@
         historicalAlarmDetailsPanel;
 
     //constants
-    var alarmPredTag = 'alarmPred',
+    var refreshInterval = 2000,
+        alarmPredTag = 'alarmPred',
         faultClassificationTag = 'faultClassification',
         alarmPredDataSetTag = 'alarmPredDataSet',
         faultCLassification = 'faultClassification',
@@ -234,29 +235,28 @@
         $log.log('navigate to '+p+'sub page');
     }
 
-    function createTable(tableTag,selCb,sortParams){
-        tbs.buildTable({
-            scope: $scope,
+    function createTable(scope,tableScope,tableTag,selCb,idKey,){
+        mtbs.mlBuildTable({
+            scope: scope,
+            tableScope:tableScope,
             tag: tableTag,
             selCb: selCb,
-            sortParams:sortParams,
+            idKey:idKey,
         });
     }
 
     function buildAllTable(){
-        $scope.payloadParams = defaultAppliPayloadParams;
-        createTable('alarmPred',null,defaultAlarmPredSortParams);
-        //createTable('faultClassification',null,defaultFaultClassificationSortParams);
-        //$scope.payloadParams = defaultAlarmPredDataSetPayloadParams;
-        //createTable('alarmPredDataSet',null,defaultAlarmPredDataSetSortParams);
-        //$scope.payloadParams = defaultFaultClassificationDataSetPayloadParams;
-        //createTable('faultClassificationDataSet',null,defaultFaultClassificationDataSetSortParams);
-        //$scope.payloadParams = {};
-       // createTable('modelLibrary',modelSelCb,defaultModelLibrarySortParams);
-        //modelDetails();
-       // createTable('currentAlarm',curAlarmSelCb,defaultAlarmSortParams);
-        //hisAlarmDetails();
-       // createTable('performance',null,defaultPerformanceSortParams);
+        createTable($scope,$scope.alarmPred,'alarmPred',null,null);
+        createTable($scope,$scope.faultClassification,'faultClassification',null,null);
+        createTable($scope,$scope.alarmPredDataSet,'alarmPredDataSet',null,null);
+        createTable($scope,$scope.faultClassificationDataSet,'faultClassificationDataSet',null,null);
+        createTable($scope,$scope.modelLibrary,'modelLibrary',modelSelCb,'modelId');
+        modelDetails();
+        createTable($scope,$scope.historicalAlarm,'historicalAlarm',hisAlarmSelCb(),'level');
+        modelDetails();
+        createTable($scope,$scope.currentAlarm,'currentAlarm',curAlarmSelCb,'level');
+        hisAlarmDetails();
+        createTable($scope,$scope.performance,'performance',null,'node');
     }
 
     function modelSelCb ($event,row) {
@@ -447,9 +447,9 @@
         .controller('OvSoonCtrl',
             ['$log','$scope','$http','$timeout','$cookieStore',
                 'WebSocketService', 'FnService', 'KeyService', 'PanelService',
-                'IconService', 'UrlFnService', 'DialogService', 'TableBuilderService','LionService',
+                'IconService', 'UrlFnService', 'DialogService', 'LionService','MLTableBuilderService',
                 function(_$log_,_$scope_, $http, $timeout, $cookieStore, _wss_, _fs_, _ks_, _ps_, _is_,
-                         ufs, ds, _tbs_, _ls_){
+                         ufs, ds, _ls_,_mtbs_){
             $log = _$log_;
             $scope = _$scope_;
             wss = _wss_;
@@ -457,8 +457,9 @@
             ks = _ks_;
             ps = _ps_;
             is = _is_;
-            tbs = _tbs_;
+            //tbs = _tbs_;
             ls = _ls_;
+            mtbs = _mtbs_;
 
 
             //button tips
@@ -479,6 +480,7 @@
             $scope.showPerformanceDataTip = 'show performance data';
             $scope.deleteDataSetTip = 'delete this data set';
             $scope.dataSetShowSelectTip = 'select which data set to show';
+            $scope.autoRefreshTip = 'toggle auto refresh';
 
             //data request payloads for each sub page
             $scope.alarmPredModelInfo = {};
@@ -494,6 +496,36 @@
             $scope.defaultFaultClssificationModelId = NaN;
 
             $scope.payloadParams = {};
+
+            //tableScope
+            $scope.alarmPred = {};
+            $scope.faultClassification = {};
+            $scope.alarmPredDataSet = {};
+            $scope.faultClassificationDataSet = {};
+            $scope.modelLibrary = {};
+            $scope.historicalAlarm = {};
+            $scope.currentAlarm = {};
+            $scope.performance = {};
+
+            //$scope.alarmPred
+            $scope.alarmPred.tableData = [];
+            $scope.alarmPred.changedData = [];
+            $scope.alarmPred.selIdML = [];
+            $scope.alarmPred.annots = 'no alarm predict data';
+            $scope.alarmPred.sortParams = defaultAlarmPredSortParams;
+            $scope.alarmPred.payloadParams = defaultAppliPayloadParams;
+            $scope.alarmPred.autoRefresh = true;
+
+            //$scope.historicalAlarm
+            $scope.historicalAlarm.tableData = [];
+            $scope.historicalAlarm.changedData = [];
+            $scope.historicalAlarm.selIdML = [];
+            $scope.historicalAlarm.annots = 'no historical alarm data';
+            $scope.historicalAlarm.sortParams = defaultAlarmSortParams;
+            $scope.historicalAlarm.payloadParams = defaultAppliPayloadParams;
+            $scope.historicalAlarm.autoRefresh = true;
+
+
 
             var handlers={};
             handlers[modelInfoResp]=getModelInfo;
@@ -670,12 +702,11 @@
                     })
                 };
             }])
-        .directive('historicalAlarmTable',
+        /*.directive('historicalAlarmTable',
             ['$rootScope','$window','$timeout','TableBuilderService','KeyService',
             function ($rootscope,$window,$timeout,tbs,ks) {
                 return {
                     scope:true,
-                    templateUrl:'historicalTable.html',
                     link: function(scope){
                     tbs.buildTable({
                         scope:scope,
@@ -683,7 +714,7 @@
                         sortParams:defaultAlarmSortParams
                     })
                 },
-            };}]);
+            };}]);*/
 
 
 }());
