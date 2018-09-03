@@ -22,9 +22,9 @@ import org.onosproject.soon.foreground.MLAppType;
 import org.onosproject.soon.foreground.ModelControlService;
 import org.onosproject.ui.RequestHandler;
 import org.onosproject.ui.UiMessageHandler;
-import univ.bupt.soon.mlshow.front.handler.AlarmHistoricalDataRequestHandler;
-import univ.bupt.soon.mlshow.front.handler.AlarmHistoricalDetailRequestHandler;
-import univ.bupt.soon.mlshow.front.handler.AlarmPredDataRequestHandler;
+import univ.bupt.soon.mlshow.front.handler.dataset.AlarmHistoricalDataRequestHandler;
+import univ.bupt.soon.mlshow.front.handler.dataset.AlarmPredDataSetDataRequestHandler;
+import univ.bupt.soon.mlshow.front.handler.model.AlarmPredDataRequestHandler;
 
 import java.util.*;
 
@@ -38,12 +38,26 @@ public class MLMessageHandler extends UiMessageHandler {
 
     @Override
     protected Collection<RequestHandler> createRequestHandlers() {
+        /* 电网采集到的相关数据的展示 */
+        // 历史告警
         AlarmHistoricalDataRequestHandler ahdrh = new AlarmHistoricalDataRequestHandler();
         ahdrh.setService(modelServices.get(MLAppType.ORIGINAL_HISTORY_ALARM_DATA));
+        // 当前告警
+
+        // 性能信息
+
+
+        /* 告警预测数据的展示 */
+        // 告警预测数据集
+        AlarmPredDataSetDataRequestHandler apdsdrh = new AlarmPredDataSetDataRequestHandler();
+        apdsdrh.setService(modelServices.get(MLAppType.ALARM_PREDICTION));
+        // 告警预测模型的应用
+        AlarmPredDataRequestHandler apdrh = new AlarmPredDataRequestHandler();
+        apdrh.setService(modelServices.get(MLAppType.ALARM_PREDICTION));
+
         return ImmutableSet.of(
-                new AlarmHistoricalDetailRequestHandler(),
                 ahdrh,
-                new AlarmPredDataRequestHandler()
+                apdsdrh
         );
     }
 

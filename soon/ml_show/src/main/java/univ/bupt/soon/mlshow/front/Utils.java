@@ -27,9 +27,12 @@ public class Utils {
 
     public static final String ID = "id";
     public static final String INPUT = "input";
-    public static final String ALARM_HAPPEN = "alarm_happen";
+    public static final String ALARM_HAPPEN = "alarmHappen";
     public static final String TRAIN = "train";
-    public static final String DATAID = "dataid";
+    public static final String DATA_ID = "dataId";
+
+    public static final String DATASET_ID = "dataSetId";
+    public static final String DATASET_TYPE =  "dataSetType";
 
 
     public static final String ALARM_SOURCE = "alarmSource";
@@ -49,5 +52,13 @@ public class Utils {
     public static final String CLEAN_TIME = "cleanTime";
     public static final String CONFIRM_TIME = "confirmTime";
     public static final String PATH_LEVEL = "pathLevel";
+
+
+    // 告警预测模型应用结果
+    public static final String TIME = "time";
+    public static final String MODEL_ID = "modelId";
+    public static final String TRAIN_DATASET_ID = "trainDataSetId";
+    public static final String TEST_DATASET_ID = "testDataSetId";
+    public static final String TEST_ACCURACY = "testAccuracy";
 
 }
