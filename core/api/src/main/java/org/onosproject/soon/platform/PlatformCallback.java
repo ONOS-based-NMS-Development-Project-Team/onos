@@ -2,14 +2,36 @@ package org.onosproject.soon.platform;
 
 
 import org.onosproject.soon.MonitorData;
+import org.onosproject.soon.foreground.ForegroundCallback;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 平台的回调接口。可见{@link MLPlatformService}。
  */
 public interface PlatformCallback {
+
+    /**
+     * 设置平台回调接口的modelId
+     * @param modelId
+     * @return
+     */
+    void setModelId(int modelId);
+
+
+    /**
+     * 设置该平台回调接口对接的前台回调接口
+     * @param fcb
+     */
+    void setForegroundCallback(ForegroundCallback fcb);
+
+    /**
+     * 获取该平台回调接口进行模型应用的输入数据.Map.key表示msgId.
+     * @return
+     */
+    Map<Integer, List<List<Double>>> getInputs();
 
     /**
      * 训练集传输结束时的消息通知。

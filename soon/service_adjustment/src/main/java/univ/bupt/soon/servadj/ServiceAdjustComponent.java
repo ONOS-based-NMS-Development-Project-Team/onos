@@ -9,9 +9,12 @@ import org.onosproject.core.CoreService;
 import org.onosproject.soon.MonitorData;
 import org.onosproject.soon.dataset.DatabaseAdapter;
 import org.onosproject.soon.dataset.original.Item;
+import org.onosproject.soon.dataset.original.servadj.AreaPredictionItem;
+import org.onosproject.soon.dataset.original.servadj.EdgePredictionItem;
 import org.onosproject.soon.foreground.ForegroundCallback;
 import org.onosproject.soon.foreground.MLAppRegistry;
 import org.onosproject.soon.foreground.MLAppType;
+import org.onosproject.soon.foreground.ModelControlService;
 import org.onosproject.soon.mlmodel.MLAlgorithmConfig;
 import org.onosproject.soon.mlmodel.MLAlgorithmType;
 import org.onosproject.soon.mlmodel.config.nn.*;
@@ -19,7 +22,9 @@ import org.onosproject.soon.platform.MLPlatformService;
 import org.postgresql.Driver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import univ.bupt.soon.servadj.predservice.AreaPredPlatformCallback;
 import univ.bupt.soon.servadj.predservice.AreaPredictionImpl;
+import univ.bupt.soon.servadj.predservice.LinkPredPlatformCallback;
 import univ.bupt.soon.servadj.predservice.LinkPredictionImpl;
 
 import java.net.URI;
@@ -50,8 +55,20 @@ public class ServiceAdjustComponent {
     protected void activate()  {
         appId = coreService.registerApplication("unive.bupt.soon.servadj");
 
-        test();
-        test();
+        databese.connect();
+        LinkPredictionImpl lpi = new LinkPredictionImpl(MLAppType.LINK_PREDICTION, "edge_load",
+                EdgePredictionItem.class, LinkPredPlatformCallback.class, databese, platformService);
+        AreaPredictionImpl area1 = new AreaPredictionImpl(MLAppType.BUSINESS_AREA_PREDICTION, "area_load",
+                AreaPredictionItem.class, AreaPredPlatformCallback.class, databese, platformService, 1);
+        AreaPredictionImpl area3 = new AreaPredictionImpl(MLAppType.RESIDENTIAL_AREA_PREDICTION, "area_load",
+                AreaPredictionItem.class, AreaPredPlatformCallback.class, databese, platformService, 2);
+//        mlAppRegistry.register(lpi, lpi.getServiceName());
+//        mlAppRegistry.register(area1, area1.getServiceName());
+//        mlAppRegistry.register(area3, area3.getServiceName());
+
+        test(lpi);
+        test(area1);
+        test(area3);
 //        if (databese.connect()) {
             // 如果数据库连接成功，向前台注册应用
 //            LinkPredictionImpl lpi = new LinkPredictionImpl(databese, platformService);
@@ -71,9 +88,8 @@ public class ServiceAdjustComponent {
     /**
      * 测试从app到平台再到底层的接口
      */
-    private void test() {
+    private void test(ModelControlService service) {
         databese.connect();
-        LinkPredictionImpl lpi = new LinkPredictionImpl(databese, platformService);
         // 注册前台回调接口
         class TestForegroundCallback implements ForegroundCallback {
 
@@ -106,7 +122,7 @@ public class ServiceAdjustComponent {
                 log.info("received message {} : dataset {} trans end!", i, i1);
                 // 因为只有一个训练集和测试集,而且先传输训练集,再传输测试集.因此接到这个消息意味着所有数据集传输结束
                 // 开始训练
-                lpi.startTraining(modelId);
+                service.startTraining(modelId);
             }
 
             @Override
@@ -118,9 +134,9 @@ public class ServiceAdjustComponent {
             public void trainEnd(int i) {
                 log.info("received message {} : training end", i);
                 // 训练结束后开始应用
-                lpi.applyModel(modelId, 5);
+                service.applyModel(modelId, 5);
                 // 并且请求URL
-                lpi.queryURL(modelId);
+                service.queryURL(modelId);
             }
 
             @Override
@@ -131,7 +147,7 @@ public class ServiceAdjustComponent {
         TestForegroundCallback foregroundCallback = new TestForegroundCallback();
 
         // 构建神经网络配置
-        MLAlgorithmConfig config = new NNAlgorithmConfig(MLAlgorithmType.FCNNModel, 45, 15,
+        MLAlgorithmConfig config = new NNAlgorithmConfig(MLAlgorithmType.FCNNModel, 31, 16,
                 Lists.newArrayList(40),
                 ActivationFunction.RELU,
                 ParamInit.DEFAULT,
@@ -143,13 +159,13 @@ public class ServiceAdjustComponent {
                 0.005,
                 LRAdjust.CONSTANT,
                 0);
-        Pair<Integer, Integer> mm = lpi.addNewModel(MLAlgorithmType.FCNNModel, config, foregroundCallback);
+        Pair<Integer, Integer> mm = service.addNewModel(MLAlgorithmType.FCNNModel, config, foregroundCallback);
         if (mm.getLeft() != -1) {
             int modelId = mm.getLeft();
             foregroundCallback.modelId = modelId;
-            Pair<Set<Integer>, Set<Integer>> tt = lpi.transAvailableDataset(modelId);
-            lpi.setDataset(modelId, tt.getLeft().iterator().next());
-            lpi.startTraining(modelId);
+            Pair<Set<Integer>, Set<Integer>> tt = service.transAvailableDataset(modelId);
+            service.setDataset(modelId, tt.getLeft().iterator().next());
+            service.startTraining(modelId);
         }
 
 
