@@ -235,7 +235,7 @@
         $log.log('navigate to '+p+'sub page');
     }
 
-    function createTable(scope,tableScope,tableTag,selCb,idKey,){
+    function createTable(scope,tableScope,tableTag,selCb,idKey){
         mtbs.mlBuildTable({
             scope: scope,
             tableScope:tableScope,
@@ -246,17 +246,17 @@
     }
 
     function buildAllTable(){
-        createTable($scope,$scope.alarmPred,'alarmPred',null,null);
-        createTable($scope,$scope.faultClassification,'faultClassification',null,null);
-        createTable($scope,$scope.alarmPredDataSet,'alarmPredDataSet',null,null);
-        createTable($scope,$scope.faultClassificationDataSet,'faultClassificationDataSet',null,null);
-        createTable($scope,$scope.modelLibrary,'modelLibrary',modelSelCb,'modelId');
-        modelDetails();
-        createTable($scope,$scope.historicalAlarm,'historicalAlarm',hisAlarmSelCb(),'level');
-        modelDetails();
-        createTable($scope,$scope.currentAlarm,'currentAlarm',curAlarmSelCb,'level');
-        hisAlarmDetails();
-        createTable($scope,$scope.performance,'performance',null,'node');
+        //createTable($scope,$scope.alarmPred,'alarmPred',null,null);
+        //createTable($scope,$scope.faultClassification,'faultClassification',null,null);
+        //createTable($scope,$scope.alarmPredDataSet,'alarmPredDataSet',null,null);
+        //createTable($scope,$scope.faultClassificationDataSet,'faultClassificationDataSet',null,null);
+        //createTable($scope,$scope.modelLibrary,'modelLibrary',null,'modelId');
+        //modelDetails();
+        createTable($scope,$scope.historicalAlarm,'historicalAlarm',null,'level');
+        //modelDetails();
+        //createTable($scope,$scope.currentAlarm,'currentAlarm',null,'level');
+        //hisAlarmDetails();
+        //createTable($scope,$scope.performance,'performance',null,'node');
     }
 
     function modelSelCb ($event,row) {
@@ -264,7 +264,7 @@
             wss.sendEvent(curDetailsReq,{id:row.modelId});
         }
         else{
-            $scope.hideModelLibraryDetailsPanel();
+            //$scope.hideModelLibraryDetailsPanel();
         }
     }
 
@@ -273,7 +273,7 @@
             wss.sendEvent(curDetailsReq,{id:row.id});
         }
         else{
-            $scope.hideCurAlarmDetailsPanel();
+            //$scope.hideCurAlarmDetailsPanel();
         }
     }
 
@@ -282,7 +282,7 @@
             wss.sendEvent(hisDetailsReq,{id:row.id});
         }
         else{
-            $scope.hideHisAlarmDetailsPanel();
+           //$scope.hideHisAlarmDetailsPanel();
         }
     }
 

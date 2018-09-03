@@ -51,16 +51,16 @@
         // === Table Data Response
         function tableDataResponseCb(data) {
             ls.stop();
-            tableData = data[root];
+            o.tableScope.tableData = data[root];
             annots = data.annots;
             onResp && onResp();
 
             // checks if data changed for row flashing
-            if (!angular.equals(tableData, oldTableData)) {
+            if (!angular.equals(o.tableScope.tableData, oldTableData)) {
                 changedData = [];
                 // only flash the row if the data already exists
                 if (oldTableData.length) {
-                    angular.forEach(tableData, function (item) {
+                    angular.forEach(o.tableScope.tableData, function (item) {
                         if (!fs.containsObj(oldTableData, item)) {
                             changedData.push(item);
                         }

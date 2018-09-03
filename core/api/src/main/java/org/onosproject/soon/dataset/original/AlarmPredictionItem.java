@@ -10,11 +10,11 @@ import java.util.Arrays;
 /**
  * CREATE TABLE public.alarm_prediction
  * (
- *   input real[], -- 输入数据，长度是108
- *   alarm_happen boolean, -- label表示是否发生告警
- *   id integer NOT NULL DEFAULT nextval('alarm_pred1_id_seq'::regclass),
+ *   id serial,
  *   train boolean, -- 是否是训练集，true表示是训练集，false表示是测试集
- *   dataid smallint,
+ *   input_type character varying(30),  -- 输入数据的类型
+ *   input real[], -- 输入数据，长度不定,随着告警变化而变化
+ *   alarm_happen boolean, -- label表示是否发生告警
  *   CONSTRAINT alarm_pred1_primary_key PRIMARY KEY (id)
  * )
  */
@@ -22,9 +22,10 @@ public class AlarmPredictionItem implements Item {
 
 
     private int id;
+    private boolean train;
+    private String input_type;
     private double[] input;
     private boolean alarm_happen;
-    private boolean train;
     private int dataid;
 
 
@@ -68,63 +69,53 @@ public class AlarmPredictionItem implements Item {
         this.dataid = dataid;
     }
 
-    @Override
-    public String toString() {
-        return "AlarmPredictionItem{" +
-                "id=" + id +
-                ", input=" + Arrays.toString(input) +
-                ", alarm_happen=" + alarm_happen +
-                ", train=" + train +
-                ", dataid=" + dataid +
-                '}';
+    public String getInput_type() {
+        return input_type;
+    }
+
+    public void setInput_type(String input_type) {
+        this.input_type = input_type;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
+
         if (o == null || getClass() != o.getClass()) return false;
+
         AlarmPredictionItem that = (AlarmPredictionItem) o;
-        return id == that.id &&
-                alarm_happen == that.alarm_happen &&
-                train == that.train &&
-                dataid == that.dataid &&
-                comp(input, that.input);
-    }
 
-    private boolean comp(double[] a, double[] b) {
-        if (a==null && b==null) {
-            return true;
-        }
-        if (a==null || b==null) {
-            return false;
-        }
-        if (a.length != b.length) {
-            return false;
-        }
-        for (int i=0; i<a.length; i++) {
-            if (a[i] != b[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private int hash(double[] a) {
-        if (a == null) {
-            return 0;
-        }
-        int rtn = Objects.hashCode(a[0]);
-        if (a.length>1) {
-            for (int i=1; i<a.length; i++) {
-                rtn = Objects.hashCode(rtn, a[i]);
-            }
-        }
-        return rtn;
+        return new EqualsBuilder()
+                .append(id, that.id)
+                .append(train, that.train)
+                .append(alarm_happen, that.alarm_happen)
+                .append(dataid, that.dataid)
+                .append(input_type, that.input_type)
+                .append(input, that.input)
+                .isEquals();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(id, hash(input), alarm_happen, train, dataid);
+        return new HashCodeBuilder(17, 37)
+                .append(id)
+                .append(train)
+                .append(input_type)
+                .append(input)
+                .append(alarm_happen)
+                .append(dataid)
+                .toHashCode();
     }
 
+    @Override
+    public String toString() {
+        return "AlarmPredictionItem{" +
+                "id=" + id +
+                ", train=" + train +
+                ", input_type='" + input_type + '\'' +
+                ", input=" + Arrays.toString(input) +
+                ", alarm_happen=" + alarm_happen +
+                ", dataid=" + dataid +
+                '}';
+    }
 }
