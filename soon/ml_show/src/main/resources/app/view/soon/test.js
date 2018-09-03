@@ -6,7 +6,7 @@
     'use strict';
 
     //ingected references
-    var $log,$scope,$cookieStore,$interval,wss,ps,fs,ks,ls,is,ds,tbs,mtbs;
+    var $log,$scope,$cookieStore,$interval,wss,ps,fs,ks,ls,is,ds,tbs,sts;
 
     //internal state
     var pStartY,
@@ -236,7 +236,7 @@
     }
 
     function createTable(scope,tableScope,tableTag,selCb,idKey,){
-        mtbs.mlBuildTable({
+        sts.mlBuildTable({
             scope: scope,
             tableScope:tableScope,
             tag: tableTag,
@@ -447,9 +447,9 @@
         .controller('OvSoonCtrl',
             ['$log','$scope','$http','$timeout','$cookieStore',
                 'WebSocketService', 'FnService', 'KeyService', 'PanelService',
-                'IconService', 'UrlFnService', 'DialogService', 'LionService','MLTableBuilderService',
+                'IconService', 'UrlFnService', 'DialogService', 'LionService','SoonTableService',
                 function(_$log_,_$scope_, $http, $timeout, $cookieStore, _wss_, _fs_, _ks_, _ps_, _is_,
-                         ufs, ds, _ls_,_mtbs_){
+                         ufs, ds, _ls_,_sts_){
             $log = _$log_;
             $scope = _$scope_;
             wss = _wss_;
@@ -459,7 +459,7 @@
             is = _is_;
             //tbs = _tbs_;
             ls = _ls_;
-            mtbs = _mtbs_;
+            sts = _sts_;
 
 
             //button tips

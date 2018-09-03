@@ -56,17 +56,17 @@
             onResp && onResp();
 
             // checks if data changed for row flashing
-            if (!angular.equals(tableData, oldTableData)) {
+            if (!angular.equals(o.tableScope.tableData, oldTableData)) {
                 changedData = [];
                 // only flash the row if the data already exists
                 if (oldTableData.length) {
-                    angular.forEach(tableData, function (item) {
+                    angular.forEach(o.tableScope.tableData, function (item) {
                         if (!fs.containsObj(oldTableData, item)) {
                             changedData.push(item);
                         }
                     });
                 }
-                angular.copy(tableData, oldTableData);
+                angular.copy(o.tableScope.tableData, oldTableData);
             }
             o.scope.$apply();
         }
@@ -139,7 +139,7 @@
     }
 
     angular.module('ovSoon')
-        .factory('MLTableBuilderService',
+        .factory('SoonTableService',
             ['$log', '$interval', 'FnService', 'WebSocketService',
                 'LoadingService',
 

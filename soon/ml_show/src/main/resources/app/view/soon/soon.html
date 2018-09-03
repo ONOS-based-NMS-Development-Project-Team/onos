@@ -400,7 +400,7 @@
                                 </td>
                             </tr>
 
-                            <tr ng-repeat="historicalAlarm in tableData | filter:queryFilter track by $index"
+                            <tr ng-repeat="historicalAlarm in historicalAlarm.tableData | filter:queryFilter track by $index"
                                 ng-repeat-complete row-id="{{historicalAlarm.level}}">
                                 <td>{{historicalAlarm.level}}</td>
                                 <td>{{historicalAlarm.alarmSource}}</td>
