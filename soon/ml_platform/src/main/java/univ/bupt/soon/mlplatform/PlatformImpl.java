@@ -133,13 +133,15 @@ public class PlatformImpl implements MLPlatformService {
     @Override
     public int addWebsocketConnection(URI uri) {
         try {
+            sockId++;
+            String absPath = uri.toString()+"/"+sockId;
             WebSocketClient client = new WebSocketClient();
             client.setMaxTextMessageSize(100 * 1024 * 1024);
-            sockId++;
+
             SoonWebsocket websocket = new SoonWebsocket(sockId);
-            Future<WebSocket.Connection> future = client.open(uri, websocket);
+            Future<WebSocket.Connection> future = client.open(URI.create(absPath), websocket);
             WebSocket.Connection conn = future.get(5, TimeUnit.SECONDS);  // 最多等五秒获取结果
-            log.info("connected to {} with id {}", uri, sockId);
+            log.info("connected to {} with id {}", absPath, sockId);
             socks.put(sockId, websocket);
         } catch (Exception e) {
             socks.remove(sockId);

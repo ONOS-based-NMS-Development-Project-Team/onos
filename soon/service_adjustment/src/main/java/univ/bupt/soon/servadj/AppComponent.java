@@ -47,7 +47,6 @@ public class AppComponent {
 //    protected MLAppRegistry mlAppRegistry;
 
 
-    @Activate
     protected void activate()  {
 //        appId = coreService.registerApplication("unive.bupt.soon.servconstruct");
 //        mlAppRegistry.register(this, MLAppType.SERVICE_RECONSTRUCTION);
@@ -69,7 +68,6 @@ public class AppComponent {
 
     }
 
-    @Deactivate
     protected void deactivate() {
 //        mlAppRegistry.unregister(MLAppType.SERVICE_RECONSTRUCTION);
 
