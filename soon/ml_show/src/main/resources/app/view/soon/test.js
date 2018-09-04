@@ -32,6 +32,8 @@
         faultClaReq = 'faultClassificationRequest',
         alarmPredDataSetReq = 'alarmPredDataSetDataRequest',
         faultClassificationDataSetReq = 'faultClassificationDataSetDataRequest',
+        areaPredDataSetReq = 'areaPredDataSetDataRequest',
+        edgePredDataSetReq = 'edgePredDataSetDataRequest',
         currentAlarmReq = 'alarmCurrentDataRequest',
         historicalAlarmReq = 'alarmHistoricalDataRequest',
         performanceReq = 'performanceDataRequest',
@@ -50,6 +52,7 @@
         hisDetailsReq = 'historicalAlarmDetailsRequest',
         hisDetailsResp = 'historicalAlarmDetailsResponse',
         alarmPredDialogId = 'alarmPred-setting-dialog',
+        dataSetSelectDialogId = 'dataSet-select-dialog',
         dialogOpts = {
             edge: 'right',
             width:400
@@ -66,6 +69,18 @@
             firstCol:'time',
             firstDir:'asc',
             secondCol:'faultType',
+            secondDir:'asc'
+        },
+        defaultAreaPredSortParams = {
+            firstCol:'time',
+            firstDir:'asc',
+            secondCol:'areaId',
+            secondDir:'asc'
+        },
+        defaultEdgePredSortParams = {
+            firstCol:'time',
+            firstDir:'asc',
+            secondCol:'edgeId',
             secondDir:'asc'
         },
         defaultModelLibrarySortParams = {
@@ -86,6 +101,18 @@
             secondCol:'faultType',
             secondDir:'asc'
         },
+        defaultAreaPredDataSetSortParams = {
+            firstCol:'dataId',
+            firstDir:'asc',
+            secondCol:'areaId',
+            secondDir:'asc'
+        },
+        defaultEdgePredDataSetSortParams = {
+            firstCol:'dataId',
+            firstDir:'asc',
+            secondCol:'edgeId',
+            secondDir:'asc'
+        },
         defaultAlarmSortParams = {
             firstCol:'level',
             firstDir:'asc',
@@ -104,20 +131,12 @@
                 recentItemNum: '1'
             }
         },
-        defaultAlarmPredDataSetPayloadParams = {
+        defaultDataSetPayloadParams = {
             setting: {
-                algorithmType: 'ANN',
+                algorithmType: 'ann',
                 dataSetType: 'train',
-                modelId: 'default',
-                dataSetId: 'default'
-            }
-        },
-        defaultFaultClassificationDataSetPayloadParams = {
-            setting: {
-                algorithmType: 'ANN',
-                dataSetType: 'train',
-                modelId: 'default',
-                dataSetId: 'default'
+                modelId: '',
+                dataSetId: ''
             }
         },
         modelInfoResp = 'modelInformationResponse',
@@ -127,6 +146,14 @@
         currentAlarmSearchByText = ['Search By','All Fields','level','alarm source','name','location','frequency','path level'],
         historicalAlarmSearchByValue = ['','$','level','alarmSource','name','type','location','pathLevel'],
         historicalAlarmSearchByText = ['Search By','All Fields','level','alarmSource','name','type','location','path level'],
+        alarmPredDataSetSearchByValue = ['dataId','alarmHappen','inputType','dataSetId','dataSetType','input'],
+        alarmPredDataSetSearchByText = ['id','alarm happen','input type','data set id','data set type','input'],
+        faultClassificationDataSetSearchByValue = ['dataId','faultType','dataSetId','dataSetType','input'],
+        faultClassificationDataSetSearchByText = ['id','fault type','data set id','data set type','input'],
+        areaPredDataSetSearchByValue = ['dataId','edgeId','dataSetId','dataSetType','tide','timePoint','oneHoursAfter','twoHoursBefore'],
+        areaPredDataSetSearchByText = ['id','edge id','data set id','data set type','tide','timePoint','output','input'],
+        edgePredDataSetSearchByValue = ['dataId','areaId','dataSetId','dataSetType','timePoint','oneHoursAfter','twoHoursBefore'],
+        edgePredDataSetSearchByText = ['id','area id','data set id','data set type','timePoint','output','input'],
         modelDetailsPropOrder = ['applicationType','modelId','algorithmType','modelState','trainDataSetId','testDataSetId','modelAccuracy'],
         modelDetailsPropOrderText = ['application type','model id','algorithm type','model state','train data set id','test data set id','model accuracy'],
         annParams = ['inputNum','outputNum','hiddenLayer','activationFunction','weightInit','biasInit','lossFunction','batchSize','epoch','optimizer','learningRate','lrAdjust','dropout'],
@@ -224,22 +251,49 @@
         d3.select('#dataSet h2').text(p);
         if(p === 'alarm predict data set'){
             d3.select('#faultClassificationDataSet').style('display','none');
+            d3.select('#areaPredDataSet').style('display','none');
+            d3.select('#edgePredDataSet').style('display','none');
             d3.select('#alarmPredDataSet').style('display','block');
-            d3.select('dataSetSearchBy').attr('value','alarmHappen').text('alarm happen');
+            d3.selectAll('#dataSetSearchBy option').remove();
+            alarmPredDataSetSearchByValue.forEach(function (item,i) {
+                d3.select('#dataSetSearchBy').append('option').attr('value',item).text(alarmPredDataSetSearchByText[i]);
+            })
         }
         if(p === 'fault classification data set'){
             d3.select('#alarmPredDataSet').style('display','none');
+            d3.select('#areaPredDataSet').style('display','none');
+            d3.select('#edgePredDataSet').style('display','none');
             d3.select('#faultClassificationDataSet').style('display','block');
-            d3.select('dataSetSearchBy').attr('value','faultClassification').text('fault classification');
+            d3.selectAll('#dataSetSearchBy option').remove();
+            faultClassificationDataSetSearchByValue.forEach(function (item,i) {
+                d3.select('#dataSetSearchBy').append('option').attr('value',item).text(faultClassificationDataSetSearchByText[i]);
+            })
+        }
+        if(p === 'area predict data set'){
+            d3.select('#alarmPredDataSet').style('display','none');
+            d3.select('#faultClassificationDataSet').style('display','none');
+            d3.select('#edgePredDataSet').style('display','none');
+            d3.select('#areaPredDataSet').style('display','block');
+            d3.selectAll('#dataSetSearchBy option').remove();
+            areaPredDataSetSearchByValue.forEach(function (item,i) {
+                d3.select('#dataSetSearchBy').append('option').attr('value',item).text(areaPredDataSetSearchByText[i]);
+            })
+        }
+        if(p === 'edge predict data set'){
+            d3.select('#alarmPredDataSet').style('display','none');
+            d3.select('#faultClassificationDataSet').style('display','none');
+            d3.select('#areaPredDataSet').style('display','none');
+            d3.select('#edgePredDataSet').style('display','block');
+            d3.selectAll('#dataSetSearchBy option').remove();
+            edgePredDataSetSearchByValue.forEach(function (item,i) {
+                d3.select('#dataSetSearchBy').append('option').attr('value',item).text(edgePredDataSetSearchByText[i]);
+            })
         }
         $log.log('navigate to '+p+'sub page');
     }
 
-<<<<<<< HEAD
-=======
     function createTable(scope,tableScope,tableTag,selCb,idKey){
         mtbs.mlBuildTable({
->>>>>>> bceaafab662f4c068f68027769e1bcff5624e675
             scope: scope,
             tableScope:tableScope,
             tag: tableTag,
@@ -251,15 +305,19 @@
     function buildAllTable(){
         //createTable($scope,$scope.alarmPred,'alarmPred',null,null);
         //createTable($scope,$scope.faultClassification,'faultClassification',null,null);
-        //createTable($scope,$scope.alarmPredDataSet,'alarmPredDataSet',null,null);
-        //createTable($scope,$scope.faultClassificationDataSet,'faultClassificationDataSet',null,null);
+        //createTable($scope,$scope.areaPred,'areaPred',null,null);
+        //createTable($scope,$scope.edgePred,'edgePred',null,null);
+        createTable($scope,$scope.alarmPredDataSet,'alarmPredDataSet',null,'dataId');
+        createTable($scope,$scope.faultClassificationDataSet,'faultClassificationDataSet',null,'dataId');
+        createTable($scope,$scope.areaPredDataSet,'areaPredDataSet',null,'dataId');
+        createTable($scope,$scope.edgePredDataSet,'edgePredDataSet',null,'dataId');
         //createTable($scope,$scope.modelLibrary,'modelLibrary',null,'modelId');
         //modelDetails();
         createTable($scope,$scope.historicalAlarm,'historicalAlarm',null,'level');
         //modelDetails();
-        //createTable($scope,$scope.currentAlarm,'currentAlarm',null,'level');
+        createTable($scope,$scope.currentAlarm,'currentAlarm',null,'level');
         //hisAlarmDetails();
-        //createTable($scope,$scope.performance,'performance',null,'node');
+        createTable($scope,$scope.performance,'performance',null,'node');
     }
 
     function modelSelCb ($event,row) {
@@ -289,7 +347,7 @@
         }
     }
 
-    //some necessary step for details panel
+    //callback handlers for details panel
     function modelDetails() {
         var handlers = {};
         handlers[modelDetailsResp] = modelRespDetailsCb;
@@ -446,6 +504,13 @@
         })
     }
 
+    function dataSetSelectDialogContent () {
+        var content;
+        content = ds.createDiv();
+        content.append('iframe').attr('src','/app/view/soon/dataSetSelectDialog.html');
+        return content;
+    }
+
     angular.module('ovSoon',['ngCookies'])
         .controller('OvSoonCtrl',
             ['$log','$scope','$http','$timeout','$cookieStore',
@@ -491,8 +556,7 @@
             $scope.currentAlarmInfo = {};
             $scope.historicalAlarmInfo = {};
             $scope.performanceInfo = {};
-            $scope.alarmPredDataSetInfo = {};
-            $scope.faultClassificationDataSetInfo = {};
+            $scope.dataSetInfo = {};
 
             //default model id for each application
             $scope.defaultAlarmPredModelId = NaN;
@@ -500,11 +564,15 @@
 
             $scope.payloadParams = {};
 
-            //tableScope
+            //tableScope for create table
             $scope.alarmPred = {};
             $scope.faultClassification = {};
+            $scope.areaPred = {};
+            $scope.edgePred = {};
             $scope.alarmPredDataSet = {};
             $scope.faultClassificationDataSet = {};
+            $scope.areaPredDataSet = {};
+            $scope.edgePredDataSet = {};
             $scope.modelLibrary = {};
             $scope.historicalAlarm = {};
             $scope.currentAlarm = {};
@@ -519,14 +587,95 @@
             $scope.alarmPred.payloadParams = defaultAppliPayloadParams;
             $scope.alarmPred.autoRefresh = true;
 
+            //$scope.faultClassification
+            $scope.faultClassification.tableData = [];
+            $scope.faultClassification.changedData = [];
+            $scope.faultClassification.selIdML = [];
+            $scope.faultClassification.annots = 'no fault classification data';
+            $scope.faultClassification.sortParams = defaultFaultClassificationSortParams;
+            $scope.faultClassification.payloadParams = defaultAppliPayloadParams;
+            $scope.faultClassification.autoRefresh = true;
+
+            //$scope.areaPred
+            $scope.areaPred.tableData = [];
+            $scope.areaPred.changedData = [];
+            $scope.areaPred.selIdML = [];
+            $scope.areaPred.annots = 'no area predict data';
+            $scope.areaPred.sortParams = defaultAreaPredSortParams;
+            $scope.areaPred.payloadParams = defaultAppliPayloadParams;
+            $scope.areaPred.autoRefresh = true;
+
+            //$scope.edgePred
+            $scope.edgePred.tableData = [];
+            $scope.edgePred.changedData = [];
+            $scope.edgePred.selIdML = [];
+            $scope.edgePred.annots = 'no edge predict data';
+            $scope.edgePred.sortParams = defaultEdgePredSortParams;
+            $scope.edgePred.payloadParams = defaultAppliPayloadParams;
+            $scope.edgePred.autoRefresh = true;
+
+            //$scope.alarmPredDataSet
+            $scope.alarmPredDataSet.tableData = [];
+            $scope.alarmPredDataSet.changedData = [];
+            $scope.alarmPredDataSet.selIdML = [];
+            $scope.alarmPredDataSet.annots = 'no alarm predict data set data';
+            $scope.alarmPredDataSet.sortParams = defaultAlarmPredDataSetSortParams;
+            $scope.alarmPredDataSet.payloadParams = defaultDataSetPayloadParams;
+            $scope.alarmPredDataSet.autoRefresh = true;
+
+            //$scope.faultClassificationDataSet
+            $scope.faultClassificationDataSet.tableData = [];
+            $scope.faultClassificationDataSet.changedData = [];
+            $scope.faultClassificationDataSet.selIdML = [];
+            $scope.faultClassificationDataSet.annots = 'no fault classification data set data';
+            $scope.faultClassificationDataSet.sortParams = defaultFaultClassificationDataSetSortParams;
+            $scope.faultClassificationDataSet.payloadParams = defaultDataSetPayloadParams;
+            $scope.faultClassificationDataSet.autoRefresh = true;
+
+            //$scope.areaPredDataSet
+            $scope.areaPredDataSet.tableData = [];
+            $scope.areaPredDataSet.changedData = [];
+            $scope.areaPredDataSet.selIdML = [];
+            $scope.areaPredDataSet.annots = 'no area predict data set data';
+            $scope.areaPredDataSet.sortParams = defaultAreaPredDataSetSortParams;
+            $scope.areaPredDataSet.payloadParams = defaultDataSetPayloadParams;
+            $scope.areaPredDataSet.autoRefresh = true;
+
+            //$scope.edgePredDataSet
+            $scope.edgePredDataSet.tableData = [];
+            $scope.edgePredDataSet.changedData = [];
+            $scope.edgePredDataSet.selIdML = [];
+            $scope.edgePredDataSet.annots = 'no edge predict data set data';
+            $scope.edgePredDataSet.sortParams = defaultEdgePredDataSetSortParams;
+            $scope.edgePredDataSet.payloadParams = defaultDataSetPayloadParams;
+            $scope.edgePredDataSet.autoRefresh = true;
+
             //$scope.historicalAlarm
             $scope.historicalAlarm.tableData = [];
             $scope.historicalAlarm.changedData = [];
             $scope.historicalAlarm.selIdML = [];
             $scope.historicalAlarm.annots = 'no historical alarm data';
             $scope.historicalAlarm.sortParams = defaultAlarmSortParams;
-            $scope.historicalAlarm.payloadParams = defaultAppliPayloadParams;
+            $scope.historicalAlarm.payloadParams = null;
             $scope.historicalAlarm.autoRefresh = true;
+
+            //$scope.currentAlarm
+            $scope.currentAlarm.tableData = [];
+            $scope.currentAlarm.changedData = [];
+            $scope.currentAlarm.selIdML = [];
+            $scope.currentAlarm.annots = 'no current alarm data';
+            $scope.currentAlarm.sortParams = defaultAlarmSortParams;
+            $scope.currentAlarm.payloadParams = null;
+            $scope.currentAlarm.autoRefresh = true;
+
+            //$scope.performance
+            $scope.performance.tableData = [];
+            $scope.performance.changedData = [];
+            $scope.performance.selIdML = [];
+            $scope.performance.annots = 'no performance data';
+            $scope.performance.sortParams = defaultPerformanceSortParams;
+            $scope.performance.payloadParams = null;
+            $scope.performance.autoRefresh = true;
 
 
 
@@ -627,7 +776,46 @@
             };
 
             $scope.dataSetShowSelect = function () {
-
+                function dOK(){
+                    var subpage = $scope.datSetSlectForm.appType;
+                    $scope.dataSetInfo.setting.algorithmType = $scope.dateSetSelectForm.algoType;
+                    $scope.dataSetInfo.setting.dataSetType = $scope.dateSetSelectForm.dataSetType;
+                    $scope.dataSetInfo.setting.modelId = $scope.dateSetSelectForm.modelId;
+                    $scope.dataSetInfo.setting.dataSetId = $scope.dateSetSelectForm.dataSetId;
+                    if(subpage === 'alarmPred'){
+                        navToSubPage('data set');
+                        navToDataSetSubPage('alarm predict data set');
+                        var pa = angular.extend({},$scope.dataSetInfo,defaultAlarmPredDataSetSortParams);
+                        wss.sendEvent(alarmPredDataSetReq,pa);
+                    }
+                    if(subpage === 'faultClassification'){
+                        navToSubPage('data set');
+                        navToDataSetSubPage('fault classification data set');
+                        var pb = angular.extend({},$scope.dataSetInfo,defaultFaultClassificationDataSetSortParams);
+                        wss.sendEvent(faultClassificationDataSetReq,pb);
+                    }
+                    if(subpage === 'alarmPred'){
+                        navToSubPage('data set');
+                        navToDataSetSubPage('alarm predict data set');
+                        var pc = angular.extend({},$scope.dataSetInfo,defaultAreaPredDataSetSortParams);
+                        wss.sendEvent(areaPredDataSetReq,pc);
+                    }
+                    if(subpage === 'alarmPred'){
+                        navToSubPage('data set');
+                        navToDataSetSubPage('alarm pred data set');
+                        var pd = angular.extend({},$scope.dataSetInfo,defaultEdgePredDataSetSortParams);
+                        wss.sendEvent(edgePredDataSetReq,pd);
+                    }
+                }
+                function dCancel(){
+                    $log.debug('Canceling config model parameters of alarmPre');
+                }
+                ds.openDialog(dataSetSelectDialogId,dialogOpts)
+                    .setTitle('data set select')
+                    .addContent(dataSetSelectDialogContent())
+                    .addOk(dOK)
+                    .addCancel(dCancel)
+                    .bindKeys();
             };
 
             buildAllTable();

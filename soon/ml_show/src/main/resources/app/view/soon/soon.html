@@ -155,7 +155,7 @@
                             </td>
                         </tr>
 
-                        <tr ng-repeat="alarmPred in tableData | filter:queryFilter track by $index"
+                        <tr ng-repeat="alarmPred in alarmpred.tableData | filter:queryFilter track by $index"
                             ng-click="selectCallback($event,alarmPred)"
                             ng-class="{selected: alarmPred.id === selId}"
                             ng-repeat-complete row-id="{{alarmPred.id}}">
@@ -255,16 +255,16 @@
                             </td>
                         </tr>
 
-                        <tr ng-repeat="faultClassification in tableData | filter:queryFilter track by $index"
+                        <tr ng-repeat="faultClassification in faultClassification.tableData | filter:queryFilter track by $index"
                             ng-click="selectCallback($event,faultClassification)"
                             ng-class="{selected: faultClassification.id === selId}"
                             ng-repeat-complete row-id="{{faultClassification.id}}">
-                            <td>{{alarmPred.time}}</td>
-                            <td>{{alarmPred.faultType}}</td>
-                            <td>{{alarmPred.modelId}}</td>
-                            <td>{{alarmPred.trainDataSetId}}</td>
-                            <td>{{alarmPred.testDataSetId}}</td>
-                            <td>{{alarmPred.testAccuracy}}</td>
+                            <td>{{faultClassification.time}}</td>
+                            <td>{{faultClassification.faultType}}</td>
+                            <td>{{faultClassification.modelId}}</td>
+                            <td>{{faultClassification.trainDataSetId}}</td>
+                            <td>{{faultClassification.testDataSetId}}</td>
+                            <td>{{faultClassification.testAccuracy}}</td>
                         </tr>
                     </table>
                 </div>
@@ -327,17 +327,17 @@
                             </td>
                         </tr>
 
-                        <tr ng-repeat="modelLibrary in tableData | filter:queryFilter track by $index"
+                        <tr ng-repeat="modelLibrary in modelLibrary.tableData | filter:queryFilter track by $index"
                             ng-click="selectCallback($event,modelLibrary)"
                             ng-class="{selected: modelLibrary.modelId === selId}"
                             ng-repeat-complete row-id="{{modelLibrary.modelId}}">
-                            <td>{{alarmPred.applicationType}}</td>
-                            <td>{{alarmPred.modelId}}</td>
-                            <td>{{alarmPred.algorithmType}}</td>
-                            <td>{{alarmPred.trainDataSetId}}</td>
-                            <td>{{alarmPred.testDataSetId}}</td>
-                            <td>{{alarmPred.modelState}}</td>
-                            <td>{{alarmPred.modelAccuracy}}</td>
+                            <td>{{modelLibrary.applicationType}}</td>
+                            <td>{{modelLibrary.modelId}}</td>
+                            <td>{{modelLibrary.algorithmType}}</td>
+                            <td>{{modelLibrary.trainDataSetId}}</td>
+                            <td>{{modelLibrary.testDataSetId}}</td>
+                            <td>{{modelLibrary.modelState}}</td>
+                            <td>{{modelLibrary.modelAccuracy}}</td>
                         </tr>
                     </table>
                 </div>
@@ -382,89 +382,15 @@
                     <div class="table-header" onos-sortable-header>
                         <table>
                             <tr>
-                                <td colId="level" sortable col-width="140px"> level </td>
-                                <td colId="alarmSource" sortable col-width="140px"> alarm source </td>
-                                <td colId="name" sortable col-width="140px"> name </td>
-                                <td colId="type" sortable col-width="140px"> type </td>
-                                <td colId="location" sortable col-width="140px"> location </td>
-                                <td colId="happenTime" sortable col-width="140px"> happen time </td>
-                            </tr>
-                        </table>
-                    </div>
-
-                    <div class="table-body">
-                        <table onos-flash-changes id-prop="id">
-                            <tr ng-if="!tableData.length" class="no-data">
-                                <td colspan="6">
-                                    {{annots.no_rows_msg}}
-                                </td>
-                            </tr>
-
-                            <tr ng-repeat="historicalAlarm in historicalAlarm.tableData | filter:queryFilter track by $index"
-                                ng-repeat-complete row-id="{{historicalAlarm.level}}">
-                                <td>{{historicalAlarm.level}}</td>
-                                <td>{{historicalAlarm.alarmSource}}</td>
-                                <td>{{historicalAlarm.name}}</td>
-                                <td>{{historicalAlarm.type}}</td>
-                                <td>{{historicalAlarm.location}}</td>
-                                <td>{{historicalAlarm.happenTime}}</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="raw-data-subpage" id="currentAlarm" >
-                <div class="summary-list" onos-table-resize>
-                    <div class="table-header" onos-sortable-header>
-                        <table>
-                            <tr>
-                                <td colId="level" sortable col-width="140px"> level </td>
-                                <td colId="alarmSource" sortable col-width="140px"> alarm source </td>
-                                <td colId="name" sortable col-width="140px"> name </td>
-                                <td colId="location" sortable col-width="140px"> location </td>
-                                <td colId="frequency" sortable col-width="140px"> frequency </td>
-                                <td colId="pathLevel" sortable col-width="140px"> path level </td>
-                            </tr>
-                        </table>
-                    </div>
-
-                    <div class="table-body">
-                        <table onos-flash-changes id-prop="id">
-                            <tr ng-if="!tableData.length" class="no-data">
-                                <td colspan="6">
-                                    {{annots.no_rows_msg}}
-                                </td>
-                            </tr>
-
-                            <tr ng-repeat="currentAlarm in tableData | filter:queryFilter track by $index"
-                                ng-click="selectCallback($event,currentAlarm)"
-                                ng-class="{selected: currentAlarm.id === selId}"
-                                ng-repeat-complete row-id="{{currentAlarm.id}}">
-                                <td>{{alarmPred.level}}</td>
-                                <td>{{alarmPred.alarmSource}}</td>
-                                <td>{{alarmPred.name}}</td>
-                                <td>{{alarmPred.location}}</td>
-                                <td>{{alarmPred.frequency}}</td>
-                                <td>{{alarmPred.pathLevel}}</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="raw-data-subpage" id="performance" >
-                <div class="summary-list" onos-table-resize>
-                    <div class="table-header" onos-sortable-header>
-                        <table>
-                            <tr>
-                                <td colId="node" sortable col-width="100px"> node </td>
-                                <td colId="board" sortable col-width="100px"> board </td>
-                                <td colId="port" sortable col-width="100px"> port </td>
-                                <td colId="component" sortable col-width="100px"> component </td>
-                                <td colId="event" sortable col-width="100px"> event </td>
-                                <td colId="endTime" sortable col-width="100px"> end time </td>
-                                <td colId="maxVal" sortable col-width="100px"> max value </td>
-                                <td colId="curVal" sortable col-width="100px"> current value </td>
-                                <td colId="minVal" sortable col-width="100px"> min value </td>
+                                <td colId="level" sortable col-width="60px">level</td>
+                                <td colId="alarmSource" sortable col-width="60px">alarm source</td>
+                                <td colId="name" sortable col-width="60px">name</td>
+                                <td colId="type" sortable col-width="60px">type</td>
+                                <td colId="location" sortable col-width="60px">location</td>
+                                <td colId="pathLevel" sortable col-width="60px">path level</td>
+                                <td colId="happenTime" sortable col-width="60px">happen time</td>
+                                <td colId="cleanTime" sortable col-width="60px">clean time</td>
+                                <td colId="confirmTime" sortable col-width="60px">confirm time</td>
                             </tr>
                         </table>
                     </div>
@@ -477,19 +403,111 @@
                                 </td>
                             </tr>
 
-                            <tr ng-repeat="alarmPred in tableData | filter:queryFilter track by $index"
-                                ng-click="selectCallback($event,alarmPred)"
-                                ng-class="{selected: alarmPred.id === selId}"
-                                ng-repeat-complete row-id="{{alarmPred.id}}">
-                                <td>{{alarmPred.node}}</td>
-                                <td>{{alarmPred.board}}</td>
-                                <td>{{alarmPred.port}}</td>
-                                <td>{{alarmPred.component}}</td>
-                                <td>{{alarmPred.event}}</td>
-                                <td>{{alarmPred.endTime}}</td>
-                                <td>{{alarmPred.maxVal}}</td>
-                                <td>{{alarmPred.curVal}}</td>
-                                <td>{{alarmPred.minVal}}</td>
+                            <tr ng-repeat="historicalAlarm in historicalAlarm.tableData | filter:queryFilter track by $index"
+                                ng-repeat-complete row-id="{{historicalAlarm.level}}">
+                                <td>{{historicalAlarm.level}}</td>
+                                <td>{{historicalAlarm.alarmSource}}</td>
+                                <td>{{historicalAlarm.name}}</td>
+                                <td>{{historicalAlarm.type}}</td>
+                                <td>{{historicalAlarm.location}}</td>
+                                <td>{{historicalAlarm.pathLevel}}</td>
+                                <td>{{historicalAlarm.happenTime}}</td>
+                                <td>{{historicalAlarm.cleanTime}}</td>
+                                <td>{{historicalAlarm.confirmTime}}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="raw-data-subpage" id="currentAlarm" >
+                <div class="summary-list" onos-table-resize>
+                    <div class="table-header" onos-sortable-header>
+                        <table>
+                            <tr>
+                                <td colId="level" sortable col-width="50px">level</td>
+                                <td colId="alarmSource" sortable col-width="50px">alarm source</td>
+                                <td colId="name" sortable col-width="50px">name</td>
+                                <td colId="location" sortable col-width="50px">location</td>
+                                <td colId="frequency" sortable col-width="50px">frequency</td>
+                                <td colId="pathLevel" sortable col-width="50px">path level</td>
+                                <td colId="firstHappen" sortable col-width="50px">first happen</td>
+                                <td colId="recentHappen" sortable col-width="50px">recent happen</td>
+                                <td colId="cleanTime" sortable col-width="50px">clean time</td>
+                                <td colId="confirmTime" sortable col-width="50px">confirm time</td>
+                                <td colId="clean" sortable col-width="50px">clean</td>
+                                <td colId="confirm" sortable col-width="50px">confirm</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="table-body">
+                        <table onos-flash-changes id-prop="id">
+                            <tr ng-if="!tableData.length" class="no-data">
+                                <td colspan="6">
+                                    {{annots.no_rows_msg}}
+                                </td>
+                            </tr>
+
+                            <tr ng-repeat="currentAlarm in cuttentAlarm.tableData | filter:queryFilter track by $index"
+                                ng-click="selectCallback($event,currentAlarm)"
+                                ng-class="{selected: currentAlarm.id === selId}"
+                                ng-repeat-complete row-id="{{currentAlarm.id}}">
+                                <td>{{currentAlarm.level}}</td>
+                                <td>{{currentAlarm.alarmSource}}</td>
+                                <td>{{currentAlarm.name}}</td>
+                                <td>{{currentAlarm.location}}</td>
+                                <td>{{currentAlarm.frequency}}</td>
+                                <td>{{currentAlarm.pathLevel}}</td>
+                                <td>{{currentAlarm.firstHappen}}</td>
+                                <td>{{currentAlarm.recentHappen}}</td>
+                                <td>{{currentAlarm.cleanTime}}</td>
+                                <td>{{currentAlarm.confirmTime}}</td>
+                                <td>{{currentAlarm.clean}}</td>
+                                <td>{{currentAlarm.confirm}}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="raw-data-subpage" id="performance" >
+                <div class="summary-list" onos-table-resize>
+                    <div class="table-header" onos-sortable-header>
+                        <table>
+                            <tr>
+                                <td colId="node" sortable col-width="60px">node</td>
+                                <td colId="board" sortable col-width="60px">board</td>
+                                <td colId="port" sortable col-width="60px">port</td>
+                                <td colId="component" sortable col-width="60px">component</td>
+                                <td colId="event" sortable col-width="60px">event</td>
+                                <td colId="endTime" sortable col-width="60px">end time</td>
+                                <td colId="maxVal" sortable col-width="60px">max value</td>
+                                <td colId="curVal" sortable col-width="60px">current value</td>
+                                <td colId="minVal" sortable col-width="60px">min value</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="table-body">
+                        <table onos-flash-changes id-prop="id">
+                            <tr ng-if="!tableData.length" class="no-data">
+                                <td colspan="9">
+                                    {{annots.no_rows_msg}}
+                                </td>
+                            </tr>
+
+                            <tr ng-repeat="performance in performance.tableData | filter:queryFilter track by $index"
+                                ng-click="selectCallback($event,performance)"
+                                ng-class="{selected: performance.id === selId}"
+                                ng-repeat-complete row-id="{{performance.id}}">
+                                <td>{{performance.node}}</td>
+                                <td>{{performance.board}}</td>
+                                <td>{{performance.port}}</td>
+                                <td>{{performance.component}}</td>
+                                <td>{{performance.event}}</td>
+                                <td>{{performance.endTime}}</td>
+                                <td>{{performance.maxVal}}</td>
+                                <td>{{performance.curVal}}</td>
+                                <td>{{performance.minVal}}</td>
                             </tr>
                         </table>
                     </div>
@@ -522,11 +540,11 @@
                 </div>
                 <div class="search">
                     <input type="text" ng-model="queryTxt" placeholder="Search"/>
-                    <select ng-model="queryBy">
+                    <select ng-model="queryBy" id="dataSetSearchBy">
                         <option value="" disabled>Search By</option>
                         <option value="$">All Fields</option>
                         <option value="id">id</option>
-                        <option value="alarmHappen" id="dataSetSearchBy">alarm happen</option>
+                        <option value="alarmHappen">alarm happen</option>
                         <option value="dataSetId">data set id</option>
                         <option value="dataSetType">data set type</option>
                     </select>
@@ -537,11 +555,12 @@
                     <div class="table-header" onos-sortable-header>
                         <table>
                             <tr>
-                                <td colId="id" sortable col-width="100px"> data id </td>
-                                <td colId="alarmHappen" sortable col-width="100px"> alarm happen </td>
-                                <td colId="dataSetId" sortable col-width="100px"> data set id </td>
-                                <td colId="dataSetType" sortable col-width="100px"> data set Type </td>
-                                <td colId="input" sortable col-width="400px"> input </td>
+                                <td colId="dataId" sortable col-width="60px">data id</td>
+                                <td colId="alarmHappen" sortable col-width="60px">alarm happen</td>
+                                <td colId="dataSetId" sortable col-width="60px">data set id</td>
+                                <td colId="dataSetType" sortable col-width="60px">data set Type</td>
+                                <td colId="inputType" sortable col-width="60px">input type</td>
+                                <td colId="input" sortable col-width="200px">input</td>
                             </tr>
                         </table>
                     </div>
@@ -549,20 +568,21 @@
                     <div class="table-body">
                         <table onos-flash-changes id-prop="id">
                             <tr ng-if="!tableData.length" class="no-data">
-                                <td colspan="4">
+                                <td colspan="6">
                                     {{annots.no_rows_msg}}
                                 </td>
                             </tr>
 
-                            <tr ng-repeat="alarmPredDataSet in tableData | filter:queryFilter track by $index"
+                            <tr ng-repeat="alarmPredDataSet in alarmPredDataSet.tableData | filter:queryFilter track by $index"
                                 ng-click="selectCallback($event,alarmPredDataSet)"
-                                ng-class="{selected: alarmPredDataSet.id === selId}"
-                                ng-repeat-complete row-id="{{alarmPredDataSet.id}}">
-                                <td>{{alarmPred.id}}</td>
-                                <td>{{alarmPred.alarmHappen}}</td>
-                                <td>{{alarmPred.dataSetId}}</td>
-                                <td>{{alarmPred.dataSetType}}</td>
-                                <td>{{alarmPred.input}}</td>
+                                ng-class="{selected: alarmPredDataSet.dataId === selId}"
+                                ng-repeat-complete row-id="{{alarmPredDataSet.dataId}}">
+                                <td>{{alarmPredDataSet.dataId}}</td>
+                                <td>{{alarmPredDataSet.alarmHappen}}</td>
+                                <td>{{alarmPredDataSet.dataSetId}}</td>
+                                <td>{{alarmPredDataSet.dataSetType}}</td>
+                                <td>{{alarmPredDataSet.inputType}}</td>
+                                <td>{{alarmPredDataSet.input}}</td>
                             </tr>
                         </table>
                     </div>
@@ -573,11 +593,11 @@
                     <div class="table-header" onos-sortable-header>
                         <table>
                             <tr>
-                                <td colId="id" sortable col-width="100px"> data id </td>
-                                <td colId="faultType" sortable col-width="100px"> fault type </td>
-                                <td colId="dataSetId" sortable col-width="100px"> data set id </td>
-                                <td colId="dataSetType" sortable col-width="100px"> data set Type </td>
-                                <td colId="input" sortable col-width="400px"> input </td>
+                                <td colId="dataId" sortable col-width="60px">data id</td>
+                                <td colId="faultType" sortable col-width="60px">fault type</td>
+                                <td colId="dataSetId" sortable col-width="60px">data set id</td>
+                                <td colId="dataSetType" sortable col-width="60px">data set Type</td>
+                                <td colId="input" sortable col-width="200px">input</td>
                             </tr>
                         </table>
                     </div>
@@ -585,20 +605,102 @@
                     <div class="table-body">
                         <table onos-flash-changes id-prop="id">
                             <tr ng-if="!tableData.length" class="no-data">
-                                <td colspan="4">
+                                <td colspan="5">
                                     {{annots.no_rows_msg}}
                                 </td>
                             </tr>
 
-                            <tr ng-repeat="faultClassificationDataSet in tableData | filter:queryFilter track by $index"
+                            <tr ng-repeat="faultClassificationDataSet in faultClassificationDataSet.tableData | filter:queryFilter track by $index"
                                 ng-click="selectCallback($event,faultClassificationDataSet)"
-                                ng-class="{selected: faultClassificationDataSet.id === selId}"
-                                ng-repeat-complete row-id="{{faultClassificationDataSet.id}}">
-                                <td>{{alarmPred.id}}</td>
-                                <td>{{alarmPred.faultType}}</td>
-                                <td>{{alarmPred.dataSetId}}</td>
-                                <td>{{alarmPred.dataSetType}}</td>
-                                <td>{{alarmPred.input}}</td>
+                                ng-class="{selected: faultClassificationDataSet.dataId === selId}"
+                                ng-repeat-complete row-id="{{faultClassificationDataSet.dataId}}">
+                                <td>{{faultClassificationDataSet.dataId}}</td>
+                                <td>{{faultClassificationDataSet.faultType}}</td>
+                                <td>{{faultClassificationDataSet.dataSetId}}</td>
+                                <td>{{faultClassificationDataSet.dataSetType}}</td>
+                                <td>{{faultClassificationDataSet.input}}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="data-set-subpage" id="areaPredDataSet">
+                <div class="summary-list" onos-table-resize>
+                    <div class="table-header" onos-sortable-header>
+                        <table>
+                            <tr>
+                                <td colId="dataId" sortable col-width="50px">data id</td>
+                                <td colId="areaId" sortable col-width="50px">area id</td>
+                                <td colId="dataSetId" sortable col-width="50px">data set id</td>
+                                <td colId="dataSetType" sortable col-width="50px">data set Type</td>
+                                <td colId="tide" sortable col-width="50px">tide</td>
+                                <td colId="timePoint" sortable col-width="50px">time point</td>
+                                <td colId="oneHoursAfter" sortable col-width="150px">output</td>
+                                <td colId="twoHoursBefore" sortable col-width="150px">input</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="table-body">
+                        <table onos-flash-changes id-prop="id">
+                            <tr ng-if="!tableData.length" class="no-data">
+                                <td colspan="8">
+                                    {{annots.no_rows_msg}}
+                                </td>
+                            </tr>
+
+                            <tr ng-repeat="areaPredDataSet in areaPredDataSet.tableData | filter:queryFilter track by $index"
+                                ng-click="selectCallback($event,areaPredDataSet)"
+                                ng-class="{selected: areaPredDataSet.dataId === selId}"
+                                ng-repeat-complete row-id="{{areaPredDataSet.dataId}}">
+                                <td>{{areaPredDataSet.dataId}}</td>
+                                <td>{{areaPredDataSet.areaId}}</td>
+                                <td>{{areaPredDataSet.dataSetId}}</td>
+                                <td>{{areaPredDataSet.dataSetType}}</td>
+                                <td>{{areaPredDataSet.tide}}</td>
+                                <td>{{areaPredDataSet.timePoint}}</td>
+                                <td>{{areaPredDataSet.oneHoursAfter}}</td>
+                                <td>{{areaPredDataSet.twoHoursBefore}}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="data-set-subpage" id="edgePredDataSet">
+                <div class="summary-list" onos-table-resize>
+                    <div class="table-header" onos-sortable-header>
+                        <table>
+                            <tr>
+                                <td colId="dataId" sortable col-width="50px">data id</td>
+                                <td colId="edgeId" sortable col-width="50px">edge id</td>
+                                <td colId="dataSetId" sortable col-width="50px">data set id</td>
+                                <td colId="dataSetType" sortable col-width="50px">data set Type</td>
+                                <td colId="timePoint" sortable col-width="50px">time point</td>
+                                <td colId="oneHoursAfter" sortable col-width="150px">output</td>
+                                <td colId="twoHoursBefore" sortable col-width="150px">input</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="table-body">
+                        <table onos-flash-changes id-prop="id">
+                            <tr ng-if="!tableData.length" class="no-data">
+                                <td colspan="7">
+                                    {{annots.no_rows_msg}}
+                                </td>
+                            </tr>
+
+                            <tr ng-repeat="edgePredDataSet in edgePredDataSet.tableData | filter:queryFilter track by $index"
+                                ng-click="selectCallback($event,edgePredDataSet)"
+                                ng-class="{selected: edgePredDataSet.dataId === selId}"
+                                ng-repeat-complete row-id="{{edgePredDataSet.dataId}}">
+                                <td>{{edgePredDataSet.dataId}}</td>
+                                <td>{{edgePredDataSet.areaId}}</td>
+                                <td>{{edgePredDataSet.dataSetId}}</td>
+                                <td>{{edgePredDataSet.dataSetType}}</td>
+                                <td>{{edgePredDataSet.timePoint}}</td>
+                                <td>{{edgePredDataSet.oneHoursAfter}}</td>
+                                <td>{{edgePredDataSet.twoHoursBefore}}</td>
                             </tr>
                         </table>
                     </div>

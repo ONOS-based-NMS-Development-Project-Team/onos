@@ -51,22 +51,22 @@
         // === Table Data Response
         function tableDataResponseCb(data) {
             ls.stop();
-            tableData = data[root];
-            annots = data.annots;
+            o.tableScope.tableData = data[root];
+            o.tableScope.annots = data.annots;
             onResp && onResp();
 
             // checks if data changed for row flashing
-            if (!angular.equals(tableData, oldTableData)) {
-                changedData = [];
+            if (!angular.equals(o.tableScope.tableData, oldTableData)) {
+                o.tableScope.changedData = [];
                 // only flash the row if the data already exists
                 if (oldTableData.length) {
-                    angular.forEach(tableData, function (item) {
+                    angular.forEach(o.tableScope.tableData, function (item) {
                         if (!fs.containsObj(oldTableData, item)) {
-                            changedData.push(item);
+                            o.tableScope.changedData.push(item);
                         }
                     });
                 }
-                angular.copy(tableData, oldTableData);
+                angular.copy(o.tableScope.tableData, oldTableData);
             }
             o.scope.$apply();
         }
@@ -75,7 +75,7 @@
 
         // === Table Data Request
         function requestTableData() {
-            var sortParams = sortParams,
+            var sortParams = o.tableScope.sortParams,
                 pp = fs.isO(o.tableScope.payloadParams),
                 payloadParams = pp || {},
                 p = angular.extend({}, sortParams, payloadParams, o.query);
@@ -94,7 +94,7 @@
         // === Row Selected
         function rowSelectionCb($event, selRow) {
             var selId = selRow[idKey];
-            selIdML = (selIdML === selId) ? null : selId;
+            o.tableScope.selIdML = (o.tableScope.selIdML === selId) ? null : selId;
             onSel && onSel($event, selRow);
         }
         o.scope.selectCallback = rowSelectionCb;

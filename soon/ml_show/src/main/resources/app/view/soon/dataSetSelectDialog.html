@@ -1,0 +1,38 @@
+<form class="dataSet-select-dialog-form">
+    <p class="form-label">
+        <select ng-model="dataSetSelectForm.appType" id="appType">
+            <option value="alarmPred">alarm predict</option>
+            <option value="faultClassification">fault classification</option>
+            <option value="areaPred">area traffic prediction</option>
+            <option value="edgePred">edge traffic prediction</option>
+        </select>
+        <label for="appType">application type: </label>
+    </p>
+    <p class="form-label">
+        <select ng-model="dataSetSelectForm.algoType" id="algoType">
+            <option value="fcnn">fully connected neural network</option>
+            <option value="rnn" disabled>recurrent neural network</option>
+            <option value="cnn" disabled>convolutional neural network</option>
+            <option value="lstm" disabled>long short-term memory</option>
+            <option value="randomforest" disabled>random forest</option>
+        </select>
+        <label for="algoType">algorithm type: </label>
+    </p>
+    <p class="form-label">
+        <select ng-model="dataSetSelectForm.dataSetType" id="dataSetType">
+            <option value="train">train data set</option>
+            <option value="test">test data set</option>
+        </select>
+        <label for="dataSetType">data set type: </label>
+    </p>
+    <p class="form-label">
+        <input type="text" ng-model="dataSetSelectForm.modelId" id="modelId" placeholder="unnecessary">
+        <label for="modelId">machine learning model id: </label>
+        <button class="dataSetSelectModelId">apply</button>
+    </p>
+    <p class="form-label">
+        <input type="text" ng-model="dataSetSelectForm.dataSetId" id="dataSetId" placeholder="unnecessary">
+        <label for="dataSetId">dataSet id: </label>
+        <button class="dataSetSelectDataSetId">apply</button>
+    </p>
+</form>
