@@ -39,7 +39,7 @@
             onResp = fs.isF(o.respCb),
             idKey = o.idKey || 'id',
             oldTableData = [],
-            refreshPromise,
+
             annots = o.tableScope.annots,
             selIdML = o.tableScope.selId,
             tableData = o.tableScope.tableData,
@@ -110,14 +110,16 @@
             requestTableData();
         }
 
+        o.tableScope.fetchData = fetchDataIfNotWaiting;
+
         function startRefresh() {
-            refreshPromise = $interval(fetchDataIfNotWaiting, refreshInterval);
+            o.tableScope.refreshPromise = $interval(fetchDataIfNotWaiting, refreshInterval);
         }
 
         function stopRefresh() {
-            if (refreshPromise) {
-                $interval.cancel(refreshPromise);
-                refreshPromise = null;
+            if (o.tableScope.refreshPromise) {
+                $interval.cancel(o.tableScope.refreshPromise);
+                o.tableScope.refreshPromise = null;
             }
         }
 

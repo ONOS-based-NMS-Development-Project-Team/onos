@@ -16,6 +16,12 @@
 #faultClassification{
     display: none;
 }
+#areaPred{
+    display: none;
+}
+#edgePred{
+    display: none;
+}
 #modelLibrary{
     display: none;
 }

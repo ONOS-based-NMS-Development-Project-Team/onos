@@ -156,6 +156,10 @@
         edgePredDataSetSearchByText = ['id','area id','data set id','data set type','timePoint','output','input'],
         modelDetailsPropOrder = ['applicationType','modelId','algorithmType','modelState','trainDataSetId','testDataSetId','modelAccuracy'],
         modelDetailsPropOrderText = ['application type','model id','algorithm type','model state','train data set id','test data set id','model accuracy'],
+        appTypeValue = ['alarmPred','faultClassification','areaPred','edgePred'],
+        appTypeText = ['alarm predict','fault classification','area predict','edge predict'],
+        algoTypeValue = ['fcnn','cnn','rnn','lstm','randomforest'],
+        algoTypeText = ['fully connected neural network','convolutional neural network','recurrent neural network','long short-term memory','random forest'],
         annParams = ['inputNum','outputNum','hiddenLayer','activationFunction','weightInit','biasInit','lossFunction','batchSize','epoch','optimizer','learningRate','lrAdjust','dropout'],
         annParamsText = ['input num','output num','hidden layer neurons number','activation function','weight init','bias init','loss function','batch size','epoch','optimizer','learning rate','learning rate adjust','dropout'];
 
@@ -167,6 +171,12 @@
         }
         if(d3.select('#faultClassification').style('display') === 'block'){
             subPageLocate = 'faultClassification';
+        }
+        if(d3.select('#areaPred').style('display') === 'block'){
+            subPageLocate = 'areaPred';
+        }
+        if(d3.select('#edgePred').style('display') === 'block'){
+            subPageLocate = 'edgePred';
         }
         if(d3.select('#modelLibrary').style('display') === 'block'){
                    subPageLocate = 'modelLibrary';
@@ -180,6 +190,37 @@
         return subPageLocate;
     }
 
+    function whichDataSetSubPage(){
+        var subPageLocate;
+        if(d3.select('#alarmPredDataSet').style('display') === 'block'){
+            subPageLocate = 'alarmPredDataSet';
+        }
+        if(d3.select('#faultClassificationDataSet').style('display') === 'block'){
+            subPageLocate = 'faultClassificationDataSet';
+        }
+        if(d3.select('#areaPredDataSet').style('display') === 'block'){
+            subPageLocate = 'areaPredDataSet';
+        }
+        if(d3.select('#edgePredDataSet').style('display') === 'block'){
+            subPageLocate = 'edgePredDataSet';
+        }
+        return subPageLocate;
+    }
+
+    function whichRawDataSubPage(){
+        var subPageLocate;
+        if(d3.select('#historicalAlarm').style('display') === 'block'){
+            subPageLocate = 'historicalAlarm';
+        }
+        if(d3.select('#currentAlarm').style('display') === 'block'){
+            subPageLocate = 'currentAlarm';
+        }
+        if(d3.select('#performance').style('display') === 'block'){
+            subPageLocate = 'performance';
+        }
+        return subPageLocate;
+    }
+
     function navToSubPage(p){
         if(p === defaultSubPage){
             d3.select('#'+whichSubPage()).style('display','none');
@@ -188,6 +229,14 @@
         if(p === 'fault classification'){
             d3.select('#'+whichSubPage()).style('display','none');
             d3.select('#faultClassification').style('display','block');
+        }
+        if(p === 'area predict'){
+            d3.select('#'+whichSubPage()).style('display','none');
+            d3.select('#areaPred').style('display','block');
+        }
+        if(p === 'edge predict'){
+            d3.select('#'+whichSubPage()).style('display','none');
+            d3.select('#edgePred').style('display','block');
         }
         if(p === 'fault locate'){
             $log.log('this application has not been development');
@@ -212,14 +261,15 @@
             d3.select('#dataSet').style('display','block');
             navToDataSetSubPage('alarm predict data set');
         }
+        stopRefresh(whichSubPage());
+        startRefresh(p);
         $log.log('navigate to '+p+' sub page');
     }
 
     function navToRawDataSubPage(p){
         d3.select('#rawData h2').text(p);
         if(p === 'performance'){
-            d3.select('#historicalAlarm').style('display','none');
-            d3.select('#currentAlarm').style('display','none');
+            d3.select('#'+whichRawDataSubPage()).style('display','none');
             d3.select('#performance').style('display','block');
             d3.selectAll('#rawDataSearchBy option').remove();
             performanceSearchByValue.forEach(function (item,i){
@@ -228,31 +278,28 @@
         }
         if(p === 'historical alarm'){
             d3.select('#historicalAlarm').style('display','block');
-            d3.select('#currentAlarm').style('display','none');
-            d3.select('#performance').style('display','none');
+            d3.select('#'+whichRawDataSubPage()).style('display','none');
             d3.selectAll('#rawDataSearchBy option').remove();
             historicalAlarmSearchByValue.forEach(function (item,i){
                 d3.select('#rawDataSearchBy').append('option').attr('value',item).text(historicalAlarmSearchByText[i]);
             });
         }
         if(p === 'current alarm'){
-            d3.select('#historicalAlarm').style('display','none');
+            d3.select('#'+whichRawDataSubPage()).style('display','none');
             d3.select('#currentAlarm').style('display','block');
-            d3.select('#performance').style('display','none');
             d3.selectAll('#rawDataSearchBy option').remove();
             currentAlarmSearchByValue.forEach(function (item,i){
                 d3.select('#rawDataSearchBy').append('option').attr('value',item).text(currentAlarmSearchByText[i]);
             });
         }
+        startRefresh(p);
         $log.log('navigate to raw data '+p+'sub page');
     }
 
     function navToDataSetSubPage(p){
         d3.select('#dataSet h2').text(p);
         if(p === 'alarm predict data set'){
-            d3.select('#faultClassificationDataSet').style('display','none');
-            d3.select('#areaPredDataSet').style('display','none');
-            d3.select('#edgePredDataSet').style('display','none');
+            d3.select('#'+whichDataSetSubPage()).style('display','none');
             d3.select('#alarmPredDataSet').style('display','block');
             d3.selectAll('#dataSetSearchBy option').remove();
             alarmPredDataSetSearchByValue.forEach(function (item,i) {
@@ -260,9 +307,7 @@
             })
         }
         if(p === 'fault classification data set'){
-            d3.select('#alarmPredDataSet').style('display','none');
-            d3.select('#areaPredDataSet').style('display','none');
-            d3.select('#edgePredDataSet').style('display','none');
+            d3.select('#'+whichDataSetSubPage()).style('display','none');
             d3.select('#faultClassificationDataSet').style('display','block');
             d3.selectAll('#dataSetSearchBy option').remove();
             faultClassificationDataSetSearchByValue.forEach(function (item,i) {
@@ -270,9 +315,7 @@
             })
         }
         if(p === 'area predict data set'){
-            d3.select('#alarmPredDataSet').style('display','none');
-            d3.select('#faultClassificationDataSet').style('display','none');
-            d3.select('#edgePredDataSet').style('display','none');
+            d3.select('#'+whichDataSetSubPage()).style('display','none');
             d3.select('#areaPredDataSet').style('display','block');
             d3.selectAll('#dataSetSearchBy option').remove();
             areaPredDataSetSearchByValue.forEach(function (item,i) {
@@ -280,15 +323,14 @@
             })
         }
         if(p === 'edge predict data set'){
-            d3.select('#alarmPredDataSet').style('display','none');
-            d3.select('#faultClassificationDataSet').style('display','none');
-            d3.select('#areaPredDataSet').style('display','none');
+            d3.select('#'+whichDataSetSubPage()).style('display','none');
             d3.select('#edgePredDataSet').style('display','block');
             d3.selectAll('#dataSetSearchBy option').remove();
             edgePredDataSetSearchByValue.forEach(function (item,i) {
                 d3.select('#dataSetSearchBy').append('option').attr('value',item).text(edgePredDataSetSearchByText[i]);
             })
         }
+        startRefresh(p);
         $log.log('navigate to '+p+'sub page');
     }
 
@@ -311,7 +353,7 @@
         createTable($scope,$scope.faultClassificationDataSet,'faultClassificationDataSet',null,'dataId');
         createTable($scope,$scope.areaPredDataSet,'areaPredDataSet',null,'dataId');
         createTable($scope,$scope.edgePredDataSet,'edgePredDataSet',null,'dataId');
-        //createTable($scope,$scope.modelLibrary,'modelLibrary',null,'modelId');
+        createTable($scope,$scope.modelLibrary,'modelLibrary',null,'modelId');
         //modelDetails();
         createTable($scope,$scope.historicalAlarm,'historicalAlarm',null,'level');
         //modelDetails();
@@ -505,23 +547,152 @@
     }
 
     function dataSetSelectDialogContent () {
-        var content;
+        var content,form,appType,algoType,dataSetType;
         content = ds.createDiv();
-        content.append('iframe').attr('src','app/view/soon/dataSetSelectDialog.html');
-        $log.log(content);
-        $log.log(content.node());
+        //content.append('iframe').attr('src','/app/view/soon/dataSetSelectDialog.html');
+        form = content.append('form').classed('dataSet-select-dialog-form',true);
+        appType = form.append('p').classed('form-label',true).append('label').text('application type: ')
+            .append('select').attr('id','appType').attr('ng-model','appType');
+        algoType = form.append('p').classed('form-label',true).append('label').text('algorithm type: ')
+            .append('select').attr('id','algoType').attr('ng-model','algoType');
+        dataSetType = form.append('p').classed('form-label',true).append('label').text('data set type: ')
+            .append('select').attr('id','dataSetType').attr('ng-model','dataSetType');
+        appTypeValue.forEach(function(item,i){
+            appType.append('option').attr('value',item).text(appTypeText[i]);
+        });
+        algoTypeValue.forEach(function (item,i) {
+            if(item === 'fcnn'){
+                algoType.append('option').attr('value',item).text(algoTypeText[i]);
+            }else{
+                algoType.append('option').attr('value',item).attr('disable',true).text(algoTypeText[i]);
+            }
+
+        });
+        dataSetType.append('option').attr('value','train').text('train data set');
+        dataSetType.append('option').attr('value','test').text('test data set');
+        form.append('p').classed('form-label',true).append('label').text('machine learning model id: ')
+            .append('input').attr('type','text').attr('ng-model','modelId').attr('placeholder','unnecessary')
+            .append('button').text('apply').on('click',showModelIdDataSet);
+        form.append('p').classed('form-label',true).append('label').text('data set id: ')
+            .append('input').attr('type','text').attr('ng-model','dataSetId').attr('placeholder','unnecessary')
+            .append('button').text('apply').on('click',showdataSetIdDataSet);
         return content;
+    }
+    function showModelIdDataSet(){}
+    function showdataSetIdDataSet(){}
+
+    function startRefresh(p) {
+        if(p === 'alarm predict'){
+            $scope.alarmPred.refreshPromise = $interval($scope.alarmPred.fetchData, refreshInterval);
+        }
+        if(p === 'fault classification'){
+            $scope.faultClassification.refreshPromise = $interval($scope.faultClassification.fetchData, refreshInterval);
+        }
+        if(p === 'area predict'){
+            $scope.areaPred.refreshPromise = $interval($scope.areaPred.fetchData, refreshInterval);
+        }
+        if(p === 'edge predict'){
+            $scope.edgePred.refreshPromise = $interval($scope.edgePred.fetchData, refreshInterval);
+        }
+        if(p === 'alarm predict data set'){
+            $scope.alarmPredDataSet.refreshPromise = $interval($scope.alarmPredDataSet.fetchData, refreshInterval);
+        }
+        if(p === 'fault classification data set'){
+            $scope.faultClassificationDataSet.refreshPromise = $interval($scope.faultClassificationDataSet.fetchData, refreshInterval);
+        }
+        if(p === 'area predict data set'){
+            $scope.areaPredDataSet.refreshPromise = $interval($scope.areaPredDataSet.fetchData, refreshInterval);
+        }
+        if(p === 'edge predict data set'){
+            $scope.edgePredDataSet.refreshPromise = $interval($scope.edgePredDataSet.fetchData, refreshInterval);
+        }
+        if(p === 'historical alarm'){
+            $scope.historicalAlarm.refreshPromise = $interval($scope.historicalAlarm.fetchData, refreshInterval);
+        }
+        if(p === 'current alarm'){
+            $scope.currentAlarm.refreshPromise = $interval($scope.currentAlarm.fetchData, refreshInterval);
+        }
+        if(p === 'performance'){
+            $scope.performance.refreshPromise = $interval($scope.performance.fetchData, refreshInterval);
+        }
+    }
+
+    function stopRefresh(p){
+        if(p === 'alarmPred'){
+            if ($scope.alarmPred.refreshPromise) {
+                $interval.cancel($scope.alarmPred.refreshPromise);
+                $scope.alarmPred.refreshPromise = null;
+            }
+        }
+        if(p === 'faultClassification'){
+            if ($scope.faultClassification.refreshPromise) {
+                $interval.cancel($scope.faultClassification.refreshPromise);
+                $scope.faultClassification.refreshPromise = null;
+            }
+        }
+        if(p === 'areaPred'){
+            if ($scope.areaPred.refreshPromise) {
+                $interval.cancel($scope.areaPred.refreshPromise);
+                $scope.areaPred.refreshPromise = null;
+            }
+        }
+        if(p === 'edgePred'){
+            if ($scope.edgePred.refreshPromise) {
+                $interval.cancel($scope.edgePred.refreshPromise);
+                $scope.edgePred.refreshPromise = null;
+            }
+        }
+        if(p === 'modelLibrary'){
+            if ($scope.modelLibrary.refreshPromise) {
+                $interval.cancel($scope.modelLibrary.refreshPromise);
+                $scope.modelLibrary.refreshPromise = null;
+            }
+        }
+        if(p === 'rawData'){
+            if ($scope.performance.refreshPromise) {
+                $interval.cancel($scope.performance.refreshPromise);
+                $scope.performance.refreshPromise = null;
+            }
+            if ($scope.historicalAlarm.refreshPromise) {
+                $interval.cancel($scope.historicalAlarm.refreshPromise);
+                $scope.historicalAlarm.refreshPromise = null;
+            }
+            if ($scope.currentAlarm.refreshPromise) {
+                $interval.cancel($scope.currentAlarm.refreshPromise);
+                $scope.currentAlarm.refreshPromise = null;
+            }
+        }
+        if(p === 'dataSet'){
+            if ($scope.alarmPredDataSet.refreshPromise) {
+                $interval.cancel($scope.alarmPredDataSet.refreshPromise);
+                $scope.alarmPredDataSet.refreshPromise = null;
+            }
+            if ($scope.faultClassificationDataSet.refreshPromise) {
+                $interval.cancel($scope.faultClassificationDataSet.refreshPromise);
+                $scope.faultClassificationDataSet.refreshPromise = null;
+            }
+            if ($scope.areaPredDataSet.refreshPromise) {
+                $interval.cancel($scope.areaPredDataSet.refreshPromise);
+                $scope.areaPredDataSet.refreshPromise = null;
+            }
+            if ($scope.edgePredDataSet.refreshPromise) {
+                $interval.cancel($scope.edgePredDataSet.refreshPromise);
+                $scope.edgePredDataSet.refreshPromise = null;
+            }
+        }
+
     }
 
     angular.module('ovSoon',['ngCookies'])
         .controller('OvSoonCtrl',
-            ['$log','$scope','$http','$timeout','$cookieStore',
+            ['$log','$scope','$http','$timeout','$cookieStore','$interval',
                 'WebSocketService', 'FnService', 'KeyService', 'PanelService',
                 'IconService', 'UrlFnService', 'DialogService', 'LionService','MLTableBuilderService',
-                function(_$log_,_$scope_, $http, $timeout, $cookieStore, _wss_, _fs_, _ks_, _ps_, _is_,
+                function(_$log_,_$scope_, $http, $timeout, $cookieStore,_$interval_, _wss_, _fs_, _ks_, _ps_, _is_,
                          ufs, _ds_, _ls_,_mtbs_){
             $log = _$log_;
             $scope = _$scope_;
+            $interval = _$interval_;
             wss = _wss_;
             fs = _fs_;
             ks = _ks_;
@@ -682,12 +853,12 @@
             $scope.performance.payloadParams = null;
             $scope.performance.autoRefresh = true;
 
-                    $scope.dataSetSelectForm = {};
-                    $scope.dataSetSelectForm.appType = {};
-                    $scope.dataSetSelectForm.algoType = {};
-                    $scope.dataSetSelectForm.dataSetType = {};
-                    $scope.dataSetSelectForm.modelId = {};
-                    $scope.dataSetSelectForm.dataSetId = {};
+                    // $scope.dataSetSelectForm = {};
+                    // $scope.dataSetSelectForm.appType = {};
+                    // $scope.dataSetSelectForm.algoType = {};
+                    // $scope.dataSetSelectForm.dataSetType = {};
+                    // $scope.dataSetSelectForm.modelId = {};
+                    // $scope.dataSetSelectForm.dataSetId = {};
 
 
 
@@ -788,46 +959,75 @@
             };
 
             $scope.dataSetShowSelect = function () {
-                function dOK(){
-                    var subpage = $scope.appType;
-                    $scope.dataSetInfo.setting.algorithmType = $scope.algoType;
-                    $scope.dataSetInfo.setting.dataSetType = $scope.dataSetType;
-                    $scope.dataSetInfo.setting.modelId = $scope.modelId;
-                    $scope.dataSetInfo.setting.dataSetId = $scope.dataSetId;
-                    if(subpage === 'alarmPred'){
-                        navToSubPage('data set');
-                        navToDataSetSubPage('alarm predict data set');
-                        var pa = angular.extend({},$scope.dataSetInfo,defaultAlarmPredDataSetSortParams);
-                        wss.sendEvent(alarmPredDataSetReq,pa);
-                    }
-                    if(subpage === 'faultClassification'){
-                        navToSubPage('data set');
-                        navToDataSetSubPage('fault classification data set');
-                        var pb = angular.extend({},$scope.dataSetInfo,defaultFaultClassificationDataSetSortParams);
-                        wss.sendEvent(faultClassificationDataSetReq,pb);
-                    }
-                    if(subpage === 'alarmPred'){
-                        navToSubPage('data set');
-                        navToDataSetSubPage('alarm predict data set');
-                        var pc = angular.extend({},$scope.dataSetInfo,defaultAreaPredDataSetSortParams);
-                        wss.sendEvent(areaPredDataSetReq,pc);
-                    }
-                    if(subpage === 'alarmPred'){
-                        navToSubPage('data set');
-                        navToDataSetSubPage('alarm pred data set');
-                        var pd = angular.extend({},$scope.dataSetInfo,defaultEdgePredDataSetSortParams);
-                        wss.sendEvent(edgePredDataSetReq,pd);
-                    }
+                // function dOK(){
+                //     var subpage = $scope.appType;
+                //     $scope.dataSetInfo.setting.algorithmType = $scope.algoType;
+                //     $scope.dataSetInfo.setting.dataSetType = $scope.dataSetType;
+                //     $scope.dataSetInfo.setting.modelId = $scope.modelId;
+                //     $scope.dataSetInfo.setting.dataSetId = $scope.dataSetId;
+                //     if(subpage === 'alarmPred'){
+                //         navToSubPage('data set');
+                //         navToDataSetSubPage('alarm predict data set');
+                //         var pa = angular.extend({},$scope.dataSetInfo,defaultAlarmPredDataSetSortParams);
+                //         wss.sendEvent(alarmPredDataSetReq,pa);
+                //     }
+                //     if(subpage === 'faultClassification'){
+                //         navToSubPage('data set');
+                //         navToDataSetSubPage('fault classification data set');
+                //         var pb = angular.extend({},$scope.dataSetInfo,defaultFaultClassificationDataSetSortParams);
+                //         wss.sendEvent(faultClassificationDataSetReq,pb);
+                //     }
+                //     if(subpage === 'alarmPred'){
+                //         navToSubPage('data set');
+                //         navToDataSetSubPage('alarm predict data set');
+                //         var pc = angular.extend({},$scope.dataSetInfo,defaultAreaPredDataSetSortParams);
+                //         wss.sendEvent(areaPredDataSetReq,pc);
+                //     }
+                //     if(subpage === 'alarmPred'){
+                //         navToSubPage('data set');
+                //         navToDataSetSubPage('alarm pred data set');
+                //         var pd = angular.extend({},$scope.dataSetInfo,defaultEdgePredDataSetSortParams);
+                //         wss.sendEvent(edgePredDataSetReq,pd);
+                //     }
+                // }
+                // function dCancel(){
+                //     $log.debug('Canceling config model parameters of alarmPre');
+                // }
+                // ds.openDialog(dataSetSelectDialogId,dialogOpts)
+                //     .setTitle('data set select')
+                //     .addContent(dataSetSelectDialogContent())
+                //     .addOk(dOK)
+                //     .addCancel(dCancel)
+                //     .bindKeys();
+                var subpage = $scope.appType;
+                $scope.dataSetInfo.setting.algorithmType = $scope.algoType;
+                $scope.dataSetInfo.setting.dataSetType = $scope.dataSetType;
+                $scope.dataSetInfo.setting.modelId = $scope.modelId;
+                $scope.dataSetInfo.setting.dataSetId = $scope.dataSetId;
+                if(subpage === 'alarmPred'){
+                    navToSubPage('data set');
+                    navToDataSetSubPage('alarm predict data set');
+                    var pa = angular.extend({},$scope.dataSetInfo,defaultAlarmPredDataSetSortParams);
+                    wss.sendEvent(alarmPredDataSetReq,pa);
                 }
-                function dCancel(){
-                    $log.debug('Canceling config model parameters of alarmPre');
+                if(subpage === 'faultClassification'){
+                    navToSubPage('data set');
+                    navToDataSetSubPage('fault classification data set');
+                    var pb = angular.extend({},$scope.dataSetInfo,defaultFaultClassificationDataSetSortParams);
+                    wss.sendEvent(faultClassificationDataSetReq,pb);
                 }
-                ds.openDialog(dataSetSelectDialogId,dialogOpts)
-                    .setTitle('data set select')
-                    .addContent(dataSetSelectDialogContent())
-                    .addOk(dOK)
-                    .addCancel(dCancel)
-                    .bindKeys();
+                if(subpage === 'areaPred'){
+                    navToSubPage('data set');
+                    navToDataSetSubPage('area predict data set');
+                    var pc = angular.extend({},$scope.dataSetInfo,defaultAreaPredDataSetSortParams);
+                    wss.sendEvent(areaPredDataSetReq,pc);
+                }
+                if(subpage === 'edgePred'){
+                    navToSubPage('data set');
+                    navToDataSetSubPage('edge predict data set');
+                    var pd = angular.extend({},$scope.dataSetInfo,defaultEdgePredDataSetSortParams);
+                    wss.sendEvent(edgePredDataSetReq,pd);
+                }
             };
 
             buildAllTable();
