@@ -105,8 +105,9 @@
                 if (fs.debugOn('widget')) {
                     $log.debug('Refreshing ' + root + ' subPage');
                 }
-                requestTableData();
+
             }
+            requestTableData();
         }
 
         function startRefresh() {

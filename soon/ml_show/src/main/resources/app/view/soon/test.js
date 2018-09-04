@@ -96,7 +96,7 @@
             secondDir:'asc'
         },
         defaultFaultClassificationDataSetSortParams = {
-            firstCol:'time',
+            firstCol:'dataId',
             firstDir:'asc',
             secondCol:'faultType',
             secondDir:'asc'
@@ -133,7 +133,7 @@
         },
         defaultDataSetPayloadParams = {
             setting: {
-                algorithmType: 'ann',
+                algorithmType: 'fcnn',
                 dataSetType: 'train',
                 modelId: '',
                 dataSetId: ''
@@ -307,7 +307,7 @@
         //createTable($scope,$scope.faultClassification,'faultClassification',null,null);
         //createTable($scope,$scope.areaPred,'areaPred',null,null);
         //createTable($scope,$scope.edgePred,'edgePred',null,null);
-        createTable($scope,$scope.alarmPredDataSet,'alarmPredDataSet',null,'dataId');
+        //createTable($scope,$scope.alarmPredDataSet,'alarmPredDataSet',null,'dataId');
         createTable($scope,$scope.faultClassificationDataSet,'faultClassificationDataSet',null,'dataId');
         createTable($scope,$scope.areaPredDataSet,'areaPredDataSet',null,'dataId');
         createTable($scope,$scope.edgePredDataSet,'edgePredDataSet',null,'dataId');
@@ -507,7 +507,9 @@
     function dataSetSelectDialogContent () {
         var content;
         content = ds.createDiv();
-        content.append('iframe').attr('src','/app/view/soon/dataSetSelectDialog.html');
+        content.append('iframe').attr('src','app/view/soon/dataSetSelectDialog.html');
+        $log.log(content);
+        $log.log(content.node());
         return content;
     }
 
@@ -517,7 +519,7 @@
                 'WebSocketService', 'FnService', 'KeyService', 'PanelService',
                 'IconService', 'UrlFnService', 'DialogService', 'LionService','MLTableBuilderService',
                 function(_$log_,_$scope_, $http, $timeout, $cookieStore, _wss_, _fs_, _ks_, _ps_, _is_,
-                         ufs, ds, _ls_,_mtbs_){
+                         ufs, _ds_, _ls_,_mtbs_){
             $log = _$log_;
             $scope = _$scope_;
             wss = _wss_;
@@ -525,6 +527,7 @@
             ks = _ks_;
             ps = _ps_;
             is = _is_;
+            ds = _ds_;
             //tbs = _tbs_;
             ls = _ls_;
             mtbs = _mtbs_;
@@ -557,6 +560,8 @@
             $scope.historicalAlarmInfo = {};
             $scope.performanceInfo = {};
             $scope.dataSetInfo = {};
+                    $scope.dataSetInfo.setting = {};
+
 
             //default model id for each application
             $scope.defaultAlarmPredModelId = NaN;
@@ -677,6 +682,13 @@
             $scope.performance.payloadParams = null;
             $scope.performance.autoRefresh = true;
 
+                    $scope.dataSetSelectForm = {};
+                    $scope.dataSetSelectForm.appType = {};
+                    $scope.dataSetSelectForm.algoType = {};
+                    $scope.dataSetSelectForm.dataSetType = {};
+                    $scope.dataSetSelectForm.modelId = {};
+                    $scope.dataSetSelectForm.dataSetId = {};
+
 
 
             var handlers={};
@@ -777,11 +789,11 @@
 
             $scope.dataSetShowSelect = function () {
                 function dOK(){
-                    var subpage = $scope.datSetSlectForm.appType;
-                    $scope.dataSetInfo.setting.algorithmType = $scope.dateSetSelectForm.algoType;
-                    $scope.dataSetInfo.setting.dataSetType = $scope.dateSetSelectForm.dataSetType;
-                    $scope.dataSetInfo.setting.modelId = $scope.dateSetSelectForm.modelId;
-                    $scope.dataSetInfo.setting.dataSetId = $scope.dateSetSelectForm.dataSetId;
+                    var subpage = $scope.appType;
+                    $scope.dataSetInfo.setting.algorithmType = $scope.algoType;
+                    $scope.dataSetInfo.setting.dataSetType = $scope.dataSetType;
+                    $scope.dataSetInfo.setting.modelId = $scope.modelId;
+                    $scope.dataSetInfo.setting.dataSetId = $scope.dataSetId;
                     if(subpage === 'alarmPred'){
                         navToSubPage('data set');
                         navToDataSetSubPage('alarm predict data set');

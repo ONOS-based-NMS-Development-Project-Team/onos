@@ -448,10 +448,8 @@
                                 </td>
                             </tr>
 
-                            <tr ng-repeat="currentAlarm in cuttentAlarm.tableData | filter:queryFilter track by $index"
-                                ng-click="selectCallback($event,currentAlarm)"
-                                ng-class="{selected: currentAlarm.id === selId}"
-                                ng-repeat-complete row-id="{{currentAlarm.id}}">
+                            <tr ng-repeat="currentAlarm in currentAlarm.tableData | filter:queryFilter track by $index"
+                                ng-repeat-complete row-id="{{currentAlarm.level}}">
                                 <td>{{currentAlarm.level}}</td>
                                 <td>{{currentAlarm.alarmSource}}</td>
                                 <td>{{currentAlarm.name}}</td>
