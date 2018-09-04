@@ -156,6 +156,10 @@
         edgePredDataSetSearchByText = ['id','area id','data set id','data set type','timePoint','output','input'],
         modelDetailsPropOrder = ['applicationType','modelId','algorithmType','modelState','trainDataSetId','testDataSetId','modelAccuracy'],
         modelDetailsPropOrderText = ['application type','model id','algorithm type','model state','train data set id','test data set id','model accuracy'],
+        appTypeValue = ['alarmPred','faultClassification','areaPred','edgePred'],
+        appTypeText = ['alarm predict','fault classification','area predict','edge predict'],
+        algoTypeValue = ['fcnn','cnn','rnn','lstm','randomforest'],
+        algoTypeText = ['fully connected neural network','convolutional neural network','recurrent neural network','long short-term memory','random forest'],
         annParams = ['inputNum','outputNum','hiddenLayer','activationFunction','weightInit','biasInit','lossFunction','batchSize','epoch','optimizer','learningRate','lrAdjust','dropout'],
         annParamsText = ['input num','output num','hidden layer neurons number','activation function','weight init','bias init','loss function','batch size','epoch','optimizer','learning rate','learning rate adjust','dropout'];
 
@@ -311,7 +315,7 @@
         createTable($scope,$scope.faultClassificationDataSet,'faultClassificationDataSet',null,'dataId');
         createTable($scope,$scope.areaPredDataSet,'areaPredDataSet',null,'dataId');
         createTable($scope,$scope.edgePredDataSet,'edgePredDataSet',null,'dataId');
-        //createTable($scope,$scope.modelLibrary,'modelLibrary',null,'modelId');
+        createTable($scope,$scope.modelLibrary,'modelLibrary',null,'modelId');
         //modelDetails();
         createTable($scope,$scope.historicalAlarm,'historicalAlarm',null,'level');
         //modelDetails();
@@ -505,9 +509,35 @@
     }
 
     function dataSetSelectDialogContent () {
-        var content;
+        var content,form,appType,algoType,dataSetType;
         content = ds.createDiv();
         content.append('iframe').attr('src','/app/view/soon/dataSetSelectDialog.html');
+        form = content.append('form').classed('dataSet-select-dialog-form',true);
+        appType = form.append('p').classed('form-label',true).append('label').text('application type: ')
+            .append('select').attr('id','appType').attr('ng-model','dataSetSelectForm.appType');
+        algoType = form.append('p').classed('form-label',true).append('label').text('algorithm type: ')
+            .append('select').attr('id','algoType').attr('ng-model','dataSetSelectForm.algoType');
+        dataSetType = form.append('p').classed('form-label',true).append('label').text('data set type: ')
+            .append('select').attr('id','dataSetType').attr('ng-model','dataSetSelectForm.dataSetType');
+        appTypeValue.forEach(function(item,i){
+            appType.append('option').attr('value',item).text(appTypeText[i]);
+        });
+        algoTypeValue.forEach(function (item,i) {
+            if(item === 'fcnn'){
+                algoType.append('option').attr('value',item).text(algoTypeText[i]);
+            }else{
+                algoType.append('option').attr('value',item).attr('disable',true).text(algoTypeText[i]);
+            }
+
+        });
+        dataSetType.append('option').attr('value','train').text('train data set');
+        dataSetType.append('option').attr('value','test').text('test data set');
+        form.append('p').classed('form-label',true).append('label').text('machine learning model id: ')
+            .append('input').attr('type','text').attr('ng-model','dataSetSelectForm.modelId').attr('placeholder','unnecessary')
+            .append('button').text('apply').on('click',showModelIdDataSet);
+        form.append('p').classed('form-label',true).append('label').text('data set id: ')
+            .append('input').attr('type','text').attr('ng-model','dataSetSelectForm.dataSetId').attr('placeholder','unnecessary')
+            .append('button').text('apply').on('click',showdataSetIdDataSet);
         return content;
     }
 
