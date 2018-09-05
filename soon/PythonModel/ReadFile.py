@@ -1,5 +1,8 @@
 import tensorflow as tf
 import hashlib
+import os
+import command
+from NeurosNetwork import NeurosNetwork
 def read_data(data_list):
     listData = []
     for i in range(len(data_list)):
@@ -36,7 +39,7 @@ def read_parameters(dict):
         optimizer = tf.train.GradientDescentOptimizer
     lrAdjust = dict["lrAdjust"]
     if lrAdjust == 'constant':
-        lrAdjust = tf.train.exponential_decay
+        lrAdjust = tf.train.linear_cosine_decay
     dropout = dict["dropout"]
 
     return [inputlayer_nnumber,outlayer_nnumber,hiddenNum,learning_rate,epoch,
@@ -52,3 +55,13 @@ def MD5_Value(filename):
                 break
             md5_value.update(data)
     return md5_value.hexdigest()
+
+if __name__ == '__main__':
+    print("hh")
+    print(os.environ['HOME'])
+    print('hh')
+    os.system("gnome-terminal -e 'ls'")
+    # os.system("ls")
+    networks = NeurosNetwork(31,16,1,0.01,101,10,tf.train.GradientDescentOptimizer,tf.train.exponential_decay
+                             ,tf.nn.relu,0.0,tf.reduce_mean,[40])
+    print(networks)

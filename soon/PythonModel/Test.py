@@ -1,5 +1,4 @@
 import json
-import websocket
 import numpy as np
 from ReadFile import read_parameters
 from NeurosNetwork import NeurosNetwork
@@ -121,19 +120,4 @@ if __name__ == '__main__':
     data_test_dict = {}
     model_para = []
     train_id = 0
-    websocket.enableTrace(True)
-    host = "ws://10.108.69.165:8181/onos/soon/soon"
-    ws = websocket.WebSocketApp(host, on_open=on_open,on_message=on_message, on_error=on_error, on_close=on_close)
-    # process = "/notify/process\n{'loss':0.5}"
-    # ws.send(process)
 
-    # server = socket.socket()
-    # server.bind(("localhost", 8000))
-    # server.listen(5)
-    # flag = True
-    # while flag:
-    #     conn, addr = server.accept()
-    #     print("conn", conn, "\naddr", addr)
-    #     flag = False
-    websocket
-    ws.run_forever()
