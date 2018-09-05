@@ -806,15 +806,55 @@
             };
 
             $scope.dataSetShowSelect = function () {
-                function dOK(){
-                    var subpage = $scope.datSetSlectForm.appType;
-                    $scope.dataSetInfo.setting.algorithmType = $scope.dateSetSelectForm.algoType;
-                    $scope.dataSetInfo.setting.dataSetType = $scope.dateSetSelectForm.dataSetType;
-                    $scope.dataSetInfo.setting.modelId = $scope.dateSetSelectForm.modelId;
-                    $scope.dataSetInfo.setting.dataSetId = $scope.dateSetSelectForm.dataSetId;
-                    if(subpage === 'alarmPred'){
-                        navToSubPage('data set');
-                        navToDataSetSubPage('alarm predict data set');
+                // function dOK(){
+                //     var subpage = $scope.datSetSlectForm.appType;
+                //     $scope.dataSetInfo.setting.algorithmType = $scope.dateSetSelectForm.algoType;
+                //     $scope.dataSetInfo.setting.dataSetType = $scope.dateSetSelectForm.dataSetType;
+                //     $scope.dataSetInfo.setting.modelId = $scope.dateSetSelectForm.modelId;
+                //     $scope.dataSetInfo.setting.dataSetId = $scope.dateSetSelectForm.dataSetId;
+                //     if(subpage === 'alarmPred'){
+                //         navToSubPage('data set');
+                //         navToDataSetSubPage('alarm predict data set');
+                //         var pa = angular.extend({},$scope.dataSetInfo,defaultAlarmPredDataSetSortParams);
+                //         wss.sendEvent(alarmPredDataSetReq,pa);
+                //     }
+                //     if(subpage === 'faultClassification'){
+                //         navToSubPage('data set');
+                //         navToDataSetSubPage('fault classification data set');
+                //         var pb = angular.extend({},$scope.dataSetInfo,defaultFaultClassificationDataSetSortParams);
+                //         wss.sendEvent(faultClassificationDataSetReq,pb);
+                //     }
+                //     if(subpage === 'alarmPred'){
+                //         navToSubPage('data set');
+                //         navToDataSetSubPage('alarm predict data set');
+                //         var pc = angular.extend({},$scope.dataSetInfo,defaultAreaPredDataSetSortParams);
+                //         wss.sendEvent(areaPredDataSetReq,pc);
+                //     }
+                //     if(subpage === 'alarmPred'){
+                //         navToSubPage('data set');
+                //         navToDataSetSubPage('alarm pred data set');
+                //         var pd = angular.extend({},$scope.dataSetInfo,defaultEdgePredDataSetSortParams);
+                //         wss.sendEvent(edgePredDataSetReq,pd);
+                //     }
+
+                // }
+                // function dCancel(){
+                //     $log.debug('Canceling config model parameters of alarmPre');
+                // }
+                // ds.openDialog(dataSetSelectDialogId,dialogOpts)
+                //     .setTitle('data set select')
+                //     .addContent(dataSetSelectDialogContent())
+                //     .addOk(dOK)
+                //     .addCancel(dCancel)
+                //     .bindKeys();
+                var subpage = $scope.datSetSlectForm.appType;
+                     $scope.dataSetInfo.setting.algorithmType = $scope.dateSetSelectForm.algoType;
+                     $scope.dataSetInfo.setting.dataSetType = $scope.dateSetSelectForm.dataSetType;
+                     $scope.dataSetInfo.setting.modelId = $scope.dateSetSelectForm.modelId;
+                     $scope.dataSetInfo.setting.dataSetId = $scope.dateSetSelectForm.dataSetId;
+                     if(subpage === 'alarmPred'){
+                         navToSubPage('data set');
+                         navToDataSetSubPage('alarm predict data set');
                         var pa = angular.extend({},$scope.dataSetInfo,defaultAlarmPredDataSetSortParams);
                         wss.sendEvent(alarmPredDataSetReq,pa);
                     }
@@ -836,16 +876,6 @@
                         var pd = angular.extend({},$scope.dataSetInfo,defaultEdgePredDataSetSortParams);
                         wss.sendEvent(edgePredDataSetReq,pd);
                     }
-                }
-                function dCancel(){
-                    $log.debug('Canceling config model parameters of alarmPre');
-                }
-                ds.openDialog(dataSetSelectDialogId,dialogOpts)
-                    .setTitle('data set select')
-                    .addContent(dataSetSelectDialogContent())
-                    .addOk(dOK)
-                    .addCancel(dCancel)
-                    .bindKeys();
             };
 
             buildAllTable();
