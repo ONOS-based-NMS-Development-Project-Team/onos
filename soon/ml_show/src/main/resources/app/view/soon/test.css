@@ -16,6 +16,12 @@
 #faultClassification{
     display: none;
 }
+#areaPred{
+    display: none;
+}
+#edgePred{
+    display: none;
+}
 #modelLibrary{
     display: none;
 }
@@ -28,6 +34,12 @@
 #faultClassificationDataSet{
     display: none;
 }
+#areaPredDataSet{
+    display: none;
+}
+#edgePredDataSet{
+    display: none;
+}
 #historicalAlarm{
     display: block;
 }
@@ -38,8 +50,8 @@
     display: none;
 }
 #soon-view div.ctrl-btns img {
-    width:42px;
-    height:42px;
+    width:52px;
+    height:52px;
 }
 #ov-soon h2 {
 }

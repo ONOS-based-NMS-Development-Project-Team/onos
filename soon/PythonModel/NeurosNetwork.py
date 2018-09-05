@@ -1,4 +1,5 @@
 import tensorflow as tf
+import os
 
 
 class NeurosNetwork(object):
@@ -7,6 +8,8 @@ class NeurosNetwork(object):
                  leraning_rate,epoch,batch_size,optimizerFunction=tf.train.GradientDescentOptimizer,
                  lrAdjust = tf.train.exponential_decay,activation_function=tf.nn.relu,dropout=0.0,
                  lossFunction = tf.reduce_mean,hidden_layer_neurosNums=[]):
+        # self.saver = tf.train.Saver()
+        self.logdir = os.environ['HOME']
         self.input_layer_neurosNums = input_layer_neurosNums
         self.output_layer_neurosNums = output_layer_neurosNums
         self.hidden_layer_nums = hidden_layer_nums
@@ -15,10 +18,10 @@ class NeurosNetwork(object):
         self.optimizerFunction = optimizerFunction
         self.lrAdjust = lrAdjust
         self.dropout = dropout
-        self.global_step = tf.Variable(0, trainable=False)
-        initial_learning_rate = leraning_rate
+        self.global_step = tf.Variable(0)
+        self.initial_learning_rate = leraning_rate
         self.epoch = epoch
-        self.learning_rate = tf.train.exponential_decay(initial_learning_rate, global_step=self.global_step,
+        self.learning_rate = tf.train.exponential_decay(self.initial_learning_rate, global_step=self.global_step,
                                                         decay_steps=self.epoch/self.batch_size,decay_rate=0.8)
         self.activation_function = activation_function
         self.hidden_layer_neurosNums = hidden_layer_neurosNums
@@ -31,13 +34,18 @@ class NeurosNetwork(object):
         # last layer without activationFunction
         self.reconstruction = self._output_Layer()
         with tf.name_scope('loss'):
-            # self.loss = tf.reduce_mean(tf.reduce_sum(tf.square(self.y - self.reconstruction), reduction_indices=[1]))
-            diff = tf.nn.softmax_cross_entropy_with_logits(logits=self.reconstruction, labels=self.y)
+            if self.lossFunction == tf.reduce_mean:
+                diff = tf.reduce_sum(tf.square(self.y - self.reconstruction), reduction_indices=[1])
+            else:
+                diff = tf.nn.softmax_cross_entropy_with_logits(logits=self.reconstruction, labels=self.y)
             with tf.name_scope('total'):
                 self.loss = self.lossFunction(diff)
         tf.summary.scalar('loss', self.loss)
         with tf.name_scope('train'):
-            self.optimizer = self.optimizerFunction(self.learning_rate).minimize(self.loss)
+            if self.lrAdjust == tf.train.exponential_decay:
+                self.optimizer = self.optimizerFunction(self.learning_rate).minimize(self.loss)
+            else:
+                self.optimizer = self.optimizerFunction(self.initial_learning_rate).minimize(self.loss)
         with tf.name_scope('accuracy'):
             with tf.name_scope('correct_prediction'):
                 correct_prediction = tf.equal(tf.argmax(self.y, 1), tf.argmax(self.reconstruction, 1))
@@ -46,7 +54,7 @@ class NeurosNetwork(object):
         tf.summary.scalar('accuracy', self.accuracy)
         init = tf.global_variables_initializer()
         self.merged = tf.summary.merge_all()
-        self.sess = tf.Session()
+        self.sess = tf.InteractiveSession()
         self.sess.run(init)
         # self.sess.run(merged)
 
@@ -135,22 +143,24 @@ class NeurosNetwork(object):
 
     # training process
     def traingResult(self, X, Y):
-        train_writter = tf.summary.FileWriter('/home/yby/train', self.sess.graph)
+        train_writter = tf.summary.FileWriter(self.logdir + '/train', self.sess.graph)
         loss_list = []
         for i in range(self.epoch):
-            value, opt = self.sess.run([self.merged, self.optimizer], feed_dict={self.x: X, self.y: Y, self.global_step:i})
+            value, opt = self.sess.run([self.merged, self.optimizer], feed_dict={self.x: X, self.y: Y})
             if i % 10 == 0:
                 # print(i, self.sess.run(self.loss, feed_dict={self.x: X, self.y: Y}))
                 train_writter.add_summary(value, i)
+                # self.saver.save(self.sess, self.logdir+'/model.ckpt',i)
             if i % 100 == 0:
                 loss = self.sess.run(self.loss, feed_dict={self.x: X, self.y: Y})
                 print(i, loss)
                 loss_list.append(loss)
+        train_writter.close()
         return loss_list
 
     # testing process
     def testResult(self, X, Y):
-        test_writter = tf.summary.FileWriter('/home/yby/test', self.sess.graph)
+        test_writter = tf.summary.FileWriter(self.logdir + '/test')
         acc_list = []
         for i in range(100):
             if i % 10 == 0:
@@ -158,4 +168,17 @@ class NeurosNetwork(object):
                 test_writter.add_summary(value, i)
                 acc_list.append(acc)
                 print('Accuracy at step %s: %s' % (i, acc))
+        test_writter.close()
         return acc_list
+
+
+    # tensorboard execute
+    def tb_exe(self):
+        log_dir = self.logdir + '/train'
+        os.system("source activate tensorflow")
+        os.system("tensorboard --logdir=" + log_dir)
+
+
+    # reset graph
+    def reset(self):
+        return tf.reset_default_graph()
