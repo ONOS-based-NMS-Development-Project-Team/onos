@@ -714,7 +714,10 @@
             $scope.faultClassificationStartTip = 'start fault classification application';
             $scope.faultClassificationStopip = 'stop fault classification application';
             $scope.faultClassificationSettingTip = 'config settings of fault Classification application';
-            $scope.modelLibraryTip = 'create new model and config parameters';
+            $scope.modelStartTip = 'start training this model';
+            $scope.modelStopTip = 'stop training this model';
+            $scope.modelDeleteTip = 'delete this model';
+            $scope.modelAddTip = 'add new model to train';
             $scope.showHistoricalAlarmTip = 'show historical alarm data';
             $scope.showCurrentAlarmTip = 'show current alarm data';
             $scope.showPerformanceDataTip = 'show performance data';

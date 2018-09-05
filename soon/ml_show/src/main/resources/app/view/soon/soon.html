@@ -24,6 +24,20 @@
                 <li>
                     <div class="soon-left-content-item-container">
                         <p ng-click="navTo($event)">
+                            area predict
+                        </p>
+                    </div>
+                </li>
+                <li>
+                    <div class="soon-left-content-item-container">
+                        <p ng-click="navTo($event)">
+                            edge predict
+                        </p>
+                    </div>
+                </li>
+                <li>
+                    <div class="soon-left-content-item-container">
+                        <p ng-click="navTo($event)">
                             fault locate
                         </p>
                     </div>
@@ -270,7 +284,7 @@
                 </div>
             </div>
         </div>
-        <div class="alarm-predict" id="areaPred">
+        <div class="area-predict" id="areaPred">
             <div class="tabular-header">
                 <h2>
                     alarm predict
@@ -370,7 +384,7 @@
                 </div>
             </div>
         </div>
-        <div class="alarm-predict" id="edgePred">
+        <div class="edge-predict" id="edgePred">
             <div class="tabular-header">
                 <h2>
                     alarm predict
@@ -483,10 +497,25 @@
 
                     <div class="separator"></div>
 
-                    <div class="modelLibrarySetting"
-                         tooltip tt-msg="modelLibrarySettingTip"
-                         ng-click="modelLibrarySetting()">
-                        <img src="app/view/soon/setting.png" class="ctrl-imgs">
+                    <div class="modelStart"
+                         tooltip tt-msg="modelStartTip"
+                         ng-click="modelStart()">
+                        <img src="app/view/soon/functionStart.png" class="ctrl-imgs">
+                    </div>
+                    <div class="modelStop"
+                         tooltip tt-msg="modelStopTip"
+                         ng-click="modelStop()">
+                        <img src="app/view/soon/functionStop.png" class="ctrl-imgs">
+                    </div>
+                    <div class="modelDelete"
+                         tooltip tt-msg="modelDeleteTip"
+                         ng-click="modelDelete()">
+                        <img src="app/view/soon/delete.png" class="ctrl-imgs">
+                    </div>
+                    <div class="modeAdd"
+                         tooltip tt-msg="modelAddTip"
+                         ng-click="modelAdd()">
+                        <img src="app/view/soon/delete.png" class="ctrl-imgs">
                     </div>
                 </div>
                 <div class="search">

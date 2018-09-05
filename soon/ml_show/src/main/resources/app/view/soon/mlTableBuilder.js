@@ -137,8 +137,6 @@
         });
 
         requestTableData();
-        startRefresh();
-
     }
 
     angular.module('ovSoon')
