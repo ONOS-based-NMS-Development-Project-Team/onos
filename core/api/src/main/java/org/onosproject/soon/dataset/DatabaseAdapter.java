@@ -55,6 +55,13 @@ public abstract class DatabaseAdapter {
      */
     public abstract List<Item> queryData(List<String> items, String constraint, String tableName, Class cls);
 
+    /**
+     * 直接用sql语句进行查询
+     * @param sql
+     * @return
+     */
+    public abstract List<Item> queryData(String sql, Class cls);
+
 
 
     /**
@@ -96,10 +103,10 @@ public abstract class DatabaseAdapter {
                             break;
                         case Types.TIMESTAMP:
                             // 如果是timestamp类型
-                            field.set(obj, rs.getDate(i));
+                            field.set(obj, rs.getTimestamp(i));
                             break;
                         case Types.TIMESTAMP_WITH_TIMEZONE:
-                            field.set(obj, rs.getDate(i));
+                            field.set(obj, rs.getTimestamp(i));
                             // 如果是timestamp with time zone类型
                             break;
                         case Types.VARCHAR:

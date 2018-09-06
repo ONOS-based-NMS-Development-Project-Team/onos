@@ -20,5 +20,8 @@
         <feature>onos-api</feature>
         <bundle>mvn:univ.bupt.soon/ml_show/0.1-SNAPSHOT</bundle>
         <bundle>mvn:org.postgresql/postgresql/42.2.4</bundle>
+        <feature>machine-learning-platform</feature>
+        <feature>service-adjustment</feature>
+        <feature>failure-location</feature>
     </feature>
 </features>

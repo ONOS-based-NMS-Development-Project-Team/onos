@@ -93,4 +93,15 @@ public class OriginalDatabaseAdapter extends DatabaseAdapter {
         }
         return null;
     }
+
+    @Override
+    public List<Item> queryData(String s, Class cls) {
+        try {
+            ResultSet rs = stmt.executeQuery(s);
+            return parseResultSet(rs, cls);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

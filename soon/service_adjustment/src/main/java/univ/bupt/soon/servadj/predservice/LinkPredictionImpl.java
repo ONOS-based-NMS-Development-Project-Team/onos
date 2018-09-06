@@ -50,7 +50,7 @@ public class LinkPredictionImpl extends ModelControlServiceAbstract {
         int testDatasetId = platformService.requestNewTestDatasetId(websocketId);
         Set<Integer> trids = Sets.newHashSet(trainDatasetId);
         Set<Integer> teids = Sets.newHashSet(testDatasetId);
-
+        // 查询训练集
         List<Item> trainData = database.queryData("*", "", tableName, itemClass);
         int size = trainData.size();
         trainIds.put(trainDatasetId, size);

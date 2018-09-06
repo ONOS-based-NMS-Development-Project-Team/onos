@@ -40,4 +40,26 @@ public enum MLAlgorithmType {
     public String getName() {
         return null;
     }
+
+    public MLAlgorithmType parseStr(String str) {
+        switch (str) {
+            case "fcnn":
+                return FCNNModel;
+
+            case "rnn":
+                return RNNModel;
+
+            case "cnn":
+                return CNNModel;
+
+            case "lstm":
+                return LSTMModel;
+
+            case "randomforest":
+                return RandomForestModel;
+
+            default:
+                return null;
+        }
+    }
 }

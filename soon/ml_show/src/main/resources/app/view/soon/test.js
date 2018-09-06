@@ -6,7 +6,7 @@
     'use strict';
 
     //ingected references
-    var $log,$scope,$cookieStore,$interval,wss,ps,fs,ks,ls,is,ds,tbs,mtbs;
+    var $log,$scope,$cookieStore,$interval,$compile,wss,ps,fs,ks,ls,is,ds,tbs,mtbs;
 
     //internal state
     var pStartY,
@@ -544,17 +544,37 @@
         })
     }
 
+    function appTypeChange() {
+        $scope.appType = this.options[this.selectedIndex].value;
+    }
+
+    function algoTypeChange() {
+        $scope.algoType = this.options[this.selectedIndex].value;
+    }
+
+    function dataSetTypeChange() {
+        $scope.dataSetType = this.options[this.selectedIndex].value;
+    }
+
+    function modelIdChange() {
+        $scope.modelId = this.options[this.selectedIndex].value;
+    }
+
+    function dataSetIdChange() {
+        $scope.dataSetId = this.options[this.selectedIndex].value;
+    }
+
     function dataSetSelectDialogContent () {
         var content,form,appType,algoType,dataSetType;
         content = ds.createDiv();
         //content.append('iframe').attr('src','/app/view/soon/dataSetSelectDialog.html');
         form = content.append('form').classed('dataSet-select-dialog-form',true);
-        appType = form.append('p').classed('form-label',true).append('label').text('application type: ')
-            .append('select').attr('id','appType').attr('ng-model','appType');
+        appType = form.append('p').classed('form-label',true).attr('id','appTypeId').append('label').text('application type: ')
+            .append('select').attr('id','appType').on('change',appTypeChange);
         algoType = form.append('p').classed('form-label',true).append('label').text('algorithm type: ')
-            .append('select').attr('id','algoType').attr('ng-model','algoType');
+            .append('select').attr('id','algoType').on('change',algoTypeChange);
         dataSetType = form.append('p').classed('form-label',true).append('label').text('data set type: ')
-            .append('select').attr('id','dataSetType').attr('ng-model','dataSetType');
+            .append('select').attr('id','dataSetType').on('change',dataSetTypeChange);
         appTypeValue.forEach(function(item,i){
             appType.append('option').attr('value',item).text(appTypeText[i]);
         });
@@ -569,10 +589,10 @@
         dataSetType.append('option').attr('value','train').text('train data set');
         dataSetType.append('option').attr('value','test').text('test data set');
         form.append('p').classed('form-label',true).append('label').text('machine learning model id: ')
-            .append('input').attr('type','text').attr('ng-model','modelId').attr('placeholder','unnecessary')
+            .append('input').attr('type','text').attr('id','modelId').attr('placeholder','unnecessary').on('change',modelIdChange)
             .append('button').text('apply').on('click',showModelIdDataSet);
         form.append('p').classed('form-label',true).append('label').text('data set id: ')
-            .append('input').attr('type','text').attr('ng-model','dataSetId').attr('placeholder','unnecessary')
+            .append('input').attr('type','text').attr('id','dataSetId').attr('placeholder','unnecessary').on('change',dataSetIdChange)
             .append('button').text('apply').on('click',showdataSetIdDataSet);
         return content;
     }
@@ -683,14 +703,15 @@
 
     angular.module('ovSoon',['ngCookies'])
         .controller('OvSoonCtrl',
-            ['$log','$scope','$http','$timeout','$cookieStore','$interval',
+            ['$log','$scope','$http','$timeout','$cookieStore','$interval','$compile',
                 'WebSocketService', 'FnService', 'KeyService', 'PanelService',
                 'IconService', 'UrlFnService', 'DialogService', 'LionService','MLTableBuilderService',
-                function(_$log_,_$scope_, $http, $timeout, $cookieStore,_$interval_, _wss_, _fs_, _ks_, _ps_, _is_,
+                function(_$log_,_$scope_, $http, $timeout, $cookieStore,_$interval_,_$compile_, _wss_, _fs_, _ks_, _ps_, _is_,
                          ufs, _ds_, _ls_,_mtbs_){
             $log = _$log_;
             $scope = _$scope_;
             $interval = _$interval_;
+            $compile = _$compile_;
             wss = _wss_;
             fs = _fs_;
             ks = _ks_;
@@ -932,13 +953,16 @@
 
             };
 
+            $scope.alarmPredSetting
+
             $scope.faultClassificationShow = function (action) {
 
             };
 
             $scope.faultClassificationSetting = function () {
 
-            };
+            }
+            ;
 
             $scope.showHistoricalAlarm = function () {
               navToSubPage('raw data') ;
@@ -960,81 +984,78 @@
             };
 
             $scope.dataSetShowSelect = function () {
-                // function dOK(){
-                //     var subpage = $scope.datSetSlectForm.appType;
-                //     $scope.dataSetInfo.setting.algorithmType = $scope.dateSetSelectForm.algoType;
-                //     $scope.dataSetInfo.setting.dataSetType = $scope.dateSetSelectForm.dataSetType;
-                //     $scope.dataSetInfo.setting.modelId = $scope.dateSetSelectForm.modelId;
-                //     $scope.dataSetInfo.setting.dataSetId = $scope.dateSetSelectForm.dataSetId;
-                //     var subpage = $scope.appType;
-                //     $scope.dataSetInfo.setting.algorithmType = $scope.algoType;
-                //     $scope.dataSetInfo.setting.dataSetType = $scope.dataSetType;
-                //     $scope.dataSetInfo.setting.modelId = $scope.modelId;
-                //     $scope.dataSetInfo.setting.dataSetId = $scope.dataSetId;
-                //     if(subpage === 'alarmPred'){
-                //         navToSubPage('data set');
-                //         navToDataSetSubPage('alarm predict data set');
-                //         var pa = angular.extend({},$scope.dataSetInfo,defaultAlarmPredDataSetSortParams);
-                //         wss.sendEvent(alarmPredDataSetReq,pa);
-                //     }
-                //     if(subpage === 'faultClassification'){
-                //         navToSubPage('data set');
-                //         navToDataSetSubPage('fault classification data set');
-                //         var pb = angular.extend({},$scope.dataSetInfo,defaultFaultClassificationDataSetSortParams);
-                //         wss.sendEvent(faultClassificationDataSetReq,pb);
-                //     }
-                //     if(subpage === 'alarmPred'){
-                //         navToSubPage('data set');
-                //         navToDataSetSubPage('alarm predict data set');
-                //         var pc = angular.extend({},$scope.dataSetInfo,defaultAreaPredDataSetSortParams);
-                //         wss.sendEvent(areaPredDataSetReq,pc);
-                //     }
-                //     if(subpage === 'alarmPred'){
-                //         navToSubPage('data set');
-                //         navToDataSetSubPage('alarm pred data set');
-                //         var pd = angular.extend({},$scope.dataSetInfo,defaultEdgePredDataSetSortParams);
-                //         wss.sendEvent(edgePredDataSetReq,pd);
-                //     }
+                function dOK(){
 
+                    var subpage = $scope.appType;
+                    $scope.dataSetInfo.setting.algorithmType = $scope.algoType;
+                    $scope.dataSetInfo.setting.dataSetType = $scope.dataSetType;
+                    $scope.dataSetInfo.setting.modelId = $scope.modelId;
+                    $scope.dataSetInfo.setting.dataSetId = $scope.dataSetId;
+                    if(subpage === 'alarmPred'){
+                        navToSubPage('data set');
+                        navToDataSetSubPage('alarm predict data set');
+                        var pa = angular.extend({},$scope.dataSetInfo,defaultAlarmPredDataSetSortParams);
+                        wss.sendEvent(alarmPredDataSetReq,pa);
+                    }
+                    if(subpage === 'faultClassification'){
+                        navToSubPage('data set');
+                        navToDataSetSubPage('fault classification data set');
+                        var pb = angular.extend({},$scope.dataSetInfo,defaultFaultClassificationDataSetSortParams);
+                        wss.sendEvent(faultClassificationDataSetReq,pb);
+                    }
+                    if(subpage === 'areaPred'){
+                        navToSubPage('data set');
+                        navToDataSetSubPage('area predict data set');
+                        var pc = angular.extend({},$scope.dataSetInfo,defaultAreaPredDataSetSortParams);
+                        wss.sendEvent(areaPredDataSetReq,pc);
+                    }
+                    if(subpage === 'edgePred'){
+                        navToSubPage('data set');
+                        navToDataSetSubPage('edge predict data set');
+                        var pd = angular.extend({},$scope.dataSetInfo,defaultEdgePredDataSetSortParams);
+                        wss.sendEvent(edgePredDataSetReq,pd);
+                    }
+
+                }
+                function dCancel(){
+                    $log.debug('Canceling config model parameters of alarmPre');
+                }
+                ds.openDialog(dataSetSelectDialogId,dialogOpts)
+                    .setTitle('data set select')
+                    .addContent(dataSetSelectDialogContent())
+                    .addOk(dOK)
+                    .addCancel(dCancel)
+                    .bindKeys();
+                $compile(d3.select('#'+dataSetSelectDialogId));
+                // var subpage = $scope.appType;
+                // $scope.dataSetInfo.setting.algorithmType = $scope.algoType;
+                // $scope.dataSetInfo.setting.dataSetType = $scope.dataSetType;
+                // $scope.dataSetInfo.setting.modelId = $scope.modelId;
+                // $scope.dataSetInfo.setting.dataSetId = $scope.dataSetId;
+                // if(subpage === 'alarmPred'){
+                //     navToSubPage('data set');
+                //     navToDataSetSubPage('alarm predict data set');
+                //     var pa = angular.extend({},$scope.dataSetInfo,defaultAlarmPredDataSetSortParams);
+                //     wss.sendEvent(alarmPredDataSetReq,pa);
                 // }
-                // function dCancel(){
-                //     $log.debug('Canceling config model parameters of alarmPre');
+                // if(subpage === 'faultClassification'){
+                //     navToSubPage('data set');
+                //     navToDataSetSubPage('fault classification data set');
+                //     var pb = angular.extend({},$scope.dataSetInfo,defaultFaultClassificationDataSetSortParams);
+                //     wss.sendEvent(faultClassificationDataSetReq,pb);
                 // }
-                // ds.openDialog(dataSetSelectDialogId,dialogOpts)
-                //     .setTitle('data set select')
-                //     .addContent(dataSetSelectDialogContent())
-                //     .addOk(dOK)
-                //     .addCancel(dCancel)
-                //     .bindKeys();
-                var subpage = $scope.appType;
-                $scope.dataSetInfo.setting.algorithmType = $scope.algoType;
-                $scope.dataSetInfo.setting.dataSetType = $scope.dataSetType;
-                $scope.dataSetInfo.setting.modelId = $scope.modelId;
-                $scope.dataSetInfo.setting.dataSetId = $scope.dataSetId;
-                if(subpage === 'alarmPred'){
-                    navToSubPage('data set');
-                    navToDataSetSubPage('alarm predict data set');
-                    var pa = angular.extend({},$scope.dataSetInfo,defaultAlarmPredDataSetSortParams);
-                    wss.sendEvent(alarmPredDataSetReq,pa);
-                }
-                if(subpage === 'faultClassification'){
-                    navToSubPage('data set');
-                    navToDataSetSubPage('fault classification data set');
-                    var pb = angular.extend({},$scope.dataSetInfo,defaultFaultClassificationDataSetSortParams);
-                    wss.sendEvent(faultClassificationDataSetReq,pb);
-                }
-                if(subpage === 'areaPred'){
-                    navToSubPage('data set');
-                    navToDataSetSubPage('area predict data set');
-                    var pc = angular.extend({},$scope.dataSetInfo,defaultAreaPredDataSetSortParams);
-                    wss.sendEvent(areaPredDataSetReq,pc);
-                }
-                if(subpage === 'edgePred'){
-                    navToSubPage('data set');
-                    navToDataSetSubPage('edge predict data set');
-                    var pd = angular.extend({},$scope.dataSetInfo,defaultEdgePredDataSetSortParams);
-                    wss.sendEvent(edgePredDataSetReq,pd);
-                }
+                // if(subpage === 'areaPred'){
+                //     navToSubPage('data set');
+                //     navToDataSetSubPage('area predict data set');
+                //     var pc = angular.extend({},$scope.dataSetInfo,defaultAreaPredDataSetSortParams);
+                //     wss.sendEvent(areaPredDataSetReq,pc);
+                // }
+                // if(subpage === 'edgePred'){
+                //     navToSubPage('data set');
+                //     navToDataSetSubPage('edge predict data set');
+                //     var pd = angular.extend({},$scope.dataSetInfo,defaultEdgePredDataSetSortParams);
+                //     wss.sendEvent(edgePredDataSetReq,pd);
+                // }
             };
 
             buildAllTable();

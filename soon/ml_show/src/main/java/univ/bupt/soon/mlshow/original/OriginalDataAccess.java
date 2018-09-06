@@ -114,4 +114,9 @@ public class OriginalDataAccess implements ModelControlService {
         // 查询数据
         return query.queryData("*", " offset "+offset+" limit "+limit, tableName, itemClass);
     }
+
+    @Override
+    public List<Item> updateData(String s, Class cls) {
+        return query.queryData(s, cls);
+    }
 }

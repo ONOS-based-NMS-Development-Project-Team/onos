@@ -148,10 +148,10 @@ public interface ModelControlService {
     List<Item> updateData(int offset, int limit);
 
 
-//    /**
-//     * 直接在tableName表上使用sql语句查询
-//     * @param sql sql语句
-//     * @return 查询结果
-//     */
-//    List<Item> updateData(String sql);
+    /**
+     * 直接在tableName表上使用sql语句查询
+     * @param sql sql语句
+     * @return 查询结果
+     */
+    List<Item> updateData(String sql, Class cls);
 }

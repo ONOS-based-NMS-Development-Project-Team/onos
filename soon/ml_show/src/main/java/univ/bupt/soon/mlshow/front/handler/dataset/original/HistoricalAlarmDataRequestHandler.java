@@ -1,4 +1,4 @@
-package univ.bupt.soon.mlshow.front.handler.dataset;
+package univ.bupt.soon.mlshow.front.handler.dataset.original;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.onosproject.soon.dataset.original.Item;
@@ -20,34 +20,37 @@ import static org.onosproject.ui.table.TableModel.sortDir;
 
 /**
  * handler for AlarmHistorical data requests.
- *
- * #soonEvent:histroicalAlarmDataRequest
+ * #soonEvent: historicalAlarmDataRequest
  * {
- * 	"event":"histroicalAlarmDataRequest",
+ * 	"event":"historicalAlarmDataRequest",
  * 	"payload":{
  * 		"firstCol":"level",
  * 		"firstDir":"asc",
  * 		"secondCol":"alarmSource",
  * 		"secondDir":"asc",
- *        }
+ * 		"setting":{
+ * 			""  对原始数据来说，我想没什么可选择的，所以setting为空
+ *                }    * 	}
  * }
- *
- * #soonEvent:histroicalAlarmDataResponse
+ * #soonEvent: historicalAlarmDataResponse
  * {
- * 	"event":"histroicalAlarmDataResponse",
+ * 	"event":"historicalAlarmDataResponse",
  * 	"payload":{
- * 		"histroicalAlarms":[{
+ * 		"historicalAlarms":[{
  * 			"level":"",
  * 			"alarmSource":"",
  * 			"name":"",
  * 			"type":"",
  * 			"location":"",
- * 			"pathLevel":""
- *                },{}],
+ * 			"pathLevel":"",
+ * 			"happenTime":"",
+ * 			"cleanTime":"",
+ * 			"confirmTime":""
+ *        },{}],
  * 		"ANNOTS":{}    * 	}
  * }
   */
-public class AlarmHistoricalDataRequestHandler extends TableRequestHandler {
+public class HistoricalAlarmDataRequestHandler extends TableRequestHandler {
 
     private static final String DATA_REQ = "historicalAlarmDataRequest";
     private static final String DATA_RESP = "historicalAlarmDataResponse";
@@ -59,7 +62,7 @@ public class AlarmHistoricalDataRequestHandler extends TableRequestHandler {
     private int offset = 0;
     private int limit = 10;
 
-    public AlarmHistoricalDataRequestHandler() {
+    public HistoricalAlarmDataRequestHandler() {
         super(DATA_REQ, DATA_RESP, TABLES);
     }
 
@@ -77,7 +80,7 @@ public class AlarmHistoricalDataRequestHandler extends TableRequestHandler {
 
     @Override
     protected String[] getColumnIds() {
-        String[] COLUMN_IDS = {LEVEL, NAME, ALARM_SRC, TP, LOCATION, HAPPEN_TIME};
+        String[] COLUMN_IDS = {LEVEL, ALARM_SOURCE, NAME, TYPE, LOCATION, PATH_LEVEL, HAPPEN_TIME, CLEAN_TIME, CONFIRM_TIME};
         return COLUMN_IDS;
     }
 
@@ -110,15 +113,23 @@ public class AlarmHistoricalDataRequestHandler extends TableRequestHandler {
         for (Item it : its) {
             populateRow(tm.addRow(), (HistoryAlarmItem)it);
         }
+        if (its.size() != limit) {
+            offset = 0;
+        }
         offset += limit;
     }
 
     private void populateRow(TableModel.Row row, HistoryAlarmItem item) {
+//        LEVEL, ALARM_SOURCE, NAME, TYPE, LOCATION, PATH_LEVEL, HAPPEN_TIME, CLEAN_TIME, CONFIRM_TIME
         row.cell(LEVEL, item.getLevel())
                 .cell(ALARM_SRC, item.getAlarm_src())
+                .cell(ALARM_SOURCE, item.getAlarm_src())
                 .cell(NAME, item.getName())
-                .cell(TP, item.getTp())
+                .cell(TYPE, item.getTp())
                 .cell(LOCATION, item.getLocation())
-                .cell(HAPPEN_TIME, formatter.format(item.getHappen_time()));
+                .cell(PATH_LEVEL, item.getPath_level())
+                .cell(HAPPEN_TIME, parseDate(item.getHappen_time()))
+                .cell(CLEAN_TIME, parseDate(item.getClean_time()))
+                .cell(CONFIRM_TIME, parseDate(item.getConfirm_time()));
     }
 }

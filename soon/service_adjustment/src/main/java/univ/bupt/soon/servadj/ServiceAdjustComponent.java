@@ -47,8 +47,8 @@ public class ServiceAdjustComponent {
     protected CoreService coreService;
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected MLPlatformService platformService;
-//    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-//    protected MLAppRegistry mlAppRegistry;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected MLAppRegistry mlAppRegistry;
 
 
     @Activate
@@ -62,13 +62,13 @@ public class ServiceAdjustComponent {
                 AreaPredictionItem.class, AreaPredPlatformCallback.class, databese, platformService, 1);
         AreaPredictionImpl area3 = new AreaPredictionImpl(MLAppType.RESIDENTIAL_AREA_PREDICTION, "area_load",
                 AreaPredictionItem.class, AreaPredPlatformCallback.class, databese, platformService, 2);
-//        mlAppRegistry.register(lpi, lpi.getServiceName());
-//        mlAppRegistry.register(area1, area1.getServiceName());
-//        mlAppRegistry.register(area3, area3.getServiceName());
+        mlAppRegistry.register(lpi, lpi.getServiceName());
+        mlAppRegistry.register(area1, area1.getServiceName());
+        mlAppRegistry.register(area3, area3.getServiceName());
 
-        test(lpi);
-        test(area1);
-        test(area3);
+//        test(lpi);
+//        test(area1);
+//        test(area3);
 //        if (databese.connect()) {
             // 如果数据库连接成功，向前台注册应用
 //            LinkPredictionImpl lpi = new LinkPredictionImpl(databese, platformService);
@@ -177,9 +177,9 @@ public class ServiceAdjustComponent {
     @Deactivate
     protected void deactivate() {
         // 注销服务
-//        mlAppRegistry.unregister(MLAppType.LINK_PREDICTION);
-//        mlAppRegistry.unregister(MLAppType.BUSINESS_AREA_PREDICTION);
-//        mlAppRegistry.unregister(MLAppType.RESIDENTIAL_AREA_PREDICTION);
+        mlAppRegistry.unregister(MLAppType.LINK_PREDICTION);
+        mlAppRegistry.unregister(MLAppType.BUSINESS_AREA_PREDICTION);
+        mlAppRegistry.unregister(MLAppType.RESIDENTIAL_AREA_PREDICTION);
 
         log.info("SOON - service reconstruction - Stopped");
     }
@@ -247,6 +247,17 @@ class InternalDatabaseAdapter extends DatabaseAdapter {
         // 开始查询ResultSet
         try {
             ResultSet rs = stmt.executeQuery(query);
+            return parseResultSet(rs, cls);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public List<Item> queryData(String s, Class cls) {
+        try {
+            ResultSet rs = stmt.executeQuery(s);
             return parseResultSet(rs, cls);
         } catch (SQLException e) {
             e.printStackTrace();

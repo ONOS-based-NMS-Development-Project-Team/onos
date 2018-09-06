@@ -22,8 +22,13 @@ import org.onosproject.soon.foreground.MLAppType;
 import org.onosproject.soon.foreground.ModelControlService;
 import org.onosproject.ui.RequestHandler;
 import org.onosproject.ui.UiMessageHandler;
-import univ.bupt.soon.mlshow.front.handler.dataset.AlarmHistoricalDataRequestHandler;
-import univ.bupt.soon.mlshow.front.handler.dataset.AlarmPredDataSetDataRequestHandler;
+import univ.bupt.soon.mlshow.front.handler.dataset.app.AreaPredDataSetDataRequestHandler;
+import univ.bupt.soon.mlshow.front.handler.dataset.app.EdgePredDataSetDataRequestHandler;
+import univ.bupt.soon.mlshow.front.handler.dataset.app.FailClassDataSetDataRequestHandler;
+import univ.bupt.soon.mlshow.front.handler.dataset.original.CurrentAlarmDataRequestHandler;
+import univ.bupt.soon.mlshow.front.handler.dataset.original.HistoricalAlarmDataRequestHandler;
+import univ.bupt.soon.mlshow.front.handler.dataset.app.AlarmPredDataSetDataRequestHandler;
+import univ.bupt.soon.mlshow.front.handler.dataset.original.PerformanceDataRequestHandler;
 import univ.bupt.soon.mlshow.front.handler.model.AlarmPredDataRequestHandler;
 
 import java.util.*;
@@ -40,24 +45,37 @@ public class MLMessageHandler extends UiMessageHandler {
     protected Collection<RequestHandler> createRequestHandlers() {
         /* 电网采集到的相关数据的展示 */
         // 历史告警
-        AlarmHistoricalDataRequestHandler ahdrh = new AlarmHistoricalDataRequestHandler();
+        HistoricalAlarmDataRequestHandler ahdrh = new HistoricalAlarmDataRequestHandler();
         ahdrh.setService(modelServices.get(MLAppType.ORIGINAL_HISTORY_ALARM_DATA));
         // 当前告警
-
+        CurrentAlarmDataRequestHandler cadrh = new CurrentAlarmDataRequestHandler();
+        cadrh.setService(modelServices.get(MLAppType.ORIGINAL_CURRENT_ALARM_DATA));
         // 性能信息
-
+        PerformanceDataRequestHandler pdrh = new PerformanceDataRequestHandler();
+        pdrh.setService(modelServices.get(MLAppType.ORIGINAL_PERFORMANCE_DATA));
 
         /* 告警预测数据的展示 */
         // 告警预测数据集
-        AlarmPredDataSetDataRequestHandler apdsdrh = new AlarmPredDataSetDataRequestHandler();
-        apdsdrh.setService(modelServices.get(MLAppType.ALARM_PREDICTION));
-        // 告警预测模型的应用
-        AlarmPredDataRequestHandler apdrh = new AlarmPredDataRequestHandler();
-        apdrh.setService(modelServices.get(MLAppType.ALARM_PREDICTION));
+//        AlarmPredDataSetDataRequestHandler apdsdrh = new AlarmPredDataSetDataRequestHandler();
+//        apdsdrh.setService(modelServices.get(MLAppType.ALARM_PREDICTION));
+        // 故障定位数据集
+        FailClassDataSetDataRequestHandler fcdsdrh = new FailClassDataSetDataRequestHandler();
+        fcdsdrh.setService(modelServices.get(MLAppType.FAILURE_CLASSIFICATION));
+        // 链路预测数据集
+        EdgePredDataSetDataRequestHandler epdsdrh = new EdgePredDataSetDataRequestHandler();
+        epdsdrh.setService(modelServices.get(MLAppType.LINK_PREDICTION));
+        // 区域预测数据集
+        AreaPredDataSetDataRequestHandler areaPdsdrh = new AreaPredDataSetDataRequestHandler();
+        areaPdsdrh.setService(modelServices.get(MLAppType.BUSINESS_AREA_PREDICTION));  // TODO 此处有冲突
 
         return ImmutableSet.of(
                 ahdrh,
-                apdsdrh
+                cadrh,
+                pdrh,
+//                apdsdrh,
+                fcdsdrh,
+                epdsdrh,
+                areaPdsdrh
         );
     }
 

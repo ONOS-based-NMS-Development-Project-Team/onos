@@ -219,6 +219,11 @@ public abstract class ModelControlServiceAbstract implements ModelControlService
     }
 
     @Override
+    public List<Item> updateData(String sql, Class cls) {
+        return database.queryData(sql, cls);
+    }
+
+    @Override
     public Pair<Boolean, Integer> queryURL(int modelId) {
         int msgId = platformService.queryURL(wsIds.get(modelId));
         if (msgId == -1) {
