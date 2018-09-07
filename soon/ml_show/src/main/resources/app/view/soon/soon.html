@@ -209,7 +209,7 @@
                     </div>
                     <div class="showRawData"
                          tooltip tt-msg="showRawDataTip"
-                         ng-click="showRawData()">
+                         ng-click="showRawDataAlarm()">
                         <img src="app/view/soon/showRawData.png" class="ctrl-imgs">
                     </div>
                     <div class="showTrainDataSet"
@@ -497,25 +497,24 @@
 
                     <div class="separator"></div>
 
-                    <div class="modelStart"
+                    <div icon icon-size="42" icon-id="play"
                          tooltip tt-msg="modelStartTip"
-                         ng-click="modelStart()">
-                        <img src="app/view/soon/functionStart.png" class="ctrl-imgs">
+                         ng-click="modelAction('start')"
+                        ng-class="{active: modelCtrlBtnState.waiting}">
                     </div>
-                    <div class="modelStop"
-                         tooltip tt-msg="modelStopTip"
-                         ng-click="modelStop()">
-                        <img src="app/view/soon/functionStop.png" class="ctrl-imgs">
-                    </div>
-                    <div class="modelDelete"
+                    <div icon icon-size="42" icon-id="garbage"
                          tooltip tt-msg="modelDeleteTip"
-                         ng-click="modelDelete()">
-                        <img src="app/view/soon/delete.png" class="ctrl-imgs">
+                         ng-click="modelAction('delete')"
+                        ng-class="{active: modelCtrlBtnState.selection}">
                     </div>
-                    <div class="modeAdd"
+                    <div icon icon-size="42" icon-id="eqMaster"
+                         tooltip tt-msg="modelEvaluateTip"
+                         ng-click="modelAction('evaluate')"
+                         ng-class="{active: modelCtrlBtnState.trained}">
+                    </div>
+                    <div icon icon-size="42" icon-id="plus"
                          tooltip tt-msg="modelAddTip"
-                         ng-click="modelAdd()">
-                        <img src="app/view/soon/delete.png" class="ctrl-imgs">
+                         ng-click="modelAction('add')">
                     </div>
                 </div>
                 <div class="search">
