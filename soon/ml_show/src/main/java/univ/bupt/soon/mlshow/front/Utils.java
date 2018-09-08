@@ -114,4 +114,32 @@ public class Utils {
     // 边预测
     public static final String EDGE_ID = "edgeId";
 
+    //模型库
+    public static final String APP_TYPE = "applicationType";
+    public static final String ALGO_TYPE = "algorithmType";
+    public static final String TRAIN_ID = "trainDataSetId";
+    public static final String Test_Id = "testDataSetId";
+    public static final String MODEL_STATE = "modelState";
+    public static final String LOSS = "loss";
+    public static final String REMAINING_TIME = "remainingTime";
+    public static final String PRECISION = "precision";
+    public static final String MODEL_LINK = "modelLink";
+    public static final String MODEL_ACCURACY = "modelAccuracy";
+    public static final String ALGO_PARAMS = "algorithmParams";
+    public static final String INPUT_NUM = "inputNum";
+    public static final String OUTPUT_NUM = "outputNum";
+    public static final String HIDDEN_LAYER = "hiddenLayer";
+    public static final String ACT_FUNTION = "activationFunction";
+    public static final String WEIGHT_INIT = "weightInit";
+    public static final String BIAS_INIT = "biasInit";
+    public static final String LOSS_FUNCTION = "lossFunction";
+    public static final String BATCH_SIZE = "batchSize";
+    public static final String EPOCH = "epoch";
+    public static final String OPTIMIZER = "optimizer";
+    public static final String LR = "learningRate";
+    public static final String LR_ADJUST = "lrAdjust";
+    public static final String DROPOUT = "dropout";
+
+
+
 }
