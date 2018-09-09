@@ -92,6 +92,32 @@ public class ModelLibraryMessageHandler extends UiMessageHandler {
         );
     }
 
+    protected MLAlgorithnConfig getRightConfig (ModelLibraryInfo info) {
+        MLAlgorithmType algoType = info.getMLModelDetails().getConfig().getAlgoType();
+        MLAlgorithmConfig config = info.getMlModelDetails().getConfig();
+        switch (algoType){
+            case  FCNNModel:
+                config = (NNAlgorithmConfig)config;
+                break;
+            case RNNModel :
+                break;
+            case CNNModel :
+                break;
+            case LSTMModel :
+                break;
+            case RandomForestModel :
+                break;
+        }
+        return config;
+    }
+
+    protected double[] getModelAccuracy (ModelLibraryInfo info) {
+        Map<Integer,double> modelAccuracyMap =  info.getMLModelDetail().getPerformances();
+        for(Integer key : modelAccuracyMap.keySet()){
+            double 
+        }
+    }
+
     private final Logger log = LoggerFactory.getLogger(getClass());
     private ModelControlService service;
 
@@ -142,14 +168,19 @@ public class ModelLibraryMessageHandler extends UiMessageHandler {
             }else {
                 for(String key : modelLibraryInfoMap.keySet()){
                     ModelLibraryInfo info = modelLibraryInfoMap.get(key);
-                    tm.addRow()
-                            .cell(APP_TYPE,info.getMlAppType())
-                            .cell(MODEL_ID,info.getModelId())
-                            .cell(LOSS,info.getLoss())
-                            .cell(REMAINING_TIME,info.getRemainingTime())
-                            .cell(PRECISION,info.getPrecision())
-                            .cell(MODEL_LINK,info.getModelLink())
-                            .cell(ALGO_TYPE,info.getMlModelDetail().getConfig().)
+                    MLAlgorithmConfig config = getRightConfig(info);
+                    () -> tm.addRow()
+                            .cell(APP_TYPE, info.getMlAppType())
+                            .cell(MODEL_ID, info.getModelId())
+                            .cell(LOSS, info.getLoss())
+                            .cell(REMAINING_TIME, info.getRemainingTime())
+                            .cell(PRECISION, info.getPrecision())
+                            .cell(MODEL_LINK, info.getModelLink())
+                            .cell(ALGO_TYPE, info.getMlAlgorithmType())
+                            .cell(TRAIN_ID,info.getMlModelDetail().getTrainDatasetId())
+                            .cell(TEST_ID,info.getTestDataSetId())
+                            .cell(MODEL_STATE,info.getModelDetail().getState())
+                            .cell(MODEL_ACCURACY,info.get)
                 }
             }
         }
