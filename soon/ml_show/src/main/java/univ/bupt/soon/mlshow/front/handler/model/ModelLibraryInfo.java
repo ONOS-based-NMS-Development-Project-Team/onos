@@ -15,7 +15,7 @@ import java.util.Map;
  * 	"event":"modelLibraryManagementRequest",
  * 	"payload":{
  * 		"modelId":"",
- * 		"action":"",
+ * 		"Action":"",
  * 		"applicationType":"",
  * 		"algorithmType":"",
  * 		"trainDataSetId":"",

@@ -1,11 +1,14 @@
 package univ.bupt.soon.mlshow.front.handler.model;
 
+import com.eclipsesource.json.JsonArray;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableSet;
-import com.sun.tools.internal.xjc.model.Model;
-import jdk.nashorn.internal.ir.annotations.Immutable;
-import org.graalvm.compiler.salver.util.ECIDUtil;
+
 import org.onosproject.soon.foreground.ModelControlService;
+import org.onosproject.soon.mlmodel.MLAlgorithmConfig;
+import org.onosproject.soon.mlmodel.MLAlgorithmType;
+import org.onosproject.soon.mlmodel.config.nn.NNAlgorithmConfig;
 import org.onosproject.ui.JsonUtils;
 import org.onosproject.ui.RequestHandler;
 import org.onosproject.ui.UiMessageHandler;
@@ -17,9 +20,12 @@ import org.slf4j.LoggerFactory;
 
 import java.security.spec.RSAOtherPrimeInfo;
 import java.sql.SQLTransactionRollbackException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import net.sf.json
 
 import static org.onosproject.ui.table.TableModel.sortDir;
 import static univ.bupt.soon.mlshow.front.Utils.*;
@@ -31,7 +37,7 @@ import static univ.bupt.soon.mlshow.front.Utils.*;
  * 	"event":"modelLibraryManagementRequest",
  * 	"payload":{
  * 		"modelId":"",
- * 		"action":"",
+ * 		"Action":"",
  * 		"applicationType":"",
  * 		"algorithmType":"",
  * 		"trainDataSetId":"",
@@ -92,12 +98,12 @@ public class ModelLibraryMessageHandler extends UiMessageHandler {
         );
     }
 
-    protected MLAlgorithnConfig getRightConfig (ModelLibraryInfo info) {
-        MLAlgorithmType algoType = info.getMLModelDetails().getConfig().getAlgoType();
-        MLAlgorithmConfig config = info.getMlModelDetails().getConfig();
+    protected MLAlgorithmConfig getRightConfig (ModelLibraryInfo info) {
+        MLAlgorithmType algoType = info.getMlAlgorithmType();
+        MLAlgorithmConfig config = new MLAlgorithmConfig(MLAlgorithmType.FCNNModel);
         switch (algoType){
             case  FCNNModel:
-                config = (NNAlgorithmConfig)config;
+                config = (NNAlgorithmConfig)info.getMlModelDetail().getConfig();
                 break;
             case RNNModel :
                 break;
@@ -111,11 +117,15 @@ public class ModelLibraryMessageHandler extends UiMessageHandler {
         return config;
     }
 
-    protected double[] getModelAccuracy (ModelLibraryInfo info) {
-        Map<Integer,double> modelAccuracyMap =  info.getMLModelDetail().getPerformances();
+    protected Object[] getModelAccuracy (ModelLibraryInfo info) {
+        Map<Integer,Double> modelAccuracyMap =  info.getMlModelDetail().getPerformances();
+        List<Double> modelAccuracy = new ArrayList();
         for(Integer key : modelAccuracyMap.keySet()){
-            double 
+            double accuracy = modelAccuracyMap.get(key);
+            modelAccuracy.add(accuracy);
         }
+        Object[] modelAccuracyAraay = modelAccuracy.toArray();
+        return modelAccuracyAraay;
     }
 
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -168,19 +178,14 @@ public class ModelLibraryMessageHandler extends UiMessageHandler {
             }else {
                 for(String key : modelLibraryInfoMap.keySet()){
                     ModelLibraryInfo info = modelLibraryInfoMap.get(key);
-                    MLAlgorithmConfig config = getRightConfig(info);
                     () -> tm.addRow()
                             .cell(APP_TYPE, info.getMlAppType())
                             .cell(MODEL_ID, info.getModelId())
-                            .cell(LOSS, info.getLoss())
                             .cell(REMAINING_TIME, info.getRemainingTime())
-                            .cell(PRECISION, info.getPrecision())
-                            .cell(MODEL_LINK, info.getModelLink())
                             .cell(ALGO_TYPE, info.getMlAlgorithmType())
                             .cell(TRAIN_ID,info.getMlModelDetail().getTrainDatasetId())
-                            .cell(TEST_ID,info.getTestDataSetId())
-                            .cell(MODEL_STATE,info.getModelDetail().getState())
-                            .cell(MODEL_ACCURACY,info.get)
+                            .cell(MODEL_STATE,info.getMlModelDetail().getState())
+                            .cell(MODEL_ACCURACY,getModelAccuracy(info))
                 }
             }
         }
@@ -188,6 +193,40 @@ public class ModelLibraryMessageHandler extends UiMessageHandler {
     }
 
     private final class ModelLibraryMgmtRequest extends RequestHandler {
+        private ModelLibraryMgmtRequest(){
+            super(MODEL_DETAILS_REQ);
+        }
+
+        protected void doAction (String action,ObjectNode payload,JsonNode st) {
+            if(action == null){
+                return;
+            }else{
+                switch (action){
+                    case "add": {
+                        long modelId = JsonUtils.number(payload,MODEL_ID);
+                        String appType = JsonUtils.string(payload,APP_TYPE);
+                        String algoType = JsonUtils.string(payload,ALGO_TYPE);
+                        long trianId = JsonUtils.number(payload,TRAIN_ID);
+                        int inputNum = st.get("inputNum").asInt(-1);
+                        int outputNum = st.get("outputNum").asInt(-1);
+                        int inputNum = st.get("inputNum").asInt(-1);
+                        List<Integer> hiddenLayer = JsonArray.
+
+
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void process (ObjectNode payload) {
+
+            //解析managementRequest参数
+            //long modelId = JsonUtils.number(payload,MODEL_ID);
+            String action = JsonUtils.string(payload,ACTION);
+            JsonNode st = payload.get("modelParams");
+
+        }
 
     }
 

@@ -118,7 +118,7 @@ public class Utils {
     public static final String APP_TYPE = "applicationType";
     public static final String ALGO_TYPE = "algorithmType";
     public static final String TRAIN_ID = "trainDataSetId";
-    public static final String Test_Id = "testDataSetId";
+    public static final String TEST_ID = "testDataSetId";
     public static final String MODEL_STATE = "modelState";
     public static final String LOSS = "loss";
     public static final String REMAINING_TIME = "remainingTime";
@@ -139,6 +139,8 @@ public class Utils {
     public static final String LR = "learningRate";
     public static final String LR_ADJUST = "lrAdjust";
     public static final String DROPOUT = "dropout";
+    //模型库Request参数
+    public static final String ACTION = "Action";
 
 
 
