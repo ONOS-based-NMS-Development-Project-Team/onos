@@ -66,7 +66,11 @@ public class ServiceAdjustComponent {
         mlAppRegistry.register(area1, area1.getServiceName());
         mlAppRegistry.register(area3, area3.getServiceName());
 
+<<<<<<< Updated upstream
 //        test(lpi);
+=======
+        test(lpi);
+>>>>>>> Stashed changes
 //        test(area1);
 //        test(area3);
 //        if (databese.connect()) {

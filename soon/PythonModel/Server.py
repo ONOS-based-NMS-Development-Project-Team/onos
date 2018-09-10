@@ -4,7 +4,7 @@ import json
 import threading
 import numpy as np
 from ReadFile import read_parameters
-from NeurosNetwork import NeurosNetwork
+from NeurosNetwork import NeuroNetwork
 
 import sys
 import pydevd
@@ -81,7 +81,7 @@ async def handler(websocket, path):
             hiddenLayer = model_para[11]
             # global networks
             print("current_model:", model_para)
-            global_networks.networks = NeurosNetwork(inputNum, outputNum, hiddenNum, learningRate, epoch, batchSize, optimiezer
+            global_networks.networks = NeuroNetwork(inputNum, outputNum, hiddenNum, learningRate, epoch, batchSize, optimiezer
                                      , lrAdjust, axtivationFunction, dropout, lossFunction, hiddenLayer)
             dataTrainSet = data_train_dict[train_id]
             print("threading_current_thread:", threading.current_thread().name)
@@ -127,7 +127,7 @@ async def handler(websocket, path):
             await websocket.send(pred)
         elif label == "/get/uri":
             print("cal_tensorboard")
-            tensor_link = 'www.cctv.com'
+            tensor_link = global_networks.networks.tb_exe()
             # json_tblink = json.dumps(tensor_link)
             tb_link = str(msg_id) + '\n' + '/notify/uri' + '\n' + tensor_link
             await websocket.send(tb_link)

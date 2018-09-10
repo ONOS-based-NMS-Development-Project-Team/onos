@@ -2,7 +2,7 @@ import tensorflow as tf
 import hashlib
 import os
 import command
-from NeurosNetwork import NeurosNetwork
+from NeurosNetwork import NeuroNetwork
 def read_data(data_list):
     listData = []
     for i in range(len(data_list)):
@@ -56,12 +56,13 @@ def MD5_Value(filename):
             md5_value.update(data)
     return md5_value.hexdigest()
 
+
 if __name__ == '__main__':
     print("hh")
     print(os.environ['HOME'])
     print('hh')
     os.system("gnome-terminal -e 'ls'")
     # os.system("ls")
-    networks = NeurosNetwork(31,16,1,0.01,101,10,tf.train.GradientDescentOptimizer,tf.train.exponential_decay
+    networks = NeuroNetwork(31,16,1,0.01,101,10,tf.train.GradientDescentOptimizer,tf.train.exponential_decay
                              ,tf.nn.relu,0.0,tf.reduce_mean,[40])
     print(networks)
