@@ -1,8 +1,11 @@
 import json
 import numpy as np
+import subprocess
+import os
 from ReadFile import read_parameters
-from NeurosNetwork import NeurosNetwork
+from NeurosNetwork import NeuroNetwork
 import websocket_server
+import time
 import socket
 
 
@@ -52,7 +55,7 @@ def on_message(ws, message):
         lossFunction = model_para[10]
         hiddenLayer = model_para[11]
         global networks
-        networks = NeurosNetwork(inputNum,outputNum,hiddenNum,learningRate,epoch,batchSize,optimiezer
+        networks = NeuroNetwork(inputNum,outputNum,hiddenNum,learningRate,epoch,batchSize,optimiezer
                                  ,lrAdjust,axtivationFunction,dropout,lossFunction,hiddenLayer)
         dataTrainId = data_train_dict[train_id]
         x = dataTrainId["input"]
@@ -120,4 +123,23 @@ if __name__ == '__main__':
     data_test_dict = {}
     model_para = []
     train_id = 0
+    cmd1 = "cd ~"
+    cmd2 = "source activate mhl"
+    cmd3 = "nohup tensorboard --logdir=/home/mahaoli/train &"
+    cmd = "/home/mahaoli/anaconda3/envs/mhl/bin/python /home/mahaoli/anaconda3/envs/mhl/bin/tensorboard --logdir=/home/mahaoli/train"
 
+    # val0 = os.system("cd ~")
+    # val = os.system("source activate mhl")
+    # val00 = os.system("pwd")
+    # print(val00)
+    # val1 = os.system("tensorboard logdir=/home/mahaoli/train")
+    # print(val1)
+    print(cmd)
+    print('http:\\\localhost:6006')
+    subprocess.getoutput(cmd)
+    # p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT,executable="/bin/bash")
+    # l = p.poll()
+    # print(l)
+    # print(p)
+    # time.sleep(200)
+    # print(p)

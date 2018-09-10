@@ -1,15 +1,17 @@
 import tensorflow as tf
 import os
+import threading
+import subprocess
 
 
-class NeurosNetwork(object):
+class NeuroNetwork(object):
 
     def __init__(self,input_layer_neurosNums,output_layer_neurosNums,hidden_layer_nums,
                  leraning_rate,epoch,batch_size,optimizerFunction=tf.train.GradientDescentOptimizer,
                  lrAdjust = tf.train.exponential_decay,activation_function=tf.nn.relu,dropout=0.0,
                  lossFunction = tf.reduce_mean,hidden_layer_neurosNums=[]):
         # self.saver = tf.train.Saver()
-        self.logdir = os.environ['HOME']
+        self.logdir = os.environ['HOME'] + '/'+threading.current_thread().name + '/train'
         self.input_layer_neurosNums = input_layer_neurosNums
         self.output_layer_neurosNums = output_layer_neurosNums
         self.hidden_layer_nums = hidden_layer_nums
@@ -174,9 +176,10 @@ class NeurosNetwork(object):
 
     # tensorboard execute
     def tb_exe(self):
-        log_dir = self.logdir + '/train'
-        os.system("source activate tensorflow")
-        os.system("tensorboard --logdir=" + log_dir)
+        cmd = "/home/mahaoli/anaconda3/envs/mhl/bin/python " \
+              "/home/mahaoli/anaconda3/envs/mhl/bin/tensorboard --logdir=" + self.logdir
+        subprocess.getoutput(cmd)
+        return 'http:\\\localhost:6006'
 
 
     # reset graph
