@@ -28,4 +28,20 @@ public enum Optimizer {
     public String getName() {
         return null;
     }
+
+    public static Optimizer parseStr(String str) {
+        switch (str) {
+            case "sgd":
+                return SGD;
+
+            case "adamsgd":
+                return ADAMSGD;
+
+            case "nestrov":
+                return NESTROV;
+
+            default:
+                return null;
+        }
+    }
 }

@@ -34,4 +34,23 @@ public enum ActivationFunction {
     public String getName() {
         return null;
     }
+
+    public static ActivationFunction parseStr(String str) {
+        switch (str) {
+            case "sigmoid":
+                return SIGMOID;
+
+            case "relu":
+                return RELU;
+
+            case "relu6":
+                return RELU6;
+
+            case "tanh":
+                return TANH;
+
+            default:
+                return null;
+        }
+    }
 }

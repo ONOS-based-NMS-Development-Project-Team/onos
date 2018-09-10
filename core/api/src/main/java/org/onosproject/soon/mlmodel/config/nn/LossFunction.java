@@ -34,4 +34,23 @@ public enum LossFunction {
     public String getName() {
         return null;
     }
+
+    public static LossFunction parseStr(String str) {
+        switch (str) {
+            case "l1loss":
+                return L1LOSS;
+
+            case "mseloss":
+                return MSELOSS;
+
+            case "nllloss":
+                return NLLLOSS;
+
+            case "crossentropyloss":
+                return CROSSENTROPY;
+
+            default:
+                return null;
+        }
+    }
 }

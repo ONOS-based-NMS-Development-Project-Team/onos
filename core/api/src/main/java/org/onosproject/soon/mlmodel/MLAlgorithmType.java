@@ -41,7 +41,7 @@ public enum MLAlgorithmType {
         return null;
     }
 
-    public MLAlgorithmType parseStr(String str) {
+    public static MLAlgorithmType parseStr(String str) {
         switch (str) {
             case "fcnn":
                 return FCNNModel;

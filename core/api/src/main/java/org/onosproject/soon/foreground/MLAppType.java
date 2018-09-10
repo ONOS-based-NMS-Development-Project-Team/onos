@@ -72,4 +72,38 @@ public enum MLAppType {
     public String getName() {
         return null;
     }
+
+    public static MLAppType parseStr(String str) {
+        switch (str) {
+            case "original_history_alarm_data":
+                return ORIGINAL_HISTORY_ALARM_DATA;
+
+            case "original_current_alarm_data":
+                return ORIGINAL_CURRENT_ALARM_DATA;
+
+            case "original_performance_data":
+                return ORIGINAL_PERFORMANCE_DATA;
+
+            case "alarm_prediction":
+                return ALARM_PREDICTION;
+
+            case "failure_location":
+                return FAILURE_LOCATION;
+
+            case "failure_classification":
+                return FAILURE_CLASSIFICATION;
+
+            case "business_area_prediction":
+                return BUSINESS_AREA_PREDICTION;
+
+            case "residential_area_prediction":
+                return RESIDENTIAL_AREA_PREDICTION;
+
+            case "link_prediction":
+                return LINK_PREDICTION;
+
+            default:
+                return null;
+        }
+    }
 }

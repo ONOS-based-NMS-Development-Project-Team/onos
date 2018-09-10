@@ -37,4 +37,23 @@ public enum ParamInit {
     public String getName() {
         return null;
     }
+
+    public static ParamInit parseStr(String str) {
+        switch (str) {
+            case "default":
+                return DEFAULT;
+
+            case "constant0":
+                return CONSTANT0;
+
+            case "constant1":
+                return CONSTANT1;
+
+            case "random":
+                return RANDOM;
+
+            default:
+                return null;
+        }
+    }
 }

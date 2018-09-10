@@ -33,4 +33,23 @@ public enum LRAdjust {
     public String getName() {
         return null;
     }
+
+    public static LRAdjust parseStr(String str) {
+        switch (str) {
+            case "constant":
+                return CONSTANT;
+
+            case "linear":
+                return LINEAR;
+
+            case "multiple":
+                return MULTIPLE;
+
+            case "onplateau":
+                return ONPLATEAU;
+
+            default:
+                return null;
+        }
+    }
 }

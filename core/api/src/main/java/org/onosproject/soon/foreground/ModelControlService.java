@@ -26,7 +26,7 @@ public interface ModelControlService {
      @param type : 神经网络类型标识，包含全连接神经网络、卷积神经网络、循环神经网络。
      @param config :  模型具体配置。
      @param callback : 回调函数。每增加一个新模型训练，底层会与TF新增一个websocket连接，因此需要一个回调方法实现相关信息的接收
-     @return :  Pair.Left表示增加的神经网络模型的id。如果为-1,表示模型增加失败; Pair.Right表示发送的模型配置消息的msgId
+     @return :  Pair.Left表示增加的模型的id。如果为-1,表示模型增加失败; Pair.Right表示发送的模型配置消息的msgId
      **/
     Pair<Integer, Integer> addNewModel(MLAlgorithmType type, MLAlgorithmConfig config, ForegroundCallback callback);
 
@@ -56,7 +56,7 @@ public interface ModelControlService {
     /**
      * 中断模型的训练过程
      * @param modelId 算法的指定配置参数的实现
-     * @return Pair.Left表示是否终端成功。如果当前模型不可中断，则返回false。Pair.Right表示发送的训练开始消息的msgId
+     * @return Pair.Left表示是否中断成功。如果当前模型不可中断，则返回false。Pair.Right表示发送的训练开始消息的msgId
      */
     Pair<Boolean, Integer> stopTraining(int modelId);
 

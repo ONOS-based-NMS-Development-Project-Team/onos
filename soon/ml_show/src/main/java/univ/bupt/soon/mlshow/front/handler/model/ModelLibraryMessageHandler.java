@@ -4,11 +4,18 @@ import com.eclipsesource.json.JsonArray;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableSet;
+import org.apache.commons.lang3.tuple.Pair;
 
+
+import org.onosproject.soon.MonitorData;
+import org.onosproject.soon.dataset.original.Item;
+import org.onosproject.soon.foreground.ForegroundCallback;
+import org.onosproject.soon.foreground.MLAppType;
 import org.onosproject.soon.foreground.ModelControlService;
 import org.onosproject.soon.mlmodel.MLAlgorithmConfig;
 import org.onosproject.soon.mlmodel.MLAlgorithmType;
-import org.onosproject.soon.mlmodel.config.nn.NNAlgorithmConfig;
+import org.onosproject.soon.mlmodel.MLModelDetail;
+import org.onosproject.soon.mlmodel.config.nn.*;
 import org.onosproject.ui.JsonUtils;
 import org.onosproject.ui.RequestHandler;
 import org.onosproject.ui.UiMessageHandler;
@@ -18,14 +25,13 @@ import org.onosproject.ui.table.TableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.security.spec.RSAOtherPrimeInfo;
 import java.sql.SQLTransactionRollbackException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import net.sf.json
+import net.sf.json.JSONArray;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.onosproject.ui.table.TableModel.sortDir;
 import static univ.bupt.soon.mlshow.front.Utils.*;
@@ -64,7 +70,7 @@ import static univ.bupt.soon.mlshow.front.Utils.*;
  * }
  * }
  */
-public class ModelLibraryMessageHandler extends UiMessageHandler {
+public class ModelLibraryMessageHandler extends UiMessageHandler implements ForegroundCallback{
 
     private static final String MODEL_DATA_REQ = "modelLibraryManagementRequest";
     private static final String MODEL_DATA_RESP = "modelLibraryManagementResponse";
@@ -88,7 +94,8 @@ public class ModelLibraryMessageHandler extends UiMessageHandler {
 
     private static final String NO_ROWS_MESSAGE = "no model found";
 
-    private final Map<String,ModelLibraryInfo> modelLibraryInfoMap = new ConcurrentHashMap<>();
+    private final Map<Integer,ModelLibraryInfo> modelLibraryInfoMap = new ConcurrentHashMap<>();
+    private final Map<Integer,Object> modelManagementMap = new ConcurrentHashMap<>();
 
     protected Collection<RequestHandler> createRequestHandlers() {
         return ImmutableSet.of(
@@ -97,6 +104,30 @@ public class ModelLibraryMessageHandler extends UiMessageHandler {
                 new ModelLibraryDetailsRequest()
         );
     }
+    @Override
+    public void operationFailure(int modelId,int msgId,String description){
+        modelManagementMap.get(modelId).put(msgId,description);
+    }
+
+    @Override
+    public void appliedModelResult(int msgId, List<Item> input, List<String> output) { }
+
+    @Override
+    public void modelEvaluation(int msgId, String result) { }
+
+    @Override
+    public void trainDatasetTransEnd(int msgId, int trainDatasetId) { }
+
+    @Override
+    public void testDatasetTransEnd(int msgId, int testDatasetId) { }
+
+    @Override
+    public void ResultUrl(int msgId, URI uri) { }
+
+    @Override
+    public void trainEnd(int msgId) { }
+    @Override
+    public void intermediateResult(int msgId, MonitorData monitorData) { }
 
     protected MLAlgorithmConfig getRightConfig (ModelLibraryInfo info) {
         MLAlgorithmType algoType = info.getMlAlgorithmType();
@@ -126,6 +157,29 @@ public class ModelLibraryMessageHandler extends UiMessageHandler {
         }
         Object[] modelAccuracyAraay = modelAccuracy.toArray();
         return modelAccuracyAraay;
+    }
+
+    protected List<Integer> arrayToList (JsonNode arrNode) {
+        List<Integer> arrList = new ArrayList<>();
+        if(arrNode.isArray()){
+            for(final JsonNode objNode : arrNode){
+                int i = objNode.asInt(-1);
+                arrList.add(i);
+            }
+        }
+        return arrList;
+    }
+
+    public int addModel (MLAlgorithmType algoType,MLAlgorithmConfig config) {
+        Pair<Integer,Integer> addNewModelPair = service.addNewModel(algoType,config,new ModelLibraryMessageHandler());
+        int modelId = addNewModelPair.getKey();
+        int addNewModelMsgId = addNewModelPair.getRight();
+        modelManagementMap.put(modelId,new HashMap<>());
+        modelManagementMap.get(modelId).put(addNewModelMsgId,null);
+        if(modelId == -1){
+            modelManagementMap.put(modelId,"load model failure in java");
+        }
+        return modelId;
     }
 
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -197,21 +251,97 @@ public class ModelLibraryMessageHandler extends UiMessageHandler {
             super(MODEL_DETAILS_REQ);
         }
 
+        int modelId;
+
+        //action为add时 参数解析
+        private MLAppType appType;
+        private MLAlgorithmType algoType;
+        private int trainId;
+
+        //action为delete时，解析modelId
+
+        //action为start时，解析参数modelId，判断state
+
+        //action为evaluate时，解析参数modelId以及
+        private List<Integer> testId;
+
+        //action为add时，解析算法参数
+        private int inputNum;
+        private int outputNum;
+        private List<Integer> hiddenLayer;
+        private ActivationFunction activationFunction;
+        private ParamInit weightInit;
+        private ParamInit biasInit;
+        private LossFunction lossFunction;
+        private int batchSize;
+        private int epoch;
+        private Optimizer optimizer;
+        private double learningRate;
+        private LRAdjust lrAdjust;
+        private double dropout;
+
         protected void doAction (String action,ObjectNode payload,JsonNode st) {
             if(action == null){
                 return;
             }else{
                 switch (action){
                     case "add": {
-                        long modelId = JsonUtils.number(payload,MODEL_ID);
-                        String appType = JsonUtils.string(payload,APP_TYPE);
-                        String algoType = JsonUtils.string(payload,ALGO_TYPE);
-                        long trianId = JsonUtils.number(payload,TRAIN_ID);
-                        int inputNum = st.get("inputNum").asInt(-1);
-                        int outputNum = st.get("outputNum").asInt(-1);
-                        int inputNum = st.get("inputNum").asInt(-1);
-                        List<Integer> hiddenLayer = JsonArray.
+                        appType = MLAppType.parseStr(JsonUtils.string(payload,APP_TYPE));
+                        algoType = MLAlgorithmType.parseStr(JsonUtils.string(payload,ALGO_TYPE));
+                        trainId = (int)JsonUtils.number(payload,TRAIN_ID);
+                        inputNum = st.get("inputNum").asInt(-1);
+                        outputNum = st.get("outputNum").asInt(-1);
+                        JsonNode arrNode = st.get("hiddenLayer");
+                        hiddenLayer =  arrayToList(arrNode);
+                        activationFunction = ActivationFunction.parseStr(st.get("activationFunction").asText());
+                        weightInit = ParamInit.parseStr(st.get("weightInit").asText());
+                        biasInit = ParamInit.parseStr(st.get("biasInit").asText());
+                        lossFunction = LossFunction.parseStr(st.get("lossFunction").asText());
+                        batchSize = st.get("batchSize").asInt();
+                        epoch = st.get("epoch").asInt();
+                        optimizer = Optimizer.parseStr(st.get("optimizer").asText());
+                        learningRate = st.get("learningRate").asDouble();
+                        lrAdjust = LRAdjust.parseStr(st.get("lrAdjust").asText());
+                        dropout = st.get("dropout").asDouble();
+                        //组装MLAlgorithmConfig
+                        NNAlgorithmConfig config = new NNAlgorithmConfig(algoType,inputNum,outputNum,hiddenLayer,activationFunction,
+                                weightInit,biasInit,lossFunction,batchSize,epoch,optimizer,learningRate,lrAdjust,dropout);
+                        modelId = addModel(algoType,config);
+                        MLModelDetail detail = new MLModelDetail(config,null,trainId,modelId,null);//state获得，
+                        ModelLibraryInfo newModel = new ModelLibraryInfo(appType,algoType,detail,modelId);
+                        modelLibraryInfoMap.put(modelId,newModel);
+                    }
+                    case "delete":{
+                        modelId = (int)JsonUtils.number(payload,MODEL_ID);
+                        Pair<Boolean,Integer> deleteModelPair = service.deleteModel(modelId);
+                        if(deleteModelPair.getLeft()){
+                            modelLibraryInfoMap.remove(modelId);
+                        }
+                        else{
+                            //主动给前台发送删除失败的alert，这个可以在前台加一个alertResponse以及对应的handler
+                        }
+                    }
+                    case "start":{
+                        modelId = (int)JsonUtils.number(payload,MODEL_ID);
+                        Pair<Boolean,Integer> startModelPair = service.startTraining(modelId);
+                        if(startModelPair.getLeft()){
+                            //更改模型状态
+                        }
+                        else {
+                            //同上
+                        }
+                    }
+                    case "evaluate":{
+                        modelId = (int)JsonUtils.number(payload,MODEL_ID);
+                        JsonNode arrNode = st.get("testDataSetId");
+                        int setTestMsgId;
+                        testId = arrayToList(arrNode);
+                        for(int i=0;i<testId.size();i++){
+                            Pair<Boolean,Integer> evaModelPair = service.getModelEvaluation(modelId,testId.get(i));
+                            if(evaModelPair.getLeft()){
 
+                            }
+                        }
 
                     }
                 }
@@ -227,6 +357,14 @@ public class ModelLibraryMessageHandler extends UiMessageHandler {
             JsonNode st = payload.get("modelParams");
 
         }
+
+        @Override
+        public void operationFailure (int msgId,String description){
+
+        }
+
+        @Override
+
 
     }
 
