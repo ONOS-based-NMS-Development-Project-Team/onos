@@ -1,6 +1,7 @@
 package univ.bupt.soon.mlshow.front.handler.model;
 
 import com.google.common.base.Objects;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.onosproject.soon.foreground.MLAppType;
 import org.onosproject.soon.mlmodel.MLAlgorithmType;
 import org.onosproject.soon.mlmodel.MLModelDetail;
@@ -55,9 +56,10 @@ public class ModelLibraryInfo {
     private final int modelId;
     private int[] testDataSetId;
     private double loss;
-    private Date remainingTime;
+    private long remainingTime;
     private double precision;
     private String modelLink;
+    private boolean trained;
 
 
     public ModelLibraryInfo (MLAppType mlAppType,MLAlgorithmType mlAlgorithmType,MLModelDetail mlModelDetail,int modelId) {
@@ -83,9 +85,9 @@ public class ModelLibraryInfo {
 
     public void setTestDataSetId (int[] testDataSetId) {this.testDataSetId = testDataSetId;}
 
-    public Date getRemainingTime () {return remainingTime;}
+    public long getRemainingTime () {return remainingTime;}
 
-    public void setRemainingTime (Date remainingTime) {this.remainingTime = remainingTime;}
+    public void setRemainingTime (long remainingTime) {this.remainingTime = remainingTime;}
 
     public double getLoss() { return loss; }
 
@@ -98,6 +100,10 @@ public class ModelLibraryInfo {
     public String getModelLink() { return modelLink; }
 
     public void setModelLink(String modelLink) { this.modelLink = modelLink; }
+
+    public boolean isTrained() { return trained; }
+
+    public void setTrained(boolean trained) { this.trained = trained; }
 
     public int getModelId () {return modelId;}
 

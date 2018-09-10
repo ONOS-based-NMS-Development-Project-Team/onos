@@ -500,7 +500,7 @@
                     <div icon icon-size="42" icon-id="play"
                          tooltip tt-msg="modelStartTip"
                          ng-click="modelAction('start')"
-                        ng-class="{active: modelCtrlBtnState.waiting}">
+                        ng-class="{active: modelCtrlBtnState.selection}">
                     </div>
                     <div icon icon-size="42" icon-id="garbage"
                          tooltip tt-msg="modelDeleteTip"
@@ -510,7 +510,7 @@
                     <div icon icon-size="42" icon-id="eqMaster"
                          tooltip tt-msg="modelEvaluateTip"
                          ng-click="modelAction('evaluate')"
-                         ng-class="{active: modelCtrlBtnState.trained}">
+                         ng-class="{active: modelCtrlBtnState.selection}">
                     </div>
                     <div icon icon-size="42" icon-id="plus"
                          tooltip tt-msg="modelAddTip"
@@ -527,7 +527,6 @@
                         <option value="algorithmType">algorithm type</option>
                         <option value="trainDataSetId"><t></t>rain data set id</option>
                         <option value="testDataSetId">test data set id</option>
-                        <option value="modelState">model state</option>
                         <option value="modelAccuracy">model accuracy</option>
                     </select>
                 </div>
@@ -541,7 +540,6 @@
                             <td colId="algorithmType" sortable col-width="140px">algorithm type</td>
                             <td colId="trainDataSetId" sortable col-width="140px">train data set id</td>
                             <td colId="testDataSetId" sortable col-width="140px">test data set id</td>
-                            <td colId="modelState" sortable col-width="140px">model state</td>
                             <td colId="modelAccuracy" sortable col-width="140px">model accuracy</td>
                         </tr>
                     </table>
@@ -564,7 +562,6 @@
                             <td>{{modelLibrary.algorithmType}}</td>
                             <td>{{modelLibrary.trainDataSetId}}</td>
                             <td>{{modelLibrary.testDataSetId}}</td>
-                            <td>{{modelLibrary.modelState}}</td>
                             <td>{{modelLibrary.modelAccuracy}}</td>
                         </tr>
                     </table>
