@@ -50,6 +50,8 @@
         modelMgtReq = 'modelLibraryManagementRequest',
         modelDetailsReq = 'modelLibraryDetailsRequest',
         modelDetailsResp = 'modelLibraryDetailsResponse',
+        modelTrainAvaiResp = 'modelTrainAvailableResponse',
+        modelTestAvaiResp = 'modelTestAvailableResponse',
         curDetailsReq = 'currentAlarmDetailsRequest',
         curDetailsResp = 'currentAlarmDetailsResponse',
         hisDetailsReq = 'historicalAlarmDetailsRequest',
@@ -796,7 +798,7 @@
         $scope.modelAddForm.appType = this.options[this.selectedIndex].value;
     }
     function algoTypeModelAddChange() {
-        $scope.modelAddForm.algorithmTye = this.options[this.selectedIndex].value;
+        $scope.modelAddForm.algorithmType = this.options[this.selectedIndex].value;
     }
     function trainDataSetModelAddChange() {
         $scope.modelAddForm.trainDataSetId = this.value;
@@ -842,6 +844,36 @@
     function dropoutFcnnChange() {
         $scope.modelFcnnConfigForm.dropout = this.value;
     }
+    function saveAvailableTrain (data) {
+        var appType = $scope.modelLibraryInfo.applicationType;
+        if(appType === 'alarmPre'){
+            $scope.alarmPred.availableTrain = data.availableTrain；
+        }
+        if(appType === 'faultClassification'){
+            $scope.faultClassification.availableTrain = data.availableTrain;
+        }
+        if(appType === 'areaPred'){
+            $scope.areaPred.availableTrain = data.availableTrain;
+        }
+        if(appType === 'edgePred'){
+            $scope.edgePred.availableTrain = data.availableTrain;
+        }
+    }
+    function showAvailableTrain () {
+        if($scope.modelLibraryInfo.availableTrain === null){
+            alert('there is no available train data set');
+        }else{
+            alert('the available train data set ids are as follows \n'+$scope.modelLibraryInfo.availableTrain.toString());
+        }
+    }
+    function showAvailableTest (data) {
+            $scope.modelLibraryInfo.availableTest = data.availableTest;
+            if($scope.modelLibraryInfo.availableTest === null){
+                alert('there is no available test data set');
+            }else{
+                alert('the available test data set ids are as follows \n'+$scope.modelLibraryInfo.availableTest.toString());
+            }
+        }
 
     //add new model to train dialog content
     function addModelContent() {
@@ -862,14 +894,15 @@
             algoTypeSelect.append('option').attr('value',item).text(algoTypeText[i]);
         });
         form.append('p').classed('form-label',true).append('label').text('train data set id: ')
-            .append('input').attr('type','text').attr('id','trainDataSetModelAdd').on('change',trainDataSetModelAddChange);
+            .append('input').attr('type','text').attr('id','trainDataSetModelAdd').on('change',trainDataSetModelAddChange)
+            .append('div').text('show available train data set').on('click',showAvailableTrain);
         form.append('p').attr('id','configMLParamsText').text('config ml parameters').on('click',mlParamsConfigShow);
         return content;
     }
 
     function mlParamsConfigShow() {
         var algoType;
-        algoType = $scope.modelLibraryInfo.algorithmType;
+        algoType = $scope.modelAddForm.algorithmType;
         if(!algoType){
             alert('please choose the machine learning algorithm type!!!');
             return false;
@@ -1008,37 +1041,37 @@
     }
 
     function evaluateModelContent(itemId) {
-        var content,form,title,appType;
+        var content,form,title,availableTest;
         var testDataSetId = [];
-        appType = fs.find(itemId,$scope.modelLibrary.tableData,'modelId').applicationType;
-        if(appType === 'alarm predict'){
-            $scope.alarmPred.tableData.forEach(function (item) {
-                if(item.dataSetType === 'test'){
-                    testDataSetId.push(item.dataSetId);
-                }
-            })
-        }
-        if(appType === 'fault classification'){
-            $scope.faultClassification.tableData.forEach(function (item) {
-                if(item.dataSetType === 'test'){
-                    testDataSetId.push(item.dataSetId);
-                }
-            })
-        }
-        if(appType === 'area traffic predict'){
-            $scope.areaPred.tableData.forEach(function (item) {
-                if(item.dataSetType === 'test'){
-                    testDataSetId.push(item.dataSetId);
-                }
-            })
-        }
-        if(appType === 'edge traffic predict'){
-            $scope.edgePred.tableData.forEach(function (item) {
-                if(item.dataSetType === 'test'){
-                    testDataSetId.push(item.dataSetId);
-                }
-            })
-        }
+        availableTest = fs.find(itemId,$scope.modelLibrary.tableData,'modelId').availableTest;
+//        if(appType === 'alarm predict'){
+//            $scope.alarmPred.tableData.forEach(function (item) {
+//                if(item.dataSetType === 'test'){
+//                    testDataSetId.push(item.dataSetId);
+//                }
+//            })
+//        }
+//        if(appType === 'fault classification'){
+//            $scope.faultClassification.tableData.forEach(function (item) {
+//                if(item.dataSetType === 'test'){
+//                    testDataSetId.push(item.dataSetId);
+//                }
+//            })
+//        }
+//        if(appType === 'area traffic predict'){
+//            $scope.areaPred.tableData.forEach(function (item) {
+//                if(item.dataSetType === 'test'){
+//                    testDataSetId.push(item.dataSetId);
+//                }
+//            })
+//        }
+//        if(appType === 'edge traffic predict'){
+//            $scope.edgePred.tableData.forEach(function (item) {
+//                if(item.dataSetType === 'test'){
+//                    testDataSetId.push(item.dataSetId);
+//                }
+//            })
+//        }
         content = ds.createDiv();
 
         form = content.append('form').classed('modelLibrary-evaluate-dialog-form',true);
@@ -1352,6 +1385,8 @@
 
             var handlers={};
             handlers[modelInfoResp]=getModelInfo;
+            handlers[modelTrainAvaiResp]=saveAvailableTrain;
+            handlers[modelTestAvaiResp]=saveAvailableTest;
             wss.bindHandlers(handlers);
 
             // navigate to sub page listed by the sidebar
