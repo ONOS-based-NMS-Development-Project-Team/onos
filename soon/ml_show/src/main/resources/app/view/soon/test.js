@@ -1611,9 +1611,8 @@
 
             //model library sub page functions
             $scope.modelAction = function (action) {
-                if($scope.modelCtrlBtnState.selection){
                     confirmModelAction(action);
-                }
+
             };
 
             //raw data sub page functions
