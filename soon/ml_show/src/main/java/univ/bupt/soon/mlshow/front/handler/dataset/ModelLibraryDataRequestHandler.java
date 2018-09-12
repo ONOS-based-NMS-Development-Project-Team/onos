@@ -22,7 +22,7 @@ package univ.bupt.soon.mlshow.front.handler.dataset;
  * 			"algorithmType":"",
  * 			"trainDataSetId":"",
  * 			"testDataSetId":[],
- * 			"modelState":"",
+ * 			"ModelState":"",
  * 			"modelAccuracy":"",
  * 			"algorithmParams":{}
  *        },{}],

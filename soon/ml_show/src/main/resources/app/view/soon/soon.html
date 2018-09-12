@@ -512,6 +512,11 @@
                          ng-click="modelAction('evaluate')"
                          ng-class="{active: modelCtrlBtnState.selection}">
                     </div>
+                    <div icon icon-size="42" icon-id="eqMaster"
+                         tooltip tt-msg="modelSetTrainTip"
+                         ng-click="modelAction('trainSet')"
+                         ng-class="{active: modelCtrlBtnState.selection}">
+                    </div>
                     <div icon icon-size="42" icon-id="plus"
                          tooltip tt-msg="modelAddTip"
                          ng-click="modelAction('add')">

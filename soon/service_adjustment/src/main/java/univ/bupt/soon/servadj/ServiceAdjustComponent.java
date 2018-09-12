@@ -66,7 +66,7 @@ public class ServiceAdjustComponent {
 //        mlAppRegistry.register(area1, area1.getServiceName());
 //        mlAppRegistry.register(area3, area3.getServiceName());
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
 //<<<<<<< Updated upstream
         test(lpi,45,15);
 //=======
@@ -74,10 +74,10 @@ public class ServiceAdjustComponent {
 //        Thread.sleep(20000);
 //>>>>>>> Stashed changes
 //        test(area1,31,16);
-=======
-        test(lpi);
+//=======
+        //test(lpi);
 //        test(area1);
->>>>>>> 857d95ba8935212549325847b3af8f7dd2e49c0f
+//>>>>>>> 857d95ba8935212549325847b3af8f7dd2e49c0f
 //        test(area3);
 //        if (databese.connect()) {
             // 如果数据库连接成功，向前台注册应用
@@ -106,7 +106,7 @@ public class ServiceAdjustComponent {
             int modelId;
 
             @Override
-            public void operationFailure(int modelId,int i, String s) {
+            public void operationFailure(int i, String s) {
                 log.info("received message {} : {}", i, s);
             }
 

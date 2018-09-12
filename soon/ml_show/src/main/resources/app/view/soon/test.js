@@ -6,13 +6,19 @@
     'use strict';
 
     //ingected references
-    var $log,$scope,$cookieStore,$interval,$compile,wss,ps,fs,ks,ls,is,ds,tbs,mtbs;
+    var $log,$scope,$cookieStore,$interval,$compile,wss,ps,fs,ks,ls,is,ds,mds,tbs,mtbs;
 
     //internal state
     var pStartY,
         pHeight,
         wSize=false,
         modelDetailsPanel,
+        mlDialogAdd,
+        modelAddPanel,
+        mlDialogConfig,
+        mlDialogConfigPanel,
+        mlDialogHidden,
+        mlDialogHiddenPanel,
         currentAlarmDetailsPanel,
         historicalAlarmDetailsPanel;
 
@@ -36,22 +42,14 @@
         faultClassificationDataSetReq = 'faultClassificationDataSetDataRequest',
         areaPredDataSetReq = 'areaPredDataSetDataRequest',
         edgePredDataSetReq = 'edgePredDataSetDataRequest',
-        currentAlarmReq = 'alarmCurrentDataRequest',
-        historicalAlarmReq = 'alarmHistoricalDataRequest',
-        performanceReq = 'performanceDataRequest',
-        pHistoricalAlarm = 'historical-alarm-table',
         pModelDetailsPanelName = 'modelLibrary-details-panel',
-        pCurName = 'currentAlarm-details-panel',
-        pHisName = 'historicalAlarm-details-panel',
-        pAlarmPredSettingName = 'alarmPred-setting-panel',
-        pAlarmPredModelSettingShowName = 'alarmPred-modelSettingShow-panel',
-        pFaultClaSettingName = 'faultClassification-setting-panel',
-        pDataSetShowName = 'dataSetShow-setting-panel',
+        modelAddPanelName = 'modelLibrary-add-panel',
         modelMgtReq = 'modelLibraryManagementRequest',
         modelDetailsReq = 'modelLibraryDetailsRequest',
         modelDetailsResp = 'modelLibraryDetailsResponse',
-        modelTrainAvaiResp = 'modelTrainAvailableResponse',
-        modelTestAvaiResp = 'modelTestAvailableResponse',
+        modelTrainAvaiResp = 'modelTrainAvailable',
+        modelTestAvaiResp = 'modelTestAvailable',
+        modelLibraryAlert = 'modelLibraryAlert',
         curDetailsReq = 'currentAlarmDetailsRequest',
         curDetailsResp = 'currentAlarmDetailsResponse',
         hisDetailsReq = 'historicalAlarmDetailsRequest',
@@ -64,10 +62,15 @@
         modelMgtDialogId = 'modelLibrary-management-dialog',
         modelAddDialogId = 'modelLibrary-add-dialog',
         modelEvaluateDialogId = 'modelLibrary-evaluate-dialog',
+        modelSetTrainDialogId = 'modelLibrary-setTrain-dialog',
         modelFcnnConfigDialogId = 'modelLibrary-fcnn-dialog',
         modelFcnnHiddenConfigDialogId = 'modelLibrary-fcnn-hidden-dialog',
         dialogOpts = {
             edge: 'right',
+            width:400
+        },
+        modelAddDialogOpts = {
+        edge: 'left',
             width:400
         },
         defaultSubPage = 'alarm predict',
@@ -170,17 +173,17 @@
         edgePredDataSetSearchByText = ['id','area id','data set id','data set type','timePoint','output','input'],
         modelDetailsPropOrder = ['applicationType','modelId','algorithmType','trainDataSetId','testDataSetId','loss','remainingTime','precision','modelAccuracy'],
         modelDetailsPropOrderText = ['application type','model id','algorithm type','train data set id','test data set id','loss','remaining time','precision in training','model accuracy'],
-        appTypeValue = ['','alarmPred','faultClassification','areaPred','edgePred'],
+        appTypeValue = ['','alarm_prediction','failure_classification','business_area_prediction','link_prediction'],
         appTypeText = ['','alarm predict','fault classification','area predict','edge predict'],
         algoTypeValue = ['','fcnn','cnn','rnn','lstm','randomforest'],
         algoTypeText = ['','fully connected neural network','convolutional neural network','recurrent neural network','long short-term memory','random forest'],
-        activationFunctionValue = ['sigmoid','relu','relu6','tanh'],
-        paraInitValue = ['default','constant0','constant1','random'],
-        paraInitText = ['default','constant all 0','constant all 1','random'],
-        lossFunctionValue = ['l1loss','mseloss','nllloss','crossentropyloss'],
-        lossFunctionText = ['l1 loss','MSE loss','negative likelihood loss','cross entropy loss'],
-        optimizerValue = ['sgd','adamsgd','nestrov'],
-        lrAdjustValue = ['constant','linear','multiple','onplateau'];
+        activationFunctionValue = ['','sigmoid','relu','relu6','tanh'],
+        paraInitValue = ['','default','constant0','constant1','random'],
+        paraInitText = ['','default','constant all 0','constant all 1','random'],
+        lossFunctionValue = ['','l1loss','mseloss','nllloss','crossentropyloss'],
+        lossFunctionText = ['','l1 loss','MSE loss','negative likelihood loss','cross entropy loss'],
+        optimizerValue = ['','sgd','adamsgd','nestrov'],
+        lrAdjustValue = ['','constant','linear','multiple','onplateau'];
 
     function whichSubPage(){
         var subPageLocate;
@@ -727,11 +730,16 @@
             doAction(action,itemId);
         }
         if(action === 'add'){
-            wss.sendEvent('modelStartRequest',{});
             addModel();
+            $scope.modelLibraryInfo.action = 'add';
         }
         if(action === 'evaluate'){
             evaluateModel(itemId);
+            $scope.modelLibraryInfo.action = 'evaluate';
+        }
+        if(action === 'trainSet'){
+            trainSetModel(itemId);
+            $scope.modelLibraryInfo.action = 'trainSet';
         }
     }
 
@@ -772,17 +780,16 @@
     function addModel() {
         function dOK(){
             $scope.modelLibraryInfo.modelId = $scope.modelAddForm.modelId;
-            $scope.modelLibraryInfo.applicationType = $scope.alarmPredSettingForm.applicationType;
+            $scope.modelLibraryInfo.applicationType = $scope.modelAddForm.appType;
             $scope.modelLibraryInfo.algorithmType = $scope.modelAddForm.algorithmType;
             $scope.modelLibraryInfo.trainDataSetId = $scope.modelAddForm.trainDataSetId;
             var p = angular.extend({},$scope.modelLibraryInfo,defaultModelLibrarySortParams);
             wss.sendEvent(modelMgtReq,p);
-
         }
         function dCancel(){
             $log.debug('Cancel config new model');
         }
-        ds.openDialog(modelAddDialogId,dialogOpts)
+        ds.openDialog(modelAddDialogId,modelAddDialogOpts)
             .setTitle('add new model to train')
             .addContent(addModelContent())
             .addOk(dOK)
@@ -812,7 +819,17 @@
         $scope.modelFcnnConfigForm.outputNum = this.value;
     }
     function hiddenNumFcnnConfigChange() {
+        var num,node;
+        node = d3.select('#modelLibrary-fcnn-dialog-form');
+        d3.selectAll('#hiddenNeuronNumFcnnConfig').remove();
         $scope.modelFcnnConfigForm.hiddenNum = this.value;
+        num = $scope.modelFcnnConfigForm.hiddenNum;
+
+        //hidden layer neuron number form show according to the number of hidden layers configured above
+        for (var i = 0; i < num; i++) {
+            node.append('p').classed('form-label', true).append('label').text('neuron number of '+(i+1).toString()+'hidden layer: ')
+                .append('input').attr('type', 'text').attr('id', 'hiddenNeuronNumFcnnConfig').attr('placeholder', 'necessary');
+        }
     }
     function activationFunctionFcnnChange() {
         $scope.modelFcnnConfigForm.activationFunction = this.options[this.selectedIndex].value;
@@ -844,10 +861,13 @@
     function dropoutFcnnChange() {
         $scope.modelFcnnConfigForm.dropout = this.value;
     }
+
+    //save available train or test data set receive from onos
+    //and show they in addModelPanel and setTestDialog
     function saveAvailableTrain (data) {
         var appType = $scope.modelLibraryInfo.applicationType;
         if(appType === 'alarmPre'){
-            $scope.alarmPred.availableTrain = data.availableTrain；
+            $scope.alarmPred.availableTrain = data.availableTrain;
         }
         if(appType === 'faultClassification'){
             $scope.faultClassification.availableTrain = data.availableTrain;
@@ -859,21 +879,81 @@
             $scope.edgePred.availableTrain = data.availableTrain;
         }
     }
-    function showAvailableTrain () {
-        if($scope.modelLibraryInfo.availableTrain === null){
-            alert('there is no available train data set');
-        }else{
-            alert('the available train data set ids are as follows \n'+$scope.modelLibraryInfo.availableTrain.toString());
+    function saveAvailableTest(data) {
+        var appType = $scope.modelLibraryInfo.applicationType;
+        if(appType === 'alarmPre'){
+            $scope.alarmPred.availableTest = data.availableTest;
+        }
+        if(appType === 'faultClassification'){
+            $scope.faultClassification.availableTest = data.availableTest;
+        }
+        if(appType === 'areaPred'){
+            $scope.areaPred.availableTest = data.availableTest;
+        }
+        if(appType === 'edgePred'){
+            $scope.edgePred.availableTest = data.availableTest;
         }
     }
-    function showAvailableTest (data) {
-            $scope.modelLibraryInfo.availableTest = data.availableTest;
-            if($scope.modelLibraryInfo.availableTest === null){
-                alert('there is no available test data set');
+    function getAvailableTrain (appType) {
+        if(appType === 'alarmPred'){
+            if($scope.alarmPred.availableTrain === null){
+                alert('there is no available train data set');
             }else{
-                alert('the available test data set ids are as follows \n'+$scope.modelLibraryInfo.availableTest.toString());
+                return $scope.alarmPred.availableTrain;
             }
         }
+        if(appType === 'faultClassification'){
+            if($scope.faultClassification.availableTrain === null){
+                alert('there is no available train data set');
+            }else{
+                return $scope.faultClassification.availableTrain;
+            }
+        }
+        if(appType === 'areaPred'){
+            if($scope.areaPred.availableTrain === null){
+                alert('there is no available train data set');
+            }else{
+                return $scope.areaPred.availableTrain;
+            }
+        }
+        if(appType === 'edgePred'){
+            if($scope.edgePred.availableTrain === null){
+                alert('there is no available train data set');
+            }else{
+                return $scope.edgePred.availableTrain;
+            }
+        }
+    }
+    function getAvailableTest (appType) {
+        if(appType === 'alarmPred'){
+            if($scope.alarmPred.availableTest === null){
+                alert('there is no available train data set');
+            }else{
+                return $scope.alarmPred.availableTest;
+            }
+        }
+        if(appType === 'faultClassification'){
+            if($scope.faultClassification.availableTrain === null){
+                alert('there is no available train data set');
+            }else{
+                return $scope.faultClassification.availableTest;
+            }
+        }
+        if(appType === 'areaPred'){
+            if($scope.areaPred.availableTrain === null){
+                alert('there is no available train data set');
+            }else{
+                return $scope.areaPred.availableTest;
+            }
+        }
+        if(appType === 'edgePred'){
+            if($scope.edgePred.availableTrain === null){
+                alert('there is no available train data set');
+            }else{
+                return $scope.edgePred.availableTest;
+            }
+        }
+    }
 
     //add new model to train dialog content
     function addModelContent() {
@@ -893,10 +973,7 @@
         algoTypeValue.forEach(function (item,i) {
             algoTypeSelect.append('option').attr('value',item).text(algoTypeText[i]);
         });
-        form.append('p').classed('form-label',true).append('label').text('train data set id: ')
-            .append('input').attr('type','text').attr('id','trainDataSetModelAdd').on('change',trainDataSetModelAddChange)
-            .append('div').text('show available train data set').on('click',showAvailableTrain);
-        form.append('p').attr('id','configMLParamsText').text('config ml parameters').on('click',mlParamsConfigShow);
+        form.append('p').attr('id','configMLParamsText').text('config ml parameters').on('click',setUpModelAddPanel);
         return content;
     }
 
@@ -912,14 +989,79 @@
         }
     }
 
+    //model add panel
+    function createModelAddPanel() {
+        modelAddPanel = ps.createPanel(modelAddPanelName, {
+            width: wSize.width,
+            margin: 0,
+            hideMargin: 0,
+        });
+        modelAddPanel.el().style({
+            position: 'absolute',
+            top: pStartY + 'px',
+        });
+        $scope.hideModelDetailsPanel = function () { modelAddPanel.hide(); };
+        modelAddPanel.hide();
+    }
+    function closeModelAddPanel() {
+        if(modelAddPanel.isVisible()){
+            $scope.selId = null;
+            modelAddPanel.hide();
+            return true;
+        }
+        return false;
+    }
+    function addModelAddCloseBtn(div) {
+        is.loadEmbeddedIcon(div,'close',26);
+        div.on('click',closeModelAddPanel);
+    }
+    function setUpModelAddPanel() {
+        var container,top,topContent,middle,closeBtn,bottom;
+
+        modelAddPanel.empty();
+        modelAddPanel.width(panelWidth);
+
+        container = modelAddPanel.append('div').classed('container',true);
+        top = container.append('div').classed('top',true);
+        closeBtn = top.append('div').classed('close-btn',true);
+        addModelAddCloseBtn(closeBtn);
+        topContent = top.append('div').classed('top-content',true);
+        topContent.append('h2').classed('title-panel',true).text('add new model');
+
+        middle = container.append('div').classed('middle',true);
+        middle.node().appendChild(fcnnConfigContent().node());
+
+        container.append('hr');
+        bottom = container.append('div').classed('bottom',true);
+        bottom.append('button').classed('panel-button',true).text('OK').on('click',dOK);
+        bottom.append('button').classed('panel-button',true).text('Cancel').on('click',dCancel);
+        function dOK(){
+            $scope.modelLibraryInfo.algorithmParams = $scope.modelFcnnConfigForm;
+            var nodeList,value;
+            var valueList = [];
+            nodeList = document.querySelectorAll('#hiddenNeuronNumFcnnConfig');
+            for(var i=0;i<nodeList.length;i++){
+                value = nodeList[i].value;
+                valueList.push(value);
+            }
+            $scope.modelLibraryInfo.algorithmParams.hiddenLayer = valueList;
+            modelAddPanel.hide();
+        }
+        function dCancel(){
+            $log.debug('Cancel config fully connected neuron network parameters');
+            modelAddPanel.hide();
+        }
+        modelAddPanel.show();
+    }
+
     function fcnnConfigShow() {
         function dOK(){
-            $scope.modelLibraryInfo.algorithmParms = $scope.modelFcnnConfigForm;
+            $scope.modelLibraryInfo.algorithmParams = $scope.modelFcnnConfigForm;
         }
         function dCancel(){
             $log.debug('Cancel config fully connected neuron network parameters');
         }
-        ds.openDialog(modelFcnnConfigDialogId,dialogOpts)
+        mds.openDialog(modelFcnnConfigDialogId,dialogOpts,)
             .setTitle('fully connected neuron network parameters config')
             .addContent(fcnnConfigContent())
             .addOk(dOK)
@@ -928,17 +1070,17 @@
     }
 
     function fcnnConfigContent() {
-        var content,form,activationFunction,weightInit,biasInit,lossFunction,optimizer,lrAdjust;
+        var content,form,activationFunction,weightInit,biasInit,lossFunction,optimizer,lrAdjust,hiddenLayer;
         content = ds.createDiv();
 
-        form = content.append('form').classed('modelLibrary-fcnn-dialog-form',true);
+        form = content.append('form').classed('modelLibrary-fcnn-dialog-form',true).attr('id','modelLibrary-fcnn-dialog-form');
         form.append('p').classed('form-label',true).append('label').text('neuron number of input layer: ')
             .append('input').attr('type','text').attr('id','inputNumFcnnConfig').attr('placeholder','necessary').on('change',inputNumFcnnConfigChange);
         form.append('p').classed('form-label',true).append('label').text('neuron number of output layer: ')
             .append('input').attr('type','text').attr('id','outputNumFcnnConfig').attr('placeholder','necessary').on('change',outputNumFcnnConfigChange);
-        form.append('p').classed('form-label',true).append('label').text('number of hidden layers: ')
+        hiddenLayer = form.append('p').classed('form-label',true).append('label').text('number of hidden layers: ')
             .append('input').attr('type','text').attr('id','hiddenNumFcnnConfig').attr('placeholder','necessary').on('change',hiddenNumFcnnConfigChange);
-        form.append('p').attr('id','configHiddenNum').text('config neuron number of each hidden layer').on('click',hiddenNumConfigShow);
+        // form.append('p').attr('id','configHiddenNum').text('config neuron number of each hidden layer').on('click',hiddenNumConfigShow);
         activationFunction = form.append('p').classed('form-label',true).append('label').text('activate function: ')
             .append('select').attr('id','activationFunctionFcnnConfig').on('change',activationFunctionFcnnChange);
         activationFunctionValue.forEach(function (item,i) {
@@ -989,12 +1131,12 @@
                 value = nodeList[i].value;
                 valueList.push(value);
             }
-            $scope.modelLibraryInfo.algorithmParms.hiddenLayer = valueList;
+            $scope.modelLibraryInfo.algorithmParams.hiddenLayer = valueList;
         }
         function dCancel(){
             $log.debug('Cancel config fully connected neuron network hidden layers neuron numbers');
         }
-        ds.openDialog(modelFcnnHiddenConfigDialogId,dialogOpts)
+        mds.openDialog(modelFcnnHiddenConfigDialogId,dialogOpts,mlDialogHidden,mlDialogHiddenPanel)
             .setTitle('fully connected neuron network hidden layer config')
             .addContent(fcnnHiddenNumConfigContent())
             .addOk(dOK)
@@ -1003,17 +1145,18 @@
     }
     function fcnnHiddenNumConfigContent() {
         var content,num,form;
-        content = ds.createDiv();
+        content = mds.createDiv();
         num = $scope.modelFcnnConfigForm.hiddenNum;
         if(!num){
             alert('please config hidden layer numbers!!!');
-            return false;
+        }else {
+            form = content.append('form').classed('modelLibrary-fcnn-hiddenLayer-dialog-form', true);
+            for (var i = 0; i < num; i++) {
+                form.append('p').classed('form-label', true).append('label').text('neuron number of ', i, 'hidden layer: ')
+                    .append('input').attr('type', 'text').attr('id', 'hiddenNumFcnnConfig').attr('placeholder', 'necessary');
+            }
         }
-        form = content.append('form').classed('modelLibrary-fcnn-hiddenLayer-dialog-form',true);
-        for(var i=0;i<num;i++){
-            form.append('p').classed('form-label',true).append('label').text('neuron number of ',i,'hidden layer: ')
-                .append('input').attr('type','text').attr('id','hiddenNumFcnnConfig').attr('placeholder','necessary');
-        }
+        return content;
     }
 
     //evaluate model function
@@ -1041,37 +1184,13 @@
     }
 
     function evaluateModelContent(itemId) {
-        var content,form,title,availableTest;
+        var content,form,title,index,model,appType;
         var testDataSetId = [];
-        availableTest = fs.find(itemId,$scope.modelLibrary.tableData,'modelId').availableTest;
-//        if(appType === 'alarm predict'){
-//            $scope.alarmPred.tableData.forEach(function (item) {
-//                if(item.dataSetType === 'test'){
-//                    testDataSetId.push(item.dataSetId);
-//                }
-//            })
-//        }
-//        if(appType === 'fault classification'){
-//            $scope.faultClassification.tableData.forEach(function (item) {
-//                if(item.dataSetType === 'test'){
-//                    testDataSetId.push(item.dataSetId);
-//                }
-//            })
-//        }
-//        if(appType === 'area traffic predict'){
-//            $scope.areaPred.tableData.forEach(function (item) {
-//                if(item.dataSetType === 'test'){
-//                    testDataSetId.push(item.dataSetId);
-//                }
-//            })
-//        }
-//        if(appType === 'edge traffic predict'){
-//            $scope.edgePred.tableData.forEach(function (item) {
-//                if(item.dataSetType === 'test'){
-//                    testDataSetId.push(item.dataSetId);
-//                }
-//            })
-//        }
+        index = fs.find(itemId,$scope.modelLibrary.tableData,'modelId');
+        model = index >=0 ? $scope.modelLibrary.tableData[index] : null;
+        appType = model.applicationType;
+        testDataSetId = getAvailableTest(appType);
+
         content = ds.createDiv();
 
         form = content.append('form').classed('modelLibrary-evaluate-dialog-form',true);
@@ -1094,6 +1213,65 @@
          }
          $scope.modelLibraryInfo.testDataSetId = testDataSetId;
     }
+
+    //set train data set function
+    function trainSetModel(itemId) {
+        function dOk() {
+            $log.debug('Initiating evaluate'+itemId);
+            wss.sendEvent(modelMgtReq, {
+                action: 'trainSet',
+                modelId: itemId,
+                testDataSetId:$scope.modelLibraryInfo.trainDataSetId
+            });
+            wss.sendEvent(modelDetailsReq, { id: itemId });
+        }
+
+        function dCancel() {
+            $log.debug('Canceling set train data set ', itemId);
+        }
+
+        ds.openDialog(modelSetTrainDialogId, dialogOpts)
+            .setTitle('evaluate model'+itemId)
+            .addContent(trainSetModelContent(itemId))
+            .addOk(dOk)
+            .addCancel(dCancel)
+            .bindKeys();
+    }
+    function trainSetModelContent(itemId) {
+        var content,form,title,index,model,appType;
+        var trainDataSetId = [];
+        index = fs.find(itemId,$scope.modelLibrary.tableData,'modelId');
+        model = index >=0 ? $scope.modelLibrary.tableData[index] : null;
+        appType = model.applicationType;
+        trainDataSetId = getAvailableTrain(appType);
+
+        content = ds.createDiv();
+
+        form = content.append('form').classed('modelLibrary-trainSet-dialog-form',true);
+        title = form.append('p').classed('form-label',true).append('label').text('train data set id: ').append('br');
+        trainDataSetId.forEach(function (item) {
+            title.append('input').classed('modelTrainSetCheckbox',true).attr('type','checkbox').attr('name','trainDataSetId')
+                .attr('value',item).on('change',modelTrainSetChange).append('p').text(item).append('br');
+        });
+        return content;
+    }
+    function modelTrainSetChange() {
+        var p,
+            trainId,
+            trainDataSetId = [];
+        p = document.querySelectorAll('.modelTrainSetCheckbox:checked');
+        for(var i=0;i<p.length;i++){
+            trainId = p[i].value;
+            trainDataSetId.push(trainId);
+        }
+        $scope.modelLibraryInfo.trainDataSetId = trainDataSetId;
+    }
+
+    function modelAlert(data) {
+        var alertContent = data.annots;
+        alert(alertContent);
+    }
+
 
     function startRefresh(p) {
         if(p === 'alarm predict'){
@@ -1201,9 +1379,9 @@
         .controller('OvSoonCtrl',
             ['$log','$scope','$http','$timeout','$cookieStore','$interval','$compile',
                 'WebSocketService', 'FnService', 'KeyService', 'PanelService',
-                'IconService', 'UrlFnService', 'DialogService', 'LionService','MLTableBuilderService',
+                'IconService', 'UrlFnService', 'DialogService','MlDialogService', 'LionService','MLTableBuilderService',
                 function(_$log_,_$scope_, $http, $timeout, $cookieStore,_$interval_,_$compile_, _wss_, _fs_, _ks_, _ps_, _is_,
-                         ufs, _ds_, _ls_,_mtbs_){
+                         ufs, _ds_,_mds_, _ls_,_mtbs_){
             $log = _$log_;
             $scope = _$scope_;
             $interval = _$interval_;
@@ -1214,6 +1392,7 @@
             ps = _ps_;
             is = _is_;
             ds = _ds_;
+            mds = _mds_,
             //tbs = _tbs_;
             ls = _ls_;
             mtbs = _mtbs_;
@@ -1232,7 +1411,8 @@
             $scope.faultClassificationStopip = 'stop fault classification application';
             $scope.faultClassificationSettingTip = 'config settings of fault Classification application';
             $scope.modelStartTip = 'start training this model';
-            $scope.modelStopTip = 'stop training this model';
+            $scope.modelEvaluateTip = 'stop training this model';
+            $scope.modelSetTrainTip = 'set train data set';
             $scope.modelDeleteTip = 'delete this model';
             $scope.modelAddTip = 'add new model to train';
             $scope.showHistoricalAlarmTip = 'show historical alarm data';
@@ -1257,6 +1437,7 @@
             $scope.dataSetInfo = {};
             $scope.dataSetInfo.setting = {};
             $scope.modelLibraryInfo = {};
+            $scope.modelLibraryInfo.algorithmParams = {};
 
             //model library sub page functions state
             $scope.modelCtrlBtnState = {};
@@ -1387,6 +1568,7 @@
             handlers[modelInfoResp]=getModelInfo;
             handlers[modelTrainAvaiResp]=saveAvailableTrain;
             handlers[modelTestAvaiResp]=saveAvailableTest;
+            handlers[modelLibraryAlert]=modelAlert;
             wss.bindHandlers(handlers);
 
             // navigate to sub page listed by the sidebar
@@ -1723,6 +1905,8 @@
                 wss.unbindHandlers();
                 ds.closeDialog();
             });
+
+            createModelAddPanel();
 
             Object.defineProperty($scope, 'queryFilter', {
                 get: function () {

@@ -59,13 +59,13 @@ public class LinkPredPlatformCallback extends PlatformCallbackAbstract {
     public void configException(int msgId, String description) {
         // 解析配置异常
         // TODO 不知道该怎么做
-        fcb.operationFailure(modelId,msgId, "Can't handle exception: "+description);
+        fcb.operationFailure(msgId, "Can't handle exception: "+description);
     }
 
     @Override
     public void runningException(int msgId, String description) {
         // 解析运行异常
         // TODO 不知道该怎么做
-        fcb.operationFailure(modelId,msgId, "Can't handle exception: "+description);
+        fcb.operationFailure(msgId, "Can't handle exception: "+description);
     }
 }

@@ -15,7 +15,7 @@ public class MLModelDetail {
     private int trainDatasetId;  // 训练集id
     private final int id; // 该模型的id
     // Key - 测试集id， Key.Value - 在测试集id上的最好表现
-    private Map<Integer, Double> performances = Maps.newConcurrentMap();
+    private Map<Integer, String> performances = Maps.newConcurrentMap();
 
     public MLAlgorithmConfig getConfig() {
         return config;
@@ -41,11 +41,11 @@ public class MLModelDetail {
         this.trainDatasetId = trainDatasetId;
     }
 
-    public Map<Integer, Double> getPerformances() {
+    public Map<Integer, String> getPerformances() {
         return performances;
     }
 
-    public void setPerformances(Map<Integer, Double> performances) {
+    public void setPerformances(Map<Integer, String> performances) {
         this.performances = performances;
     }
 
@@ -54,7 +54,7 @@ public class MLModelDetail {
     }
 
     public MLModelDetail(MLAlgorithmConfig config, MLModelState state, int trainDatasetId,
-                         int id, Map<Integer, Double> performances) {
+                         int id, Map<Integer, String> performances) {
         this.config = config;
         this.state = state;
         this.trainDatasetId = trainDatasetId;

@@ -34,7 +34,7 @@ import java.util.Map;
  * 			"algorithmType":"",
  * 			"trainDataSetId":"",
  * 			"testDataSetId":[],
- * 			"modelState":"",
+ * 			"ModelState":"",
  * 		    "loss":"",
  * 		    "remainingTime":"",
  * 		    "precision":"",
