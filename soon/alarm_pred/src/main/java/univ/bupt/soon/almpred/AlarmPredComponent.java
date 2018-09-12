@@ -46,8 +46,8 @@ public class AlarmPredComponent {
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected CoreService coreService;
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected MLAppRegistry mlAppRegistry;
+//    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+//    protected MLAppRegistry mlAppRegistry;
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected MLPlatformService platformService;
 
@@ -60,12 +60,16 @@ public class AlarmPredComponent {
                                 AlarmPredictionItem.class, AlarmPredPlatformCallback.class, database, platformService);
 
         // 注册
-        mlAppRegistry.register(aps, aps.getServiceName());
+//        mlAppRegistry.register(aps, aps.getServiceName());
+        log.info("hh");
+        test(aps);
+        log.info("gg");
+
     }
 
     @Deactivate
     protected void deactivate() {
-        mlAppRegistry.unregister(MLAppType.ALARM_PREDICTION);
+//        mlAppRegistry.unregister(MLAppType.ALARM_PREDICTION);
         database.close();
         log.info("SOON - alarm prediction - Stopped");
     }
@@ -76,12 +80,12 @@ public class AlarmPredComponent {
     private void test(ModelControlService service){
         database.connect();
         // 注册前台回调接口
-        class TestForegroundCallback implements ForegroundCallback{
+        class TestForegroundCallback implements ForegroundCallback {
 
             int modelId;
 
             @Override
-            public void operationFailure(int msgId, String description) {
+            public void operationFailure(int modelId,int msgId, String description) {
                 log.info("received message {} : {}", msgId, description);
             }
 
@@ -128,21 +132,22 @@ public class AlarmPredComponent {
             public void intermediateResult(int msgId, MonitorData monitorData) {
                 log.info("received message {} : {}", msgId, monitorData.toString());
             }
+        }
             TestForegroundCallback foregroundCallback = new TestForegroundCallback();
             // 构建神经网络配置
-            MLAlgorithmConfig config = new NNAlgorithmConfig(MLAlgorithmType.FCNNModel, 36, 2,
-                    Lists.newArrayList(40),
+            MLAlgorithmConfig config = new NNAlgorithmConfig(MLAlgorithmType.FCNNModel, 36, 1,
+                    Lists.newArrayList(36),
                     ActivationFunction.RELU,
                     ParamInit.DEFAULT,
                     ParamInit.CONSTANT0,
-                    LossFunction.MSELOSS,
+                    LossFunction.CROSSENTROPY,
                     1,
                     100,
                     Optimizer.SGD,
                     0.005,
                     LRAdjust.CONSTANT,
                     0);
-            Pair<Int eger, Integer> mm = service.addNewModel(MLAlgorithmType.FCNNModel, config, foregroundCallback);
+            Pair<Integer, Integer> mm = service.addNewModel(MLAlgorithmType.FCNNModel, config, foregroundCallback);
             if (mm.getLeft() != -1) {
                     int modelId = mm.getLeft();
                     foregroundCallback.modelId = modelId;
@@ -150,7 +155,7 @@ public class AlarmPredComponent {
                     service.setDataset(modelId, tt.getLeft().iterator().next());
                     service.startTraining(modelId);
                 }
-        }
+
     }
 
 

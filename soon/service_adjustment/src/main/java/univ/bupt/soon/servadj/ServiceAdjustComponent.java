@@ -47,12 +47,12 @@ public class ServiceAdjustComponent {
     protected CoreService coreService;
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected MLPlatformService platformService;
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected MLAppRegistry mlAppRegistry;
+//    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+//    protected MLAppRegistry mlAppRegistry;
 
 
     @Activate
-    protected void activate()  {
+    protected void activate() throws InterruptedException {
         appId = coreService.registerApplication("unive.bupt.soon.servadj");
 
         databese.connect();
@@ -62,16 +62,17 @@ public class ServiceAdjustComponent {
                 AreaPredictionItem.class, AreaPredPlatformCallback.class, databese, platformService, 1);
         AreaPredictionImpl area3 = new AreaPredictionImpl(MLAppType.RESIDENTIAL_AREA_PREDICTION, "area_load",
                 AreaPredictionItem.class, AreaPredPlatformCallback.class, databese, platformService, 2);
-        mlAppRegistry.register(lpi, lpi.getServiceName());
-        mlAppRegistry.register(area1, area1.getServiceName());
-        mlAppRegistry.register(area3, area3.getServiceName());
+//        mlAppRegistry.register(lpi, lpi.getServiceName());
+//        mlAppRegistry.register(area1, area1.getServiceName());
+//        mlAppRegistry.register(area3, area3.getServiceName());
 
-<<<<<<< Updated upstream
+//<<<<<<< Updated upstream
+        test(lpi,45,15);
+//=======
 //        test(lpi);
-=======
-        test(lpi);
->>>>>>> Stashed changes
-//        test(area1);
+//        Thread.sleep(20000);
+//>>>>>>> Stashed changes
+//        test(area1,31,16);
 //        test(area3);
 //        if (databese.connect()) {
             // 如果数据库连接成功，向前台注册应用
@@ -92,7 +93,7 @@ public class ServiceAdjustComponent {
     /**
      * 测试从app到平台再到底层的接口
      */
-    private void test(ModelControlService service) {
+    private void test(ModelControlService service, int s, int d) {
         databese.connect();
         // 注册前台回调接口
         class TestForegroundCallback implements ForegroundCallback {
@@ -100,7 +101,7 @@ public class ServiceAdjustComponent {
             int modelId;
 
             @Override
-            public void operationFailure(int i, String s) {
+            public void operationFailure(int modelId,int i, String s) {
                 log.info("received message {} : {}", i, s);
             }
 
@@ -151,7 +152,7 @@ public class ServiceAdjustComponent {
         TestForegroundCallback foregroundCallback = new TestForegroundCallback();
 
         // 构建神经网络配置
-        MLAlgorithmConfig config = new NNAlgorithmConfig(MLAlgorithmType.FCNNModel, 31, 16,
+        MLAlgorithmConfig config = new NNAlgorithmConfig(MLAlgorithmType.FCNNModel, s, d,
                 Lists.newArrayList(40),
                 ActivationFunction.RELU,
                 ParamInit.DEFAULT,
@@ -177,13 +178,12 @@ public class ServiceAdjustComponent {
 
 
 
-
     @Deactivate
     protected void deactivate() {
         // 注销服务
-        mlAppRegistry.unregister(MLAppType.LINK_PREDICTION);
-        mlAppRegistry.unregister(MLAppType.BUSINESS_AREA_PREDICTION);
-        mlAppRegistry.unregister(MLAppType.RESIDENTIAL_AREA_PREDICTION);
+//        mlAppRegistry.unregister(MLAppType.LINK_PREDICTION);
+//        mlAppRegistry.unregister(MLAppType.BUSINESS_AREA_PREDICTION);
+//        mlAppRegistry.unregister(MLAppType.RESIDENTIAL_AREA_PREDICTION);
 
         log.info("SOON - service reconstruction - Stopped");
     }

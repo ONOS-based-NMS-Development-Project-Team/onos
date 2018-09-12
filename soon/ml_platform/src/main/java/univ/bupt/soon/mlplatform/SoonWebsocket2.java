@@ -38,7 +38,7 @@ public class SoonWebsocket2 implements WebSocket.OnTextMessage, WebSocket.OnCont
 
         log.info("Received  message from python " );
 
-        String filepath = "/home/bloodsparkle/resultFromPython.txt";
+        String filepath = "/home/ecoc/resultFromPython.txt";
         WebSocketClient client = null;
         try {
             client = new WebSocketClient();

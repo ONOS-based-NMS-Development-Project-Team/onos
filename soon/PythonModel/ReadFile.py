@@ -1,7 +1,6 @@
 import tensorflow as tf
 import hashlib
 import os
-import command
 from NeurosNetwork import NeuroNetwork
 def read_data(data_list):
     listData = []

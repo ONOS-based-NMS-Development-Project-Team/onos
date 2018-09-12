@@ -68,7 +68,7 @@ public class PlatformImpl implements MLPlatformService {
     private int trainId = 0;
     private int testId = 0;
     private int modelId = 0;
-    public static int sockId = 0;
+    static int sockId = 0;
 
 
 //    /**

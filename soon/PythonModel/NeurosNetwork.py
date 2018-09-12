@@ -11,7 +11,7 @@ class NeuroNetwork(object):
                  lrAdjust = tf.train.exponential_decay,activation_function=tf.nn.relu,dropout=0.0,
                  lossFunction = tf.reduce_mean,hidden_layer_neurosNums=[]):
         # self.saver = tf.train.Saver()
-        self.logdir = os.environ['HOME'] + '/'+threading.current_thread().name + '/train'
+        self.logdir = os.environ['HOME'] + '/'+threading.current_thread().name
         self.input_layer_neurosNums = input_layer_neurosNums
         self.output_layer_neurosNums = output_layer_neurosNums
         self.hidden_layer_nums = hidden_layer_nums
@@ -41,7 +41,7 @@ class NeuroNetwork(object):
             else:
                 diff = tf.nn.softmax_cross_entropy_with_logits(logits=self.reconstruction, labels=self.y)
             with tf.name_scope('total'):
-                self.loss = self.lossFunction(diff)
+                self.loss = tf.reduce_mean(diff)
         tf.summary.scalar('loss', self.loss)
         with tf.name_scope('train'):
             if self.lrAdjust == tf.train.exponential_decay:
@@ -69,9 +69,9 @@ class NeuroNetwork(object):
             if i == n:
                 all_weights['w' + str(i)] = tf.Variable(tf.truncated_normal([self.hidden_layer_neurosNums[i-2], self.output_layer_neurosNums],stddev=0.1 , dtype=tf.float32))
                 all_weights['b' + str(i)] = tf.Variable(tf.zeros([self.output_layer_neurosNums], dtype=tf.float32))
-                break
-            all_weights['w' + str(i)] = tf.Variable(tf.truncated_normal([self.hidden_layer_neurosNums[i-2],self.hidden_layer_neurosNums[i-1]],stddev=0.1))
-            all_weights['b' + str(i)] = tf.Variable(tf.zeros([self.hidden_layer_neurosNums[i-1]],dtype = tf.float32))
+                return all_weights
+            all_weights['w' + str(i)] = tf.Variable(tf.truncated_normal([self.hidden_layer_neurosNums[i-2], self.hidden_layer_neurosNums[i-1]], stddev=0.1))
+            all_weights['b' + str(i)] = tf.Variable(tf.zeros([self.hidden_layer_neurosNums[i-1]], dtype=tf.float32))
         return all_weights
 
     def _layer(self):
@@ -177,11 +177,12 @@ class NeuroNetwork(object):
     # tensorboard execute
     def tb_exe(self):
         cmd = "/home/mahaoli/anaconda3/envs/mhl/bin/python " \
-              "/home/mahaoli/anaconda3/envs/mhl/bin/tensorboard --logdir=" + self.logdir
+              "/home/mahaoli/anaconda3/envs/mhl/bin/tensorboard --logdir=" + self.logdir + '/train'
         subprocess.getoutput(cmd)
-        return 'http:\\\localhost:6006'
+        return 'localhost:6006'
 
 
     # reset graph
     def reset(self):
+        self.sess.close()
         return tf.reset_default_graph()

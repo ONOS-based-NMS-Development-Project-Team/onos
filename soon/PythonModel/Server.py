@@ -119,20 +119,24 @@ async def handler(websocket, path):
             print(content)
             pred_X = np.mat(content)
             prediction = global_networks.networks.verify(pred_X)
+            print("prediction:", prediction)
             prediction_json = prediction.tolist()
+            print(prediction_json)
             # prediction = str(prediction_json)
             json_pred = json.dumps(prediction_json)
             pred = str(msg_id) + '\n' + '/notify/apply' + '\n' + json_pred
-            global_networks.networks.sess.close()
+            # global_networks.networks.sess.close()
             await websocket.send(pred)
         elif label == "/get/uri":
             print("cal_tensorboard")
             tensor_link = global_networks.networks.tb_exe()
             # json_tblink = json.dumps(tensor_link)
+            # tensor_link = "111"
             tb_link = str(msg_id) + '\n' + '/notify/uri' + '\n' + tensor_link
+            print(tb_link)
             await websocket.send(tb_link)
-            print('---------------------------------------------------------------------')
             global_networks.networks.reset()
+            print('---------------------------------------------------------------------')
         else:
             print("others")
 
@@ -143,6 +147,7 @@ if __name__ == '__main__':
     train_id = 0
     test_id = 0
     global_networks = threading.local()
-    start_server = websockets.serve(ws_handler=handler, host='10.117.63.234', port=9999, max_size=100*1024*1024)
+    start_server = websockets.serve(ws_handler=handler, host='10.108.70.177', port=9999, max_size=100*1024*1024)
+    print("开始监听。。。。")
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()
