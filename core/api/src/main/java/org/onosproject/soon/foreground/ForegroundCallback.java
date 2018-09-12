@@ -30,7 +30,7 @@ public interface ForegroundCallback {
      * @param msgId 发送消息的msgId
      * @param description 异常描述
      */
-    void operationFailure(int modelId,int msgId, String description);
+    void operationFailure(int msgId, String description);
 
 
     /**××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××**/

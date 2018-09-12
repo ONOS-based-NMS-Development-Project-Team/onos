@@ -4,6 +4,8 @@ import com.eclipsesource.json.JsonArray;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableSet;
+import io.grpc.internal.IoUtils;
+import org.apache.commons.collections.map.CompositeMap;
 import org.apache.commons.lang3.tuple.Pair;
 
 
@@ -12,10 +14,12 @@ import org.onosproject.soon.dataset.original.Item;
 import org.onosproject.soon.foreground.ForegroundCallback;
 import org.onosproject.soon.foreground.MLAppType;
 import org.onosproject.soon.foreground.ModelControlService;
+import org.onosproject.soon.foreground.ModelControlServiceAbstract;
 import org.onosproject.soon.mlmodel.MLAlgorithmConfig;
 import org.onosproject.soon.mlmodel.MLAlgorithmType;
 import org.onosproject.soon.mlmodel.MLModelDetail;
 import org.onosproject.soon.mlmodel.config.nn.*;
+import org.onosproject.store.service.ConsistentMapException;
 import org.onosproject.ui.JsonUtils;
 import org.onosproject.ui.RequestHandler;
 import org.onosproject.ui.UiMessageHandler;
@@ -25,6 +29,7 @@ import org.onosproject.ui.table.TableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.URI;
 import java.security.spec.RSAOtherPrimeInfo;
 import java.sql.SQLTransactionRollbackException;
@@ -70,7 +75,7 @@ import static univ.bupt.soon.mlshow.front.Utils.*;
  * }
  * }
  */
-public class ModelLibraryMessageHandler extends UiMessageHandler implements ForegroundCallback{
+public class ModelLibraryMessageHandler extends UiMessageHandler{
 
     private static final String MODEL_DATA_REQ = "modelLibraryManagementRequest";
     private static final String MODEL_DATA_RESP = "modelLibraryManagementResponse";
@@ -81,6 +86,8 @@ public class ModelLibraryMessageHandler extends UiMessageHandler implements Fore
     private static final String MODEL_DETAILS_REQ = "modelLibraryDetailRequest";
     private static final String MODEL_DETAILS_RESP = "modelLibraryDetailsResponse";
     private static final String DETAILS = "details";
+
+    private static final String Model_ALERT = "modelLibraryAlert";
 
     private static final String[] COL_IDS = {
             APP_TYPE,MODEL_ID,ALGO_TYPE,TRAIN_DATASET_ID,TEST_DATASET_ID,MODEL_STATE
@@ -95,8 +102,17 @@ public class ModelLibraryMessageHandler extends UiMessageHandler implements Fore
     private static final String NO_ROWS_MESSAGE = "no model found";
 
     private final Map<Integer,ModelLibraryInfo> modelLibraryInfoMap = new ConcurrentHashMap<>();
-    private final Map<Integer,Object> modelManagementMap = new ConcurrentHashMap<>();
 
+    //java 不同的操作返回信息存放
+    private final Map<Integer,String> modelManagementMapJava = new ConcurrentHashMap<>();
+    //test data set id 与对应 msgId存放，供modelEvaluation使用
+    private final Map<Integer,Map<Integer,Integer>> modelMsgId = new ConcurrentHashMap<>();
+
+    //发送可用训练集、测试集时，存放对应的id以供回调函数确定是否发送成功
+    private final ConcurrentHashMap<Integer,Boolean> trainAvai = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer,Boolean> testAvai = new ConcurrentHashMap<>();
+
+    //注入handlers
     protected Collection<RequestHandler> createRequestHandlers() {
         return ImmutableSet.of(
                 new ModelLibraryDataRequest(),
@@ -104,49 +120,26 @@ public class ModelLibraryMessageHandler extends UiMessageHandler implements Fore
                 new ModelLibraryDetailsRequest()
         );
     }
-    @Override
-    public void operationFailure(int modelId,int msgId,String description){
-        modelManagementMap.get(modelId).put(msgId,description);
-    }
 
-    @Override
-    public void appliedModelResult(int msgId, List<Item> input, List<String> output) { }
 
-    @Override
-    public void modelEvaluation(int msgId, String result) { }
-
-    @Override
-    public void trainDatasetTransEnd(int msgId, int trainDatasetId) { }
-
-    @Override
-    public void testDatasetTransEnd(int msgId, int testDatasetId) { }
-
-    @Override
-    public void ResultUrl(int msgId, URI uri) { }
-
-    @Override
-    public void trainEnd(int msgId) { }
-    @Override
-    public void intermediateResult(int msgId, MonitorData monitorData) { }
-
-    protected MLAlgorithmConfig getRightConfig (ModelLibraryInfo info) {
-        MLAlgorithmType algoType = info.getMlAlgorithmType();
-        MLAlgorithmConfig config = new MLAlgorithmConfig(MLAlgorithmType.FCNNModel);
-        switch (algoType){
-            case  FCNNModel:
-                config = (NNAlgorithmConfig)info.getMlModelDetail().getConfig();
-                break;
-            case RNNModel :
-                break;
-            case CNNModel :
-                break;
-            case LSTMModel :
-                break;
-            case RandomForestModel :
-                break;
-        }
-        return config;
-    }
+//    protected MLAlgorithmConfig getRightConfig (ModelLibraryInfo info) {
+//        MLAlgorithmType algoType = info.getMlAlgorithmType();
+//        MLAlgorithmConfig config = new MLAlgorithmConfig(MLAlgorithmType.FCNNModel);
+//        switch (algoType){
+//            case  FCNNModel:
+//                config = (NNAlgorithmConfig)info.getMlModelDetail().getConfig();
+//                break;
+//            case RNNModel :
+//                break;
+//            case CNNModel :
+//                break;
+//            case LSTMModel :
+//                break;
+//            case RandomForestModel :
+//                break;
+//        }
+//        return config;
+//    }
 
     protected Object[] getModelAccuracy (ModelLibraryInfo info) {
         Map<Integer,Double> modelAccuracyMap =  info.getMlModelDetail().getPerformances();
@@ -170,16 +163,12 @@ public class ModelLibraryMessageHandler extends UiMessageHandler implements Fore
         return arrList;
     }
 
-    public int addModel (MLAlgorithmType algoType,MLAlgorithmConfig config) {
-        Pair<Integer,Integer> addNewModelPair = service.addNewModel(algoType,config,new ModelLibraryMessageHandler());
-        int modelId = addNewModelPair.getKey();
-        int addNewModelMsgId = addNewModelPair.getRight();
-        modelManagementMap.put(modelId,new HashMap<>());
-        modelManagementMap.get(modelId).put(addNewModelMsgId,null);
-        if(modelId == -1){
-            modelManagementMap.put(modelId,"load model failure in java");
+    protected void setDataSetAvai(Map map,int modelId,Set<Integer> set) {
+        ConcurrentHashMap<Integer,Boolean> dataSetMap = new ConcurrentHashMap<>();
+        for(int i : set){
+            dataSetMap.put(i,false);
         }
-        return modelId;
+        map.put(modelId,dataSetMap);
     }
 
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -230,16 +219,17 @@ public class ModelLibraryMessageHandler extends UiMessageHandler implements Fore
             if(modelLibraryInfoMap.isEmpty()){
                 return;
             }else {
-                for(String key : modelLibraryInfoMap.keySet()){
+                for(int key : modelLibraryInfoMap.keySet()){
                     ModelLibraryInfo info = modelLibraryInfoMap.get(key);
-                    () -> tm.addRow()
-                            .cell(APP_TYPE, info.getMlAppType())
-                            .cell(MODEL_ID, info.getModelId())
-                            .cell(REMAINING_TIME, info.getRemainingTime())
-                            .cell(ALGO_TYPE, info.getMlAlgorithmType())
-                            .cell(TRAIN_ID,info.getMlModelDetail().getTrainDatasetId())
-                            .cell(MODEL_STATE,info.getMlModelDetail().getState())
-                            .cell(MODEL_ACCURACY,getModelAccuracy(info))
+                    if(info.isTrained()) {
+                        tm.addRow()
+                                .cell(APP_TYPE, info.getMlAppType())
+                                .cell(MODEL_ID, info.getModelId())
+                                .cell(REMAINING_TIME, info.getRemainingTime())
+                                .cell(ALGO_TYPE, info.getMlAlgorithmType())
+                                .cell(TRAIN_ID, info.getMlModelDetail().getTrainDatasetId())
+                                .cell(MODEL_ACCURACY, getModelAccuracy(info));
+                    }
                 }
             }
         }
@@ -280,7 +270,27 @@ public class ModelLibraryMessageHandler extends UiMessageHandler implements Fore
         private LRAdjust lrAdjust;
         private double dropout;
 
-        protected void doAction (String action,ObjectNode payload,JsonNode st) {
+        public int addModel (MLAlgorithmType algoType,MLAlgorithmConfig config) throws IOException {
+            ModelForegroundCallback callback = new ModelForegroundCallback();
+            Pair<Integer,Integer> addNewModelPair = service.addNewModel(algoType,config,callback);
+            int modelId = addNewModelPair.getKey();
+            Pair<Set<Integer>,Set<Integer>> pair = service.transAvailableDataset(modelId);
+            Set<Integer> trainIdSet = pair.getLeft();
+            Set<Integer> testIdSet = pair.getRight();
+            setDataSetAvai(trainAvai,modelId,testIdSet);
+            setDataSetAvai(testAvai,modelId,testIdSet);
+            if(modelId == -1){
+                modelManagementMapJava.put(modelId,"load model failure in java");
+                ObjectNode rootNode = MAPPER.createObjectNode();
+                rootNode.put(ANNOTS,"fail to load model "+modelId+"on platform");
+                this.sendMessage(Model_ALERT,rootNode);
+            }
+            callback.modelId = modelId;
+            //int addNewModelMsgId = addNewModelPair.getRight();
+            return modelId;
+        }
+
+        protected void doAction (String action,ObjectNode payload,JsonNode st) throws IOException {
             if(action == null){
                 return;
             }else{
@@ -318,6 +328,10 @@ public class ModelLibraryMessageHandler extends UiMessageHandler implements Fore
                             modelLibraryInfoMap.remove(modelId);
                         }
                         else{
+                            modelManagementMapJava.put(modelId,"fail delete model"+modelId+"in java");
+                            ObjectNode rootNode = MAPPER.createObjectNode();
+                            rootNode.put(ANNOTS,"fail to delete model "+modelId+" on platform");
+                            this.sendMessage(Model_ALERT,rootNode);
                             //主动给前台发送删除失败的alert，这个可以在前台加一个alertResponse以及对应的handler
                         }
                     }
@@ -328,6 +342,10 @@ public class ModelLibraryMessageHandler extends UiMessageHandler implements Fore
                             //更改模型状态
                         }
                         else {
+                            modelManagementMapJava.put(modelId,"fail start model"+modelId+"in java");
+                            ObjectNode rootNode = MAPPER.createObjectNode();
+                            rootNode.put(ANNOTS,"fail to start model "+modelId+" on platform");
+                            this.sendMessage(Model_ALERT,rootNode);
                             //同上
                         }
                     }
@@ -335,14 +353,22 @@ public class ModelLibraryMessageHandler extends UiMessageHandler implements Fore
                         modelId = (int)JsonUtils.number(payload,MODEL_ID);
                         JsonNode arrNode = st.get("testDataSetId");
                         int setTestMsgId;
+                        Map<Integer,Integer> evaMap = new ConcurrentHashMap<>();
                         testId = arrayToList(arrNode);
                         for(int i=0;i<testId.size();i++){
                             Pair<Boolean,Integer> evaModelPair = service.getModelEvaluation(modelId,testId.get(i));
                             if(evaModelPair.getLeft()){
-
+                                setTestMsgId = evaModelPair.getRight();
+                                evaMap.put(setTestMsgId,testId.get(i));
+                            }
+                            else {
+                                modelManagementMapJava.put(modelId,"fail evaluate model"+modelId+"in testId "+testId.get(i)+"in java");
+                                ObjectNode rootNode = MAPPER.createObjectNode();
+                                rootNode.put(ANNOTS,"fail to evaluate model "+modelId+"in test data set "+testId.get(i)+" on platform");
+                                this.sendMessage(Model_ALERT,rootNode);
                             }
                         }
-
+                        modelMsgId.put(modelId,evaMap);
                     }
                 }
             }
@@ -353,22 +379,122 @@ public class ModelLibraryMessageHandler extends UiMessageHandler implements Fore
 
             //解析managementRequest参数
             //long modelId = JsonUtils.number(payload,MODEL_ID);
-            String action = JsonUtils.string(payload,ACTION);
-            JsonNode st = payload.get("modelParams");
+            try {
+                String action = JsonUtils.string(payload, ACTION);
+                JsonNode st = payload.get("modelParams");
+                doAction(action, payload, st);
+            }
+            catch (Exception ex){
+                log.debug(ex.toString());
+            }
 
         }
-
-        @Override
-        public void operationFailure (int msgId,String description){
-
-        }
-
-        @Override
-
 
     }
 
     private final class ModelLibraryDetailsRequest extends RequestHandler {
+        private ModelLibraryDetailsRequest(){
+            super(MODEL_DETAILS_REQ);
+        }
+
+        @Override
+        public void process(ObjectNode payload) {
+            int modelId = (int)JsonUtils.number(payload,MODEL_ID);
+
+            ModelLibraryInfo model = modelLibraryInfoMap.get(modelId);
+            ObjectNode data = objectNode();
+            ObjectNode algoParams = objectNode();
+
+            MLAlgorithmConfig config = model.getMlModelDetail().getConfig();
+
+            //装填模型参数ObjectNode
+            algoParams.put(INPUT_NUM,((NNAlgorithmConfig) config).getInputNum());
+            algoParams.put(OUTPUT_NUM,((NNAlgorithmConfig) config).getOutputNum());
+            algoParams.put(HIDDEN_LAYER,((NNAlgorithmConfig) config).getHiddenLayer().toString());
+            algoParams.put(ACT_FUNTION,((NNAlgorithmConfig) config).getActivationFunction().toString());
+            algoParams.put(WEIGHT_INIT,((NNAlgorithmConfig) config).getWeightInit().toString());
+            algoParams.put(BIAS_INIT,((NNAlgorithmConfig) config).getBiasInit().toString());
+            algoParams.put(LOSS_FUNCTION,((NNAlgorithmConfig) config).getLossFunction().toString());
+            algoParams.put(BATCH_SIZE,((NNAlgorithmConfig) config).getBatchSize());
+            algoParams.put(EPOCH,((NNAlgorithmConfig) config).getEpoch());
+            algoParams.put(OPTIMIZER,((NNAlgorithmConfig) config).getOptimizer().toString());
+            algoParams.put(LR,((NNAlgorithmConfig) config).getLearningRate());
+            algoParams.put(LR_ADJUST,((NNAlgorithmConfig) config).getLrAdjust().toString());
+            algoParams.put(DROPOUT,((NNAlgorithmConfig) config).getDropout());
+
+            //装填模型详细信息ObjectNode
+            data.put(MODEL_ID, modelId);
+            data.put(APP_TYPE,model.getMlAppType().toString());
+            data.put(ALGO_TYPE,model.getMlAlgorithmType().toString());
+            data.put(TRAIN_ID,model.getMlModelDetail().getTrainDatasetId());
+            data.put(TEST_ID,Arrays.toString(model.getTestDataSetId()));
+            data.put(LOSS, model.getLoss());
+            data.put(REMAINING_TIME, model.getRemainingTime());
+            data.put(PRECISION, model.getPrecision());
+            data.put(MODEL_LINK, model.getModelLink());
+            data.put(MODEL_ACCURACY, model.getMlModelDetail().getPerformances().values().toString());
+            data.put(ALGO_PARAMS,algoParams);
+;
+
+            ObjectNode rootNode = objectNode();
+            rootNode.set(DETAILS, data);
+            sendMessage(MODEL_DETAILS_RESP, rootNode);
+        }
+    }
+
+    private class ModelForegroundCallback implements ForegroundCallback {
+
+        //python调用回调函数赋值存放
+        private final Map<Integer,String> modelManagementMap = new ConcurrentHashMap<>();
+
+
+        private int modelId;
+        //ForegroundCallback实现
+        @Override
+        public void operationFailure(int msgId,String description){
+            modelManagementMap.put(msgId,description);
+        }
+
+        @Override
+        public void appliedModelResult(int msgId, List<Item> input, List<String> output) { }
+
+        @Override
+        public void modelEvaluation(int msgId, String result) {
+            int testId = modelMsgId.get(modelId).get(msgId);
+            MLModelDetail detail = modelLibraryInfoMap.get(modelId).getMlModelDetail();
+            Map map = detail.getPerformances();
+            map.put(testId,result);
+            detail.setPerformances(map);
+            modelLibraryInfoMap.get(modelId).setMlModelDetail(detail);
+        }
+
+        @Override
+        public void trainDatasetTransEnd(int msgId, int trainDatasetId) {
+            trainAvai.put(trainDatasetId,true);
+        }
+
+        @Override
+        public void testDatasetTransEnd(int msgId, int testDatasetId) {
+            testAvai.put(testDatasetId,true);
+        }
+
+        @Override
+        public void ResultUrl(int msgId, URI uri) {
+            modelLibraryInfoMap.get(modelId).setModelLink(uri.toString());
+        }
+
+        @Override
+        public void trainEnd(int msgId) {
+            modelLibraryInfoMap.get(modelId).setTrained(true);
+        }
+        @Override
+        public void intermediateResult(int msgId, MonitorData monitorData) {
+            ModelLibraryInfo model = modelLibraryInfoMap.get(modelId);
+            NNMonitorData data = (NNMonitorData)monitorData;
+            model.setLoss(data.getLoss());
+            model.setRemainingTime(data.getRemainingTime());
+            model.setPrecision(data.getPrecision());
+        }
 
     }
 }
