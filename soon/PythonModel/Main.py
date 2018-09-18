@@ -1,4 +1,4 @@
-from NeurosNetwork import NeurosNetwork
+from NeurosNetwork import NeuroNetwork
 import tensorflow as tf
 from xmlProcessor import analyzeXml_list, analyzeXml_dict
 from ReadFile import read_data, read_parameters
@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     # 模型初始化
     # 具体参数由para指定，这里只是举了一个例子
-    network = NeurosNetwork(4,1,1,0.1,100,10,tf.train.GradientDescentOptimizer,tf.train.exponential_decay,
+    network = NeuroNetwork(4,1,1,0.1,100,10,tf.train.GradientDescentOptimizer,tf.train.exponential_decay,
                             tf.nn.relu,0.0,tf.reduce_mean,[80])
 
     # 训练过程

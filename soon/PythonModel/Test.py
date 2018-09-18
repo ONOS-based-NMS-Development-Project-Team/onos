@@ -4,9 +4,10 @@ import subprocess
 import os
 from ReadFile import read_parameters
 from NeurosNetwork import NeuroNetwork
-import websocket_server
+import tensorflow as tf
 import time
 import socket
+import threading
 
 
 def on_message(ws, message):
@@ -117,29 +118,9 @@ def is_json(myjson):
 
 
 if __name__ == '__main__':
-    data_train_list = []
-    data_test_list = []
-    data_train_dict = {}
-    data_test_dict = {}
-    model_para = []
-    train_id = 0
-    cmd1 = "cd ~"
-    cmd2 = "source activate mhl"
-    cmd3 = "nohup tensorboard --logdir=/home/mahaoli/train &"
-    cmd = "/home/mahaoli/anaconda3/envs/mhl/bin/python /home/mahaoli/anaconda3/envs/mhl/bin/tensorboard --logdir=/home/mahaoli/train"
-
-    # val0 = os.system("cd ~")
-    # val = os.system("source activate mhl")
-    # val00 = os.system("pwd")
-    # print(val00)
-    # val1 = os.system("tensorboard logdir=/home/mahaoli/train")
-    # print(val1)
-    print(cmd)
-    print('http:\\\localhost:6006')
-    subprocess.getoutput(cmd)
-    # p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT,executable="/bin/bash")
-    # l = p.poll()
-    # print(l)
-    # print(p)
-    # time.sleep(200)
-    # print(p)
+    list =[1,2,3]
+    list1 = tf.one_hot(indices=list,depth=4,axis=1)
+    sess = tf.Session()
+    print(list)
+    print(np.mat(sess.run(list1)))
+    print(sess.run(list1))

@@ -6,6 +6,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.onosproject.soon.dataset.DatabaseAdapter;
 import org.onosproject.soon.dataset.original.AlarmPredictionItem;
 import org.onosproject.soon.dataset.original.Item;
+import org.onosproject.soon.foreground.ForegroundCallback;
 import org.onosproject.soon.foreground.MLAppType;
 import org.onosproject.soon.foreground.ModelControlServiceAbstract;
 import org.onosproject.soon.platform.MLPlatformService;
@@ -13,12 +14,14 @@ import org.onosproject.soon.dataset.dataset.SegmentForDataset;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 /**
  *
  */
 public class AlarmPredService extends ModelControlServiceAbstract {
+    ForegroundCallback foregroundCallback = null;
 
     public AlarmPredService(MLAppType serviceName, String tableName, Class itemClass, Class platformCallbackClass,
                             DatabaseAdapter database, MLPlatformService platformService) {
@@ -41,6 +44,12 @@ public class AlarmPredService extends ModelControlServiceAbstract {
         testIds.put(testDatasetId, size);
 
         SegmentForDataset segmentForDataset = convertToSegmentForDataset(trainData, trainDatasetId,true);
+        List<List<Double>> labDataInp = segmentForDataset.getInput();
+        List<List<Double>> labDataOutp = segmentForDataset.getInput();
+        List<List<Double>> originDataInp = displayOriginData(labDataInp);
+        List<List<Double>> originDataOup = displayOriginData(labDataOutp);
+        SegmentForDataset sfd = new SegmentForDataset();
+
         platformService.sendTrainData(websocketId, segmentForDataset);
 
         segmentForDataset.setTrainData(false);
@@ -119,5 +128,24 @@ public class AlarmPredService extends ModelControlServiceAbstract {
                 tableName, itemClass);
     }
 
+    @Override
+    public void setForegroundCallback(ForegroundCallback foregroundCallback) {
+        this.foregroundCallback = foregroundCallback;
+    }
+
+    private List<List<Double>> displayOriginData(List<List<Double>> segmentForDataset){
+        List<List<Double>> tmpIn = Lists.newArrayList();
+        Random random = new Random();
+        for (List<Double> list : segmentForDataset) {
+            List<Double> tmp = Lists.newArrayList();
+            for (int i=0;i<11;i++) {
+
+                String str = "-" + random.nextDouble(39.0);
+                tmp.add(origin);
+            }
+            tmpIn.add(tmp);
+        }
+        return tmpIn;
+    }
 
 }

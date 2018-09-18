@@ -7,6 +7,7 @@ import org.onosproject.soon.dataset.DatabaseAdapter;
 import org.onosproject.soon.dataset.dataset.SegmentForDataset;
 import org.onosproject.soon.dataset.original.Item;
 import org.onosproject.soon.dataset.original.servadj.AreaPredictionItem;
+import org.onosproject.soon.foreground.ForegroundCallback;
 import org.onosproject.soon.foreground.MLAppType;
 import org.onosproject.soon.foreground.ModelControlServiceAbstract;
 import org.onosproject.soon.platform.MLPlatformService;
@@ -24,6 +25,7 @@ import java.util.Set;
 public class AreaPredictionImpl extends ModelControlServiceAbstract {
 
     private final int areaId;  // 区域id
+    ForegroundCallback foregroundCallback = null;
 
     public AreaPredictionImpl(MLAppType serviceName, String tableName, Class itemClass, Class platformCallbackClass,
                               DatabaseAdapter database, MLPlatformService platformService, int areaId) {
@@ -46,7 +48,6 @@ public class AreaPredictionImpl extends ModelControlServiceAbstract {
         int testDatasetId = platformService.requestNewTestDatasetId(websocketId);
         Set<Integer> trids = Sets.newHashSet(trainDatasetId);
         Set<Integer> teids = Sets.newHashSet(testDatasetId);
-
         List<Item> trainData = database.queryData("*", " where area_id="+areaId, tableName, itemClass);
         int size = trainData.size();
         trainIds.put(trainDatasetId, size);
@@ -76,6 +77,12 @@ public class AreaPredictionImpl extends ModelControlServiceAbstract {
         segment.setInput(inp);
         segment.setOutput(out);
 
+        List<List<Double>> originDataInp = displayOriginData(inp);
+        List<List<Double>> originDataOup = displayOriginData(out);
+        SegmentForDataset sfd = new SegmentForDataset();
+        sfd.setInput(originDataInp);
+        sfd.setInput(originDataOup);
+        foregroundCallback.originData(sfd);
 
         // 两次传输,一次作为训练集,一次作为测试集
         segment.setDatasetId(trainDatasetId);
@@ -88,6 +95,10 @@ public class AreaPredictionImpl extends ModelControlServiceAbstract {
         return Pair.of(trids, teids);
     }
 
+    @Override
+    public void setForegroundCallback(ForegroundCallback foregroundCallback) {
+        this.foregroundCallback = foregroundCallback;
+    }
 
 
     /**
@@ -108,6 +119,19 @@ public class AreaPredictionImpl extends ModelControlServiceAbstract {
             rtn.add(ds);
         }
         return rtn;
+    }
+
+    private List<List<Double>> displayOriginData(List<List<Double>> segmentForDataset){
+        List<List<Double>> tmpIn = Lists.newArrayList();
+        for (List<Double> list : segmentForDataset) {
+            List<Double> tmp = Lists.newArrayList();
+            for (Double dou:list) {
+                Double origin = dou * 60;
+                tmp.add(origin);
+            }
+            tmpIn.add(tmp);
+        }
+        return tmpIn;
     }
 
 }

@@ -31,6 +31,8 @@ import java.util.*;
  */
 public class LinkPredictionImpl extends ModelControlServiceAbstract {
 
+    ForegroundCallback foregroundCallback = null;
+
     public LinkPredictionImpl(MLAppType serviceName, String tableName, Class itemClass, Class platformCallbackClass,
                               DatabaseAdapter database, MLPlatformService platformService) {
         super(serviceName, tableName, itemClass, platformCallbackClass, database, platformService);
@@ -57,12 +59,26 @@ public class LinkPredictionImpl extends ModelControlServiceAbstract {
         testIds.put(testDatasetId, size);
 
         SegmentForDataset segmentForDataset = convertToSegmentForDataset(trainData, trainDatasetId, true);
+        //Todo 转化数据
+        List<List<Double>> labDataInp = segmentForDataset.getInput();
+        List<List<Double>> labDataOutp = segmentForDataset.getInput();
+        List<List<Double>> originDataInp = displayOriginData(labDataInp);
+        List<List<Double>> originDataOup = displayOriginData(labDataOutp);
+        SegmentForDataset sfd = new SegmentForDataset();
+        sfd.setInput(originDataInp);
+        sfd.setInput(originDataOup);
+        foregroundCallback.originData(sfd);
         platformService.sendTrainData(websocketId, segmentForDataset);
 
         segmentForDataset.setTrainData(false);
         segmentForDataset.setDatasetId(testDatasetId);
         platformService.sendTestData(websocketId, segmentForDataset);
         return Pair.of(trids, teids);
+    }
+
+    @Override
+    public void setForegroundCallback(ForegroundCallback foregroundCallback) {
+        this.foregroundCallback = foregroundCallback;
     }
 
 
@@ -130,5 +146,19 @@ public class LinkPredictionImpl extends ModelControlServiceAbstract {
         rtn.setInput(inputData);
         rtn.setOutput(outputData);
         return rtn;
+    }
+
+
+    private List<List<Double>> displayOriginData(List<List<Double>> segmentForDataset){
+        List<List<Double>> tmpIn = Lists.newArrayList();
+        for (List<Double> list : segmentForDataset) {
+            List<Double> tmp = Lists.newArrayList();
+            for (Double dou:list) {
+                Double origin = dou * 60;
+                tmp.add(origin);
+            }
+            tmpIn.add(tmp);
+        }
+        return tmpIn;
     }
 }

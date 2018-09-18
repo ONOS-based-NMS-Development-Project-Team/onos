@@ -8,6 +8,7 @@ import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
 import org.onosproject.soon.MonitorData;
 import org.onosproject.soon.dataset.DatabaseAdapter;
+import org.onosproject.soon.dataset.dataset.SegmentForDataset;
 import org.onosproject.soon.dataset.original.Item;
 import org.onosproject.soon.dataset.original.servadj.AreaPredictionItem;
 import org.onosproject.soon.dataset.original.servadj.EdgePredictionItem;
@@ -66,18 +67,8 @@ public class ServiceAdjustComponent {
         mlAppRegistry.register(area1, area1.getServiceName());
         mlAppRegistry.register(area3, area3.getServiceName());
 
-//<<<<<<< HEAD
-//<<<<<<< Updated upstream
-//        test(lpi,45,15);
-//=======
-//        test(lpi);
-//        Thread.sleep(20000);
-//>>>>>>> Stashed changes
-//        test(area1,31,16);
-//=======
-        //test(lpi);
-//        test(area1);
-//>>>>>>> 857d95ba8935212549325847b3af8f7dd2e49c0f
+
+        test(lpi,45,15);
 //        test(area3);
 //        if (databese.connect()) {
 ////             如果数据库连接成功向前台注册应用
@@ -104,7 +95,6 @@ public class ServiceAdjustComponent {
         class TestForegroundCallback implements ForegroundCallback {
 
             int modelId;
-
             @Override
             public void operationFailure(int i, String s) {
                 log.info("received message {} : {}", i, s);
@@ -152,6 +142,11 @@ public class ServiceAdjustComponent {
             @Override
             public void intermediateResult(int i, MonitorData monitorData) {
                 log.info("received message {} : {}", i, monitorData.toString());
+            }
+
+            @Override
+            public void originData(SegmentForDataset segmentForDataset) {
+
             }
         }
         TestForegroundCallback foregroundCallback = new TestForegroundCallback();
@@ -207,7 +202,7 @@ class InternalDatabaseAdapter extends DatabaseAdapter {
     private Connection conn = null;
     private Statement stmt = null;
     private final String JDBC_DRIVER = "org.postgresql.Driver";
-    private final String DB_URL = "jdbc:postgresql://10.108.69.165:5432/ecoc2018";
+    private final String DB_URL = "jdbc:postgresql://localhost:5432/ecoc2018";
     private final String USER = "postgres";
     private final String PASS = "bupt";
 

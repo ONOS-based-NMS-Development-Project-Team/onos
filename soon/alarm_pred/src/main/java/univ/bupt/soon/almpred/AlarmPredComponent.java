@@ -10,6 +10,7 @@ import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
 import org.onosproject.soon.MonitorData;
 import org.onosproject.soon.dataset.DatabaseAdapter;
+import org.onosproject.soon.dataset.dataset.SegmentForDataset;
 import org.onosproject.soon.dataset.original.AlarmPredictionItem;
 import org.onosproject.soon.dataset.original.Item;
 import org.onosproject.soon.foreground.ForegroundCallback;
@@ -131,6 +132,11 @@ public class AlarmPredComponent {
             @Override
             public void intermediateResult(int msgId, MonitorData monitorData) {
                 log.info("received message {} : {}", msgId, monitorData.toString());
+            }
+
+            @Override
+            public void originData(SegmentForDataset segmentForDataset) {
+
             }
         }
             TestForegroundCallback foregroundCallback = new TestForegroundCallback();

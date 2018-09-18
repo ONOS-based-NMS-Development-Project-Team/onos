@@ -154,4 +154,11 @@ public interface ModelControlService {
      * @return 查询结果
      */
     List<Item> updateData(String sql, Class cls);
+
+
+    /**
+     * 设置前台回调
+     * @param
+     */
+    void setForegroundCallback(ForegroundCallback foregroundCallback);
 }

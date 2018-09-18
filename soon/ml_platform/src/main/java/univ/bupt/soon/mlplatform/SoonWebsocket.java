@@ -11,6 +11,7 @@ import org.onosproject.soon.dataset.dataset.SegmentForDataset;
 import org.onosproject.soon.mlmodel.MLAlgorithmConfig;
 import org.onosproject.soon.mlmodel.MLAlgorithmType;
 import org.onosproject.soon.mlmodel.config.nn.*;
+import org.onosproject.soon.platform.MLPlatformService;
 import org.onosproject.soon.platform.PlatformCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,7 @@ public class SoonWebsocket implements WebSocket.OnTextMessage, WebSocket.OnContr
     int msgId = 0; // websocket连接中消息的索引。
     PlatformCallback pcb = null;  // 该websocket的回调接口
     Connection conn = null;
+    PlatformImpl platform = new PlatformImpl();
     ChannelState state = ChannelState.CONFIGURING; // 初始化为配置状态
     static ObjectMapper mapper = new ObjectMapper();  // JSON转换
 
@@ -63,20 +65,10 @@ public class SoonWebsocket implements WebSocket.OnTextMessage, WebSocket.OnContr
         if (ind != null) {
             switch (ind) {
                 case END_NOTIFY:
-                    try {
                         // 训练结束提示
                         state = ChannelState.COMPLETED;
                         // 通知训练结束
                         pcb.trainingEnd(msgId);
-                    }catch (Exception e){
-                        System.out.println("ok");
-                        PlatformImpl platform = new PlatformImpl();
-                        Properties properties = new Properties();
-                        platform.addWebsocketConnection(URI.create(properties.getProperty("server_uri")));
-                        state = ChannelState.COMPLETED;
-                        // 通知训练结束
-                        pcb.trainingEnd(msgId);
-                    }
                     break;
                 case URL_NOTIFY:
                     // 得到TensorBoard的URL

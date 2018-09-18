@@ -2,6 +2,7 @@ package org.onosproject.soon.foreground;
 
 
 import org.onosproject.soon.MonitorData;
+import org.onosproject.soon.dataset.dataset.SegmentForDataset;
 import org.onosproject.soon.dataset.original.Item;
 import org.onosproject.soon.mlmodel.MLAlgorithmConfig;
 import org.onosproject.soon.mlmodel.MLAlgorithmType;
@@ -87,4 +88,7 @@ public interface ForegroundCallback {
      * 介于训练开始和训练结束之间的通知。
      */
     void intermediateResult(int msgId, MonitorData monitorData);
+
+
+    void originData(SegmentForDataset segmentForDataset);
 }

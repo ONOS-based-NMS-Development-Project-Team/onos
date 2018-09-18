@@ -6,10 +6,10 @@ import subprocess
 
 class NeuroNetwork(object):
 
-    def __init__(self,input_layer_neurosNums,output_layer_neurosNums,hidden_layer_nums,
-                 leraning_rate,epoch,batch_size,optimizerFunction=tf.train.GradientDescentOptimizer,
-                 lrAdjust = tf.train.exponential_decay,activation_function=tf.nn.relu,dropout=0.0,
-                 lossFunction = tf.reduce_mean,hidden_layer_neurosNums=[]):
+    def __init__(self, input_layer_neurosNums, output_layer_neurosNums, hidden_layer_nums,
+                 leraning_rate, epoch, batch_size, optimizerFunction,
+                 lrAdjust, activation_function, dropout=0.0,
+                 lossFunction = tf.reduce_mean, hidden_layer_neurosNums=[]):
         # self.saver = tf.train.Saver()
         self.logdir = os.environ['HOME'] + '/'+threading.current_thread().name
         self.input_layer_neurosNums = input_layer_neurosNums
@@ -38,8 +38,10 @@ class NeuroNetwork(object):
         with tf.name_scope('loss'):
             if self.lossFunction == tf.reduce_mean:
                 diff = tf.reduce_sum(tf.square(self.y - self.reconstruction), reduction_indices=[1])
-            else:
-                diff = tf.nn.softmax_cross_entropy_with_logits(logits=self.reconstruction, labels=self.y)
+            elif self.lossFunction == tf.nn.softmax_cross_entropy_with_logits:
+                diff = tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.reconstruction, labels=self.y))
+            elif self.lossFunction == tf.abs:
+                diff = tf.reduce_sum(tf.abs(self.reconstruction - self.y))
             with tf.name_scope('total'):
                 self.loss = tf.reduce_mean(diff)
         tf.summary.scalar('loss', self.loss)
@@ -144,10 +146,10 @@ class NeuroNetwork(object):
             tf.summary.histogram('histogram', var)
 
     # training process
-    def traingResult(self, X, Y):
-        train_writter = tf.summary.FileWriter(self.logdir + '/train', self.sess.graph)
+    def traingResult(self, X, Y, i):
+        train_writter = tf.summary.FileWriter(self.logdir + '/train' + str(i), self.sess.graph)
         loss_list = []
-        for i in range(self.epoch):
+        for i in range(self.epoch+1):
             value, opt = self.sess.run([self.merged, self.optimizer], feed_dict={self.x: X, self.y: Y})
             if i % 10 == 0:
                 # print(i, self.sess.run(self.loss, feed_dict={self.x: X, self.y: Y}))
@@ -165,7 +167,7 @@ class NeuroNetwork(object):
         test_writter = tf.summary.FileWriter(self.logdir + '/test')
         acc_list = []
         for i in range(100):
-            if i % 10 == 0:
+            if i % 100 == 1:
                 value, acc = self.sess.run([self.merged, self.accuracy], feed_dict={self.x:X, self.y:Y})
                 test_writter.add_summary(value, i)
                 acc_list.append(acc)
@@ -175,14 +177,24 @@ class NeuroNetwork(object):
 
 
     # tensorboard execute
-    def tb_exe(self):
-        cmd = "/home/mahaoli/anaconda3/envs/mhl/bin/python " \
-              "/home/mahaoli/anaconda3/envs/mhl/bin/tensorboard --logdir=" + self.logdir + '/train'
-        subprocess.getoutput(cmd)
-        return 'localhost:6006'
+    def tb_exe(self, i):
+        cmd = "/home/ecoc/miniconda3/envs/ecoc-demo/bin/python " \
+              "/home/ecoc/miniconda3/envs/ecoc-demo/bin/tensorboard --logdir=" + self.logdir + '/train'\
+              + str(i) + " --port=" + str(i)
+
+        print(cmd)
+        thread = threading.Thread(target=subprocess.getoutput, args=(cmd,))
+        thread.start()
+        # subprocess.getoutput(cmd)
+        return 'localhost:' + str(i)
 
 
     # reset graph
     def reset(self):
-        self.sess.close()
+        # self.sess.close()
         return tf.reset_default_graph()
+
+
+    # one-hot code
+    def one_hot(self,labels,num_class):
+        return tf.one_hot(labels,depth=num_class,axis=1)

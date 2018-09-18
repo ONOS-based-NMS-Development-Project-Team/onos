@@ -68,14 +68,17 @@ public abstract class PlatformCallbackAbstract implements PlatformCallback {
 
     @Override
     public void applyResult(int msgId, List<List<Double>> list) {
+        List<List<Double>> originData = displayOriginData(list);
         // 模型应用的结果
         List<String> result = Lists.newArrayList();
+
         for (List<Double> i : list) {
 //            if (i.get(0)==1.0 && i.get(1)==0.0) {
 //                result.add(String.valueOf(true));
 //            }else if (i.get(0)==0.0 && i.get(1)==1.0){
 //                result.add(String.valueOf(false));
 //            }
+
             result.add(i.toString());
         }
         List<List<Double>> tmp = inputs.get(msgId);
@@ -100,4 +103,19 @@ public abstract class PlatformCallbackAbstract implements PlatformCallback {
      * @return
      */
     protected abstract List<Item> parse(List<List<Double>> inp);
+
+    private List<List<Double>> displayOriginData(List<List<Double>> segmentForDataset){
+        List<List<Double>> tmpIn = Lists.newArrayList();
+        for (List<Double> list : segmentForDataset) {
+            List<Double> tmp = Lists.newArrayList();
+            for (Double dou:list) {
+                Double origin = dou * 60;
+                tmp.add(origin);
+            }
+            tmpIn.add(tmp);
+        }
+        return tmpIn;
+    }
 }
+
+

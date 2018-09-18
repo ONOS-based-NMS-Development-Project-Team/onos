@@ -5,6 +5,8 @@ import threading
 import numpy as np
 from ReadFile import read_parameters
 from NeurosNetwork import NeuroNetwork
+from random import randint
+import datetime
 
 import sys
 import pydevd
@@ -22,6 +24,7 @@ def is_json(myjson):
 
 
 async def handler(websocket, path):
+
     while True:
         message = await websocket.recv()
         msg_id, label, content = message.split('\n', 2)
@@ -38,6 +41,7 @@ async def handler(websocket, path):
             print("trainID:", data_train_id)
             data_train_dict[data_train_id] = content
             received_trdinID = str(msg_id) + '\n' + '/notify/train_dataset_end' + '\n' + str(data_train_id)
+            print("trainDataSetEnd")
             await websocket.send(received_trdinID)
             # data_list.append(data_train_dict)
         elif label == "/control/delete/train":
@@ -58,15 +62,14 @@ async def handler(websocket, path):
             train_id = content
             print("needID:", train_id)
         elif label == "/config/test":
-            # global data_test_dict
-            # data_test_dict = {}
             data_test_id = content["datasetId"]
             data_test_dict[data_test_id] = content
             print("test_ID:", data_test_id)
             received_testID = str(msg_id) + '\n' + '/notify/test_dataset_end' + '\n' + str(data_test_id)
             await websocket.send(received_testID)
         elif label == "/control/start":
-            pass
+            nowtime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+            j = int(str(randint(1, 6)) + str(nowtime)[10:])
             inputNum = model_para[0]
             outputNum = model_para[1]
             hiddenNum = model_para[2]
@@ -90,53 +93,102 @@ async def handler(websocket, path):
             y = dataTrainSet["output"]
             X = np.mat(x)
             Y = np.mat(y)
-            global_networks.networks.traingResult(X, Y)
-            lossdict = global_networks.networks.traingResult(X, Y)
-            for i in range(len(lossdict)):
-                a = lossdict[i].tolist()
-                dict = {"loss": a, "remainingTime": 0, "precision": 0}
-                json_str = json.dumps(dict)
-                string = msg_id + '\n' + '/notify/process' + '\n' + json_str
-                await websocket.send(string)
-            print("transported loss end")
-            end = 'train_end'
-            end_str = json.dumps(end)
-            end = str(msg_id) + '\n' + '/notify/train_end' + '\n' + end_str
-            await websocket.send(end)
+            if inputNum == 36:
+                pre_AP_one = []
+                num_class = 2
+                # trans label
+                list1 = Y.tolist()
+                for one in list1:
+                    if one[0] == 1.0 and one[1] == 0.0:
+                        pre_AP_one.append(1)
+                        # print("one:", one)
+                    else:
+                        pre_AP_one.append(0)
+                print(pre_AP_one)
+                one_hot = global_networks.networks.one_hot(pre_AP_one, num_class)
+                print("ssssssssss",global_networks.networks.sess.run(one_hot)[:5])
+                Y_OH = np.mat(global_networks.networks.sess.run(one_hot))
+            elif inputNum == 30:
+                pre_FC_one = []
+                num_class = 7
+                list2 = Y.tolist()
+                print(list2)
+                for one in list2:
+                    pre_FC_one.append(int(one[0])-1)
+                print(pre_FC_one)
+                one_hot = global_networks.networks.one_hot(pre_FC_one, num_class)
+                Y_OH = np.mat(global_networks.networks.sess.run(one_hot))
+                print(Y_OH[:5])
+            else:
+                Y_OH = Y
+            try:
+                # global_networks.networks.traingResult(X, Y, j)
+                lossdict = global_networks.networks.traingResult(X, Y_OH, j)
+                for i in range(len(lossdict)):
+                    a = lossdict[i].tolist()
+                    dict = {"loss": a, "remainingTime": 0, "precision": 0}
+                    json_str = json.dumps(dict)
+                    string = msg_id + '\n' + '/notify/process' + '\n' + json_str
+                    await websocket.send(string)
+                print("transported loss end")
+                end = 'train_end'
+                print(end)
+                end_str = json.dumps(end)
+                end = str(msg_id) + '\n' + '/notify/train_end' + '\n' + end_str
+                await websocket.send(end)
+            except:
+                return global_networks.networks.reset()
         elif label == "/eval":
-            pass
-            # global test_id
-            # test_id = content
-            # print("needID:", test_id)
-            # dataTsetSet = data_test_dict[test_id]
-            # x = dataTrainSet["input"]
-            # y = dataTrainSet["output"]
-            # X = np.mat(x)
-            # Y = np.mat(y)
-            # global_networks.networks.testResult(X, Y)
+            try:
+                test_id = content
+                print("needID:", test_id)
+                dataTestSet = data_test_dict[test_id]
+                x = dataTestSet["input"]
+                y = dataTestSet["output"]
+                X = np.mat(x)
+                Y = np.mat(y)
+                acc = global_networks.networks.testResult(X, Y)
+                for j in acc:
+                    a = acc[j].tolist()
+                    string = msg_id + '\n' + '/notify/process' + '\n' + test_id + '\n' + a
+                    await websocket.send(string)
+            except:
+                global_networks.networks.reset()
         elif label == "/apply":
             print("model input:")
             print(content)
             pred_X = np.mat(content)
-            prediction = global_networks.networks.verify(pred_X)
-            print("prediction:", prediction)
-            prediction_json = prediction.tolist()
-            print(prediction_json)
-            # prediction = str(prediction_json)
-            json_pred = json.dumps(prediction_json)
+            if model_para[0] == 30 or model_para[0] == 36:
+                prediction = np.argmax(global_networks.networks.verify(pred_X), axis=1)
+                ppp = []
+                for q in prediction:
+                    pred_1 = []
+                    pred_1.append(q+1.0)
+                    ppp.append(pred_1)
+                print(ppp)
+                json_pred = json.dumps(ppp)
+            else:
+                prediction = global_networks.networks.verify(pred_X)
+                prediction_json = prediction.tolist()
+                print("prediction:", prediction)
+                json_pred = json.dumps(prediction_json)
             pred = str(msg_id) + '\n' + '/notify/apply' + '\n' + json_pred
             # global_networks.networks.sess.close()
             await websocket.send(pred)
-        elif label == "/get/uri":
-            print("cal_tensorboard")
-            tensor_link = global_networks.networks.tb_exe()
-            # json_tblink = json.dumps(tensor_link)
-            # tensor_link = "111"
-            tb_link = str(msg_id) + '\n' + '/notify/uri' + '\n' + tensor_link
-            print(tb_link)
-            await websocket.send(tb_link)
             global_networks.networks.reset()
-            print('---------------------------------------------------------------------')
+            print("-----------------------------------------------------------------------")
+        elif label == "/get/uri":
+            try:
+                print("cal_tensorboard")
+                tensor_link = global_networks.networks.tb_exe(j)
+                # json_tblink = json.dumps(tensor_link)
+                # tensor_link = "111"
+                tb_link = str(msg_id) + '\n' + '/notify/uri' + '\n' + tensor_link
+                print(tb_link)
+                await websocket.send(tb_link)
+                # global_networks.networks.reset()
+            except:
+                global_networks.networks.reset()
         else:
             print("others")
 
@@ -146,6 +198,8 @@ if __name__ == '__main__':
     model_para = {}
     train_id = 0
     test_id = 0
+    # global i
+    j = 0
     global_networks = threading.local()
     start_server = websockets.serve(ws_handler=handler, host='10.108.70.177', port=9999, max_size=100*1024*1024)
     print("开始监听。。。。")
