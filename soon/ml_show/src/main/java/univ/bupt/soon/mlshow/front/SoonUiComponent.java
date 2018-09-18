@@ -20,7 +20,7 @@ import org.onosproject.ui.UiMessageHandlerFactory;
 import org.onosproject.ui.UiView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import univ.bupt.soon.mlshow.front.handler.model.ModelLibraryMessageHandler;
+import univ.bupt.soon.mlshow.front.handler.model.*;
 import univ.bupt.soon.mlshow.original.OriginalDataAccess;
 
 import java.util.List;
@@ -66,7 +66,11 @@ public class SoonUiComponent implements MLAppRegistry {
     private final UiMessageHandlerFactory messageHandlerFactory =
             () -> ImmutableList.of(
                     new MLMessageHandler(),
-                    new ModelLibraryMessageHandler()
+                    new ModelLibraryMessageHandler(),
+                    new FaultClassificationMessageRequestHandler(),
+                    new AlarmPredictionMessageRequestHandler(),
+                    new EdgePredictionMessageRequestHandler(),
+                    new AreaPredictionMessageRequestHandler()
             );
 
     // Application UI extension

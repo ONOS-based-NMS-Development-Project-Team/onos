@@ -71,6 +71,11 @@ public abstract class PlatformCallbackAbstract implements PlatformCallback {
         // 模型应用的结果
         List<String> result = Lists.newArrayList();
         for (List<Double> i : list) {
+//            if (i.get(0)==1.0 && i.get(1)==0.0) {
+//                result.add(String.valueOf(true));
+//            }else if (i.get(0)==0.0 && i.get(1)==1.0){
+//                result.add(String.valueOf(false));
+//            }
             result.add(i.toString());
         }
         List<List<Double>> tmp = inputs.get(msgId);

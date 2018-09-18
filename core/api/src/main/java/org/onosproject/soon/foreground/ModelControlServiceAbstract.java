@@ -157,9 +157,9 @@ public abstract class ModelControlServiceAbstract implements ModelControlService
         if (msgId != -1) {
             PlatformCallback pfc = ipcs.get(modelId);
             pfc.getInputs().put(msgId, input);
-            return Pair.of(false, msgId);
-        } else {
             return Pair.of(true, msgId);
+        } else {
+            return Pair.of(false, msgId);
         }
     }
 

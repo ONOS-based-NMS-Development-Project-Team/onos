@@ -3,57 +3,149 @@
  */
 
 .soon-left{
+    position: absolute;
+    top: 76px;
+    bottom: 0px;
     float:left;
-    width:20%;
+    width:16%;
+    background-color: #f4f5f7;
+    overflow-y: auto;
 }
+.soon-left-logo-container{
+    padding: 3px 9px 3px 20px;
+    display: table-cell;
+}
+.soon-left-logo {
+    cursor: pointer;
+}
+.soon-left-name-container{
+    display: table-cell;
+    vertical-align: middle;
+    padding-right: 10px;
+}
+.soon-name{
+    vertical-align: middle;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+#ov-soon a {
+    cursor: pointer;
+}
+.soon-name .soon-left-item-content-container a:hover {
+    display: inline-block;
+    color: #3b73af;
+    cursor: pointer;
+}
+.soon-left-content-container{
+    margin: 50px 10px;
+}
+.soon-left-item-content-container a:active{
+    color: #0052CC;
+}
+.soon-left li {
+    margin: 10px 0px;
+}
+
+
 .soon-right{
-    width:80%;
-    float:right;
+    margin-left: 16%;
+    padding: 0px 20px;
 }
-#alarmPred{
-    display: none;
-}
-#faultClassification{
-    display: none;
-}
-#areaPred{
-    display: none;
-}
-#edgePred{
-    display: none;
-}
+
+/*
+ initial subpage --model library
+ */
 #modelLibrary{
-    display: none;
-}
-#dataSet{
-    display: none;
-}
-#alarmPredDataSet{
-    display: none;
-}
-#faultClassificationDataSet{
-    display: none;
-}
-#areaPredDataSet{
-    display: none;
-}
-#edgePredDataSet{
-    display: none;
-}
-#historicalAlarm{
     display: block;
 }
-#currentAlarm{
-    display: none;
-}
+#alarmPred,#faultClassification,#areaPred,#edgePred,#dataSet,
+#alarmPredDataSet,#faultClassificationDataSet,#areaPredDataSet,
+#edgePredDataSet,#rawData,#historicalAlarm,#currentAlarm,
 #performance{
     display: none;
 }
-#soon-view div.ctrl-btns img {
-    width:52px;
-    height:52px;
+
+#modelLibrary-add-dialog {
+    left: 20px;
 }
-#ov-soon h2 {
+#alarmPred-setting-dialog h2,#faultClassification-setting-dialog h2,#areaPred-setting-dialog h2,
+#edgePred-setting-dialog h2,#dataSet-select-dialog h2,#modelLibrary-add-dialog h2,
+#modelLibrary-management-dialog h2, #modelLibrary-evaluate-dialog h2,#modelLibrary-setTrain-dialog h2{
+    width: 100%;
+    padding: 14px;
+}
+#alarmPred-setting-dialog .body,#faultClassification-setting-dialog .body,#areaPred-setting-dialog .body,
+#edgePred-setting-dialog .body,#dataSet-select-dialog .body,#modelLibrary-add-dialog .body,
+#modelLibrary-management-dialog .body, #modelLibrary-evaluate-dialog .body,#modelLibrary-setTrain-dialog .body,
+#modelLibrary-add-panel .container,#modelLibrary-details-panel .container{
+    padding: 0px 30px;
+    overflow-y: auto;
+}
+.soon-dialog-form {
+    padding: 13px 3px;
+}
+.soon-dialog-form .form-label{
+    text-align: right;
+}
+.soon-dialog-form table {
+    border-spacing: 6px;
+}
+#configMLParamsText {
+    display: inline-block;
+    background-color: #518eec;
+    color: white;
+    width: 100%;
+    height: 20px;
+    text-align: center;
+    cursor: pointer;
+}
+.soon-dialog-form input,select{
+    width: 201px;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+#configMLParamsText a:hover {
+    background-color: darkgoldenrod;
+}
+#modelLibrary-add-panel .bottom {
+    overflow-y: auto;
+}
+#modelLibrary-add-panel .panel-button {
+    background-color: #518ecc;
+    color: white;
+    display: inline-block;
+    cursor: pointer;
+    height: 29px;
+    padding: 6px 8px 2px 8px;
+    margin: 4px;
+    float: right;
+}
+#modelLibrary-add-panel input,select{
+    width: 177px;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+#modelLibrary-details-panel .label {
+    font-weight: bold;
+    text-align: right;
+    font-size: 10pt;
+    padding-right: 6px;
+}
+#modelLibrary-details-panel .middle-table,.bottom-table{
+    margin: 10px 100px 10px 50px;
+    border-spacing: 7px;
+}
+#modelLibrary-details-panel .middle h4{
+    margin-left: 15px;
+}
+#modelLibrary-details-panel .middle a {
+    margin-left: 46px;
+}
+#soon-view div.ctrl-btns img {
+    width:47px;
+    height:47px;
 }
 #ov-soon div.tabular-header div.ctrl-btns{
     top:55px;

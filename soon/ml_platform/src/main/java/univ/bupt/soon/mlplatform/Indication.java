@@ -184,7 +184,12 @@ public enum Indication {
             return URL_NOTIFY;
         } else if (str.equals(MODEL_APPLY_NOTIFY.getName())) {
             return MODEL_APPLY_NOTIFY;
-        } else {
+        } else if (str.equals(END_TRAIN_DATASET_NOTIFY.getName())) {
+            return END_TRAIN_DATASET_NOTIFY;
+        }else if (str.equals(END_TEST_DATASET_NOTIFY.getName())) {
+            return END_TEST_DATASET_NOTIFY;
+        }
+        else {
             return null;
         }
     }

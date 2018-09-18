@@ -89,17 +89,23 @@ public class AlarmPredService extends ModelControlServiceAbstract {
             }
             // 增加输出
             if (item.isAlarm_happen()){
-                double alarm_happen = 1.0;
-                tmpOut.add(alarm_happen);
+                double alarm_happen1 = 1.0;
+                double alarm_happen2 = 0.0;
+                tmpOut.add(alarm_happen1);
+                tmpOut.add(alarm_happen2);
             }else {
-                double alarm_happen = 0.0;
-                tmpOut.add(alarm_happen);
+                double alarm_happen3 = 0.0;
+                double alarm_happen4 = 1.0;
+                tmpOut.add(alarm_happen3);
+                tmpOut.add(alarm_happen4);
             }
             inputData.add(tmpIn);
             outputData.add(tmpOut);
         }
         rtn.setInput(inputData);
         rtn.setOutput(outputData);
+        log.info(String.valueOf(rtn.getInput().get(0)));
+        log.info(String.valueOf(rtn.getOutput().get(0)));
         return rtn;
     }
 

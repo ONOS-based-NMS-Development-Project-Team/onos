@@ -46,8 +46,8 @@ public class AlarmPredComponent {
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected CoreService coreService;
-//    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-//    protected MLAppRegistry mlAppRegistry;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected MLAppRegistry mlAppRegistry;
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected MLPlatformService platformService;
 
@@ -60,9 +60,9 @@ public class AlarmPredComponent {
                                 AlarmPredictionItem.class, AlarmPredPlatformCallback.class, database, platformService);
 
         // 注册
-//        mlAppRegistry.register(aps, aps.getServiceName());
+        mlAppRegistry.register(aps, aps.getServiceName());
         log.info("hh");
-        test(aps);
+//        test(aps);
         log.info("gg");
 
     }
@@ -85,7 +85,7 @@ public class AlarmPredComponent {
             int modelId;
 
             @Override
-            public void operationFailure(int modelId,int msgId, String description) {
+            public void operationFailure(int msgId, String description) {
                 log.info("received message {} : {}", msgId, description);
             }
 

@@ -37,14 +37,7 @@
             resp = o.tag + 'DataResponse',
             onSel = fs.isF(o.selCb),
             onResp = fs.isF(o.respCb),
-            idKey = o.idKey || 'id',
-            oldTableData = [],
-
-            annots = o.tableScope.annots,
-            selIdML = o.tableScope.selId,
-            tableData = o.tableScope.tableData,
-            changedData = o.tableScope.changedData,
-            sortParams = o.tableScope.sortParams;
+            oldTableData = [];``
 
         // === websocket functions --------------------
 
@@ -52,7 +45,6 @@
         function tableDataResponseCb(data) {
             ls.stop();
             o.tableScope.tableData = data[root];
-            o.tableScope.annots = data.annots;
             onResp && onResp();
 
             // checks if data changed for row flashing
@@ -88,16 +80,7 @@
                 ls.start();
             }
         }
-        o.scope.sortCallback = requestTableData;
-
-
-        // === Row Selected
-        function rowSelectionCb($event, selRow) {
-            var selId = selRow[idKey];
-            o.tableScope.selIdML = (o.tableScope.selIdML === selId) ? null : selId;
-            onSel && onSel($event, selRow);
-        }
-        o.scope.selectCallback = rowSelectionCb;
+        o.tableScope.sortCallback = requestTableData;
 
         // === autoRefresh functions
         function fetchDataIfNotWaiting() {
@@ -135,8 +118,6 @@
             stopRefresh();
             ls.stop();
         });
-
-        requestTableData();
     }
 
     angular.module('ovSoon')

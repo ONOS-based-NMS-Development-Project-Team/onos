@@ -22,16 +22,14 @@ import org.onosproject.soon.foreground.MLAppType;
 import org.onosproject.soon.foreground.ModelControlService;
 import org.onosproject.ui.RequestHandler;
 import org.onosproject.ui.UiMessageHandler;
-import univ.bupt.soon.mlshow.front.handler.dataset.ModelLibraryDataRequestHandler;
+import univ.bupt.soon.mlshow.front.handler.dataset.app.AlarmPredDataSetDataRequestHandler;
 import univ.bupt.soon.mlshow.front.handler.dataset.app.AreaPredDataSetDataRequestHandler;
 import univ.bupt.soon.mlshow.front.handler.dataset.app.EdgePredDataSetDataRequestHandler;
 import univ.bupt.soon.mlshow.front.handler.dataset.app.FailClassDataSetDataRequestHandler;
 import univ.bupt.soon.mlshow.front.handler.dataset.original.CurrentAlarmDataRequestHandler;
 import univ.bupt.soon.mlshow.front.handler.dataset.original.HistoricalAlarmDataRequestHandler;
-import univ.bupt.soon.mlshow.front.handler.dataset.app.AlarmPredDataSetDataRequestHandler;
 import univ.bupt.soon.mlshow.front.handler.dataset.original.PerformanceDataRequestHandler;
-import univ.bupt.soon.mlshow.front.handler.model.AlarmPredDataRequestHandler;
-import univ.bupt.soon.mlshow.front.handler.model.ModelLibraryMessageHandler;
+import univ.bupt.soon.mlshow.front.handler.model.*;
 
 import java.util.*;
 
@@ -58,8 +56,8 @@ public class MLMessageHandler extends UiMessageHandler {
 
         /* 告警预测数据的展示 */
         // 告警预测数据集
-//        AlarmPredDataSetDataRequestHandler apdsdrh = new AlarmPredDataSetDataRequestHandler();
-//        apdsdrh.setService(modelServices.get(MLAppType.ALARM_PREDICTION));
+        AlarmPredDataSetDataRequestHandler apdsdrh = new AlarmPredDataSetDataRequestHandler();
+        apdsdrh.setService(modelServices.get(MLAppType.ALARM_PREDICTION));
         // 故障定位数据集
         FailClassDataSetDataRequestHandler fcdsdrh = new FailClassDataSetDataRequestHandler();
         fcdsdrh.setService(modelServices.get(MLAppType.FAILURE_CLASSIFICATION));
@@ -74,10 +72,11 @@ public class MLMessageHandler extends UiMessageHandler {
                 ahdrh,
                 cadrh,
                 pdrh,
-//                apdsdrh,
+                apdsdrh,
                 fcdsdrh,
                 epdsdrh,
                 areaPdsdrh
+
         );
     }
 

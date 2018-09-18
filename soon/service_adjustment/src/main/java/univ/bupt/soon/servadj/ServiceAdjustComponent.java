@@ -47,8 +47,8 @@ public class ServiceAdjustComponent {
     protected CoreService coreService;
     @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
     protected MLPlatformService platformService;
-//    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-//    protected MLAppRegistry mlAppRegistry;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    protected MLAppRegistry mlAppRegistry;
 
 
     @Activate
@@ -62,13 +62,13 @@ public class ServiceAdjustComponent {
                 AreaPredictionItem.class, AreaPredPlatformCallback.class, databese, platformService, 1);
         AreaPredictionImpl area3 = new AreaPredictionImpl(MLAppType.RESIDENTIAL_AREA_PREDICTION, "area_load",
                 AreaPredictionItem.class, AreaPredPlatformCallback.class, databese, platformService, 2);
-//        mlAppRegistry.register(lpi, lpi.getServiceName());
-//        mlAppRegistry.register(area1, area1.getServiceName());
-//        mlAppRegistry.register(area3, area3.getServiceName());
+        mlAppRegistry.register(lpi, lpi.getServiceName());
+        mlAppRegistry.register(area1, area1.getServiceName());
+        mlAppRegistry.register(area3, area3.getServiceName());
 
 //<<<<<<< HEAD
 //<<<<<<< Updated upstream
-        test(lpi,45,15);
+//        test(lpi,45,15);
 //=======
 //        test(lpi);
 //        Thread.sleep(20000);
@@ -80,14 +80,14 @@ public class ServiceAdjustComponent {
 //>>>>>>> 857d95ba8935212549325847b3af8f7dd2e49c0f
 //        test(area3);
 //        if (databese.connect()) {
-            // 如果数据库连接成功，向前台注册应用
+////             如果数据库连接成功向前台注册应用
 //            LinkPredictionImpl lpi = new LinkPredictionImpl(databese, platformService);
 //            AreaPredictionImpl businessApi = new AreaPredictionImpl(true, databese, platformService);
 //            AreaPredictionImpl residentialApi = new AreaPredictionImpl(false, databese, platformService);
 //            mlAppRegistry.register(lpi, MLAppType.LINK_PREDICTION);
 //            mlAppRegistry.register(businessApi, MLAppType.BUSINESS_AREA_PREDICTION);
 //            mlAppRegistry.register(residentialApi, MLAppType.RESIDENTIAL_AREA_PREDICTION);
-
+//
 //        } else {
 //             如果数据库连接失败
 //            throw new RuntimeException("database connection fails.");
@@ -186,9 +186,9 @@ public class ServiceAdjustComponent {
     @Deactivate
     protected void deactivate() {
         // 注销服务
-//        mlAppRegistry.unregister(MLAppType.LINK_PREDICTION);
-//        mlAppRegistry.unregister(MLAppType.BUSINESS_AREA_PREDICTION);
-//        mlAppRegistry.unregister(MLAppType.RESIDENTIAL_AREA_PREDICTION);
+        mlAppRegistry.unregister(MLAppType.LINK_PREDICTION);
+        mlAppRegistry.unregister(MLAppType.BUSINESS_AREA_PREDICTION);
+        mlAppRegistry.unregister(MLAppType.RESIDENTIAL_AREA_PREDICTION);
 
         log.info("SOON - service reconstruction - Stopped");
     }

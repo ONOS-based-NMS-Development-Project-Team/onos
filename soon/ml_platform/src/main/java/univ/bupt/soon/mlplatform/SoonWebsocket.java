@@ -19,6 +19,7 @@ import univ.bupt.soon.mlplatform.pojo.TransNNAlgorithmConfig;
 import java.io.*;
 import java.net.URI;
 import java.util.List;
+import java.util.Properties;
 
 
 /**
@@ -62,10 +63,20 @@ public class SoonWebsocket implements WebSocket.OnTextMessage, WebSocket.OnContr
         if (ind != null) {
             switch (ind) {
                 case END_NOTIFY:
-                    // 训练结束提示
-                    state = ChannelState.COMPLETED;
-                    // 通知训练结束
-                    pcb.trainingEnd(msgId);
+                    try {
+                        // 训练结束提示
+                        state = ChannelState.COMPLETED;
+                        // 通知训练结束
+                        pcb.trainingEnd(msgId);
+                    }catch (Exception e){
+                        System.out.println("ok");
+                        PlatformImpl platform = new PlatformImpl();
+                        Properties properties = new Properties();
+                        platform.addWebsocketConnection(URI.create(properties.getProperty("server_uri")));
+                        state = ChannelState.COMPLETED;
+                        // 通知训练结束
+                        pcb.trainingEnd(msgId);
+                    }
                     break;
                 case URL_NOTIFY:
                     // 得到TensorBoard的URL

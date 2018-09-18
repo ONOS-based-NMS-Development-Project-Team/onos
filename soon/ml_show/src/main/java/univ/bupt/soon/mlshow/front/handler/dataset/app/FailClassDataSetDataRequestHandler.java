@@ -84,7 +84,8 @@ public class FailClassDataSetDataRequestHandler  extends TableRequestHandler {
     }
     @Override
     protected String[] getColumnIds() {
-        String[] COLUMN_IDS = {DATA_ID, FAULT_TYPE, DATASET_ID, DATASET_TYPE, INPUT};
+        String[] COLUMN_IDS = {DATA_ID, FAULT_TYPE, DATASET_ID, DATASET_TYPE, INPUT_1,
+            INPUT_2,INPUT_3,INPUT_4,INPUT_5,INPUT_6};
         return COLUMN_IDS;
     }
 
@@ -139,7 +140,12 @@ public class FailClassDataSetDataRequestHandler  extends TableRequestHandler {
                         .cell(FAULT_TYPE, item.getCls())
                         .cell(DATASET_ID, datasetId)
                         .cell(DATASET_TYPE, isTrain)
-                        .cell(INPUT, item.input());
+                        .cell(INPUT_1, item.input_1())
+                        .cell(INPUT_2,item.input_2())
+                        .cell(INPUT_3,item.input_3())
+                        .cell(INPUT_4,item.input_4())
+                        .cell(INPUT_5,item.input_5())
+                        .cell(INPUT_6,item.input_6());
             }
         if (results.size() != limit) {
             offset = 0;

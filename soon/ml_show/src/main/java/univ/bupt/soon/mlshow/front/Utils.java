@@ -1,7 +1,7 @@
 package univ.bupt.soon.mlshow.front;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.*;
 
 /**
  * 工具类，包含了handler通用的变量
@@ -34,6 +34,78 @@ public class Utils {
         }
     }
 
+    public static String arrayToString (double[] input) {
+        String s = "";
+        for(int i=0;i<input.length;i++){
+            if(i == 1){
+                s = String.valueOf(i);
+            }else {
+                s = s + "," + i;
+            }
+        }
+        return s;
+    }
+
+    public static String setToString (Set<Integer> set) {
+        String s = "";
+        for (Integer i : set) {
+            int index = 0;
+            int a = i.intValue();
+            String b = String.valueOf(a);
+            if (index == 0){
+                s = b;
+                index++;
+            }else {
+                s = s+","+b;
+                index++;
+            }
+        }
+        return s;
+    }
+
+    public static List<Integer> stringToIntList (String s) {
+        List<Integer> list = new ArrayList<>();
+        String[] sa = new String[]{};
+        sa = s.split(",");
+        for (int i=0;i<sa.length;i++)
+        {
+            int t = Integer.parseInt(sa[i]);
+            list.add(t);
+        }
+        return list;
+    }
+
+    public static String listToString (List<Integer> list) {
+        String s = "";
+        if(list == null){
+            return s;
+        }
+        for(int i=0;i<list.size();i++){
+            if(i<list.size()-1){
+                s = s +list.get(i)+",";
+            }
+            if(i == list.size()-1){
+                s = s+list.get(i);
+            }
+        }
+        return s;
+    }
+
+    public static String getStringEvaluate (Map<Integer,String> map) {
+        String s = "";
+        if(map == null){
+            return s;
+        }
+        if (map.isEmpty()){
+            return s;
+        }
+        else{
+            for (String i : map.values()) {
+                s = i + ",";
+            }
+            return s;
+        }
+    }
     // 排序变量
     public static final String FIRST_COL = "firstCol";
     public static final String FIRST_DIR = "firstDir";
@@ -62,6 +134,14 @@ public class Utils {
 
 
     public static final String RESULT = "result";
+
+    //failure classification data set input col
+    public static final String INPUT_1 = "input-1";
+    public static final String INPUT_2 = "input-2";
+    public static final String INPUT_3 = "input-3";
+    public static final String INPUT_4 = "input-4";
+    public static final String INPUT_5 = "input-5";
+    public static final String INPUT_6 = "input-6";
 
     // 历史告警数据返回条目
     public static final String LEVEL = "level";
@@ -107,7 +187,7 @@ public class Utils {
     // 区域预测
     public static final String AREA_ID = "areaId";
     public static final String TIDE = "tide";
-    public static final String TIMEPOINT = "timepoint";
+    public static final String TIMEPOINT = "timePoint";
     public static final String ONE_HOUR_AFTER = "oneHoursAfter";
     public static final String TWO_HOURS_BEFORE = "twoHoursBefore";
 
@@ -139,11 +219,15 @@ public class Utils {
     public static final String LR = "learningRate";
     public static final String LR_ADJUST = "lrAdjust";
     public static final String DROPOUT = "dropout";
+    public static final String AVAI_TEST = "availableTest";//每个modelId对应的可用数据集存储
+    public static final String AVAI_TRAIN = "availableTrain";
     //模型库Request参数
     public static final String ACTION = "action";
     public static final String MODEL_TRAINAVAI = "availableTrain";
     public static final String MODEL_TESTAVAI = "availableTest";
+    public static final String MODEL_ALERT = "modelLibraryAlert";
+    public static final String MODEL_ALERT_REQ = "modelLibraryAlertRequest";
 
-
-
+    //模型应用
+    public static final String RECENT_ITEM_NUM = "recentItemNum";
 }

@@ -1,0 +1,3 @@
+setting -- \f013
+delete -- \f014
+database -- \f1c0

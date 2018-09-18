@@ -468,4 +468,46 @@ public class FailureClassificationItem implements Item {
                 ", board5=" + board5 +
                 ", time5=" + time5;
     }
+    public String input_1() {
+        return "level0=" + level0 +
+                ", name0=" + name0 +
+                ", node0=" + node0 +
+                ", board0=" + board0 +
+                ", time0=" + time0 ;
+    }
+    public String input_2() {
+        return ", level1=" + level1 +
+                ", name1=" + name1 +
+                ", node1=" + node1 +
+                ", board1=" + board1 +
+                ", time1=" + time1 ;
+    }
+    public String input_3() {
+        return ", level2=" + level2 +
+                ", name2=" + name2 +
+                ", node2=" + node2 +
+                ", board2=" + board2 +
+                ", time2=" + time2 ;
+    }
+    public String input_4() {
+        return ", level3=" + level3 +
+                ", name3=" + name3 +
+                ", node3=" + node3 +
+                ", board3=" + board3 +
+                ", time3=" + time3 ;
+    }
+    public String input_5() {
+        return ", level4=" + level4 +
+                ", name4=" + name4 +
+                ", node4=" + node4 +
+                ", board4=" + board4 +
+                ", time4=" + time4 ;
+    }
+    public String input_6() {
+        return ", level5=" + level5 +
+                ", name5=" + name5 +
+                ", node5=" + node5 +
+                ", board5=" + board5 +
+                ", time5=" + time5;
+    }
 }

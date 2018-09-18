@@ -8,6 +8,7 @@ import org.onosproject.soon.mlmodel.MLModelDetail;
 
 import java.util.Date;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -54,12 +55,13 @@ public class ModelLibraryInfo {
     private MLAlgorithmType mlAlgorithmType;
     private MLModelDetail mlModelDetail;
     private final int modelId;
-    private int[] testDataSetId;
+    private List<Integer> testDataSetId;
     private double loss;
     private long remainingTime;
     private double precision;
     private String modelLink;
-    private boolean trained;
+    private String availableTrain;
+    private String availableTest;
 
 
     public ModelLibraryInfo (MLAppType mlAppType,MLAlgorithmType mlAlgorithmType,MLModelDetail mlModelDetail,int modelId) {
@@ -81,9 +83,9 @@ public class ModelLibraryInfo {
 
     public void setMlModelDetail (MLModelDetail mlModelDetail) {this.mlModelDetail = mlModelDetail;}
 
-    public int[] getTestDataSetId () {return testDataSetId;}
+    public List<Integer> getTestDataSetId () {return testDataSetId;}
 
-    public void setTestDataSetId (int[] testDataSetId) {this.testDataSetId = testDataSetId;}
+    public void setTestDataSetId (List<Integer> testDataSetId) {this.testDataSetId = testDataSetId;}
 
     public long getRemainingTime () {return remainingTime;}
 
@@ -101,9 +103,13 @@ public class ModelLibraryInfo {
 
     public void setModelLink(String modelLink) { this.modelLink = modelLink; }
 
-    public boolean isTrained() { return trained; }
+    public String getAvailableTest() { return availableTest; }
 
-    public void setTrained(boolean trained) { this.trained = trained; }
+    public void setAvailableTest(String availableTest) { this.availableTest = availableTest; }
+
+    public String getAvailableTrain() { return availableTrain; }
+
+    public void setAvailableTrain(String availableTrain) { this.availableTrain = availableTrain; }
 
     public int getModelId () {return modelId;}
 
@@ -123,5 +129,6 @@ public class ModelLibraryInfo {
     }
 
     @Override
-    public int hashCode () {return Objects.hashCode(mlAppType,mlModelDetail,modelId,testDataSetId,loss,remainingTime,precision,modelLink);}
+    public int hashCode () {return Objects.hashCode(mlAppType,mlModelDetail,modelId,testDataSetId,
+            loss,remainingTime,precision,modelLink,availableTest,availableTrain);}
 }

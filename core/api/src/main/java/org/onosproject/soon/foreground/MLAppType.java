@@ -68,7 +68,6 @@ public enum MLAppType {
         }
     };
 
-
     public String getName() {
         return null;
     }
