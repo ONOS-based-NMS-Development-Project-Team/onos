@@ -188,6 +188,8 @@ public enum Indication {
             return END_TRAIN_DATASET_NOTIFY;
         }else if (str.equals(END_TEST_DATASET_NOTIFY.getName())) {
             return END_TEST_DATASET_NOTIFY;
+        }else if (str.equals(MODEL_EVAL_NOTIFY.getName())){
+            return MODEL_EVAL_NOTIFY;
         }
         else {
             return null;

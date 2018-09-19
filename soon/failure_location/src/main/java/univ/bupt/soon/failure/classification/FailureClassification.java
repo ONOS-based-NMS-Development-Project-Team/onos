@@ -8,6 +8,7 @@ import org.onosproject.soon.dataset.DatabaseAdapter;
 import org.onosproject.soon.dataset.dataset.SegmentForDataset;
 import org.onosproject.soon.dataset.original.FailureClassificationItem;
 import org.onosproject.soon.dataset.original.Item;
+import org.onosproject.soon.foreground.ForegroundCallback;
 import org.onosproject.soon.foreground.MLAppType;
 import org.onosproject.soon.foreground.ModelControlServiceAbstract;
 import org.onosproject.soon.platform.MLPlatformService;
@@ -140,5 +141,10 @@ public class FailureClassification extends ModelControlServiceAbstract {
     public List<Item> updateData(int offset, int limit) {
         return  database.queryData("*", " offset "+offset+" limit "+limit+" where train=true",
                 tableName, itemClass);
+    }
+
+    @Override
+    public void setForegroundCallback(ForegroundCallback foregroundCallback) {
+
     }
 }

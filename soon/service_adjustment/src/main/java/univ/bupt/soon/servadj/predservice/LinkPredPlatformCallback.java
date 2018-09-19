@@ -52,7 +52,15 @@ public class LinkPredPlatformCallback extends PlatformCallbackAbstract {
     public void evalResult(int msgId, int testDatasetId, List<List<Double>> results) {
         // 评估模型在测试集上的应用结果
         // TODO 这个还不知道该怎么评估,直接先给1.0
-        fcb.modelEvaluation(msgId, "Not implemented yet, Hahahahahaha");
+        String s  = "";
+        for (List<Double> list : results) {
+            for (Double rea:list) {
+                String a = String.valueOf(rea);
+                s = s + a + ",";
+            }
+        }
+        s.substring(0,s.length()-1);
+        fcb.modelEvaluation(msgId,s);
     }
 
     @Override

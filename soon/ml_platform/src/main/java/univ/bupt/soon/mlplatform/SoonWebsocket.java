@@ -113,8 +113,7 @@ public class SoonWebsocket implements WebSocket.OnTextMessage, WebSocket.OnContr
                     try {
                         String[] res = content.split("\n", 2);
                         int testDatasetId = Integer.parseInt(res[0]);
-                        List<List<Double>> results = mapper.readValue(res[1], new TypeReference<List<List<Double>>>() {
-                        });
+                        List<List<Double>> results = mapper.readValue(res[1], new TypeReference<List<List<Double>>>() {});
                         pcb.evalResult(msgId, testDatasetId, results);
                     } catch (Exception e) {
                         e.printStackTrace();
