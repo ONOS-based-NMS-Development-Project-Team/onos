@@ -1,5 +1,12 @@
 package univ.bupt.soon.mlshow.front;
 
+import com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -7,8 +14,44 @@ import java.util.*;
  * 工具类，包含了handler通用的变量
  */
 public class Utils {
+    private static Logger log = LoggerFactory.getLogger(Utils.class);
 
     private Utils() {
+    }
+
+    // 性能表中节点,历史告警和当前告警中的告警源的中英文映射
+    public static Map<String, String> nodeMap = Maps.newHashMap();
+    // 性能表中的性能事件的中英文映射
+    public static Map<String, String> eventMap = Maps.newHashMap();
+    // 初始化nodesMap和eventMap
+    static {
+        String nodeFile = "nodes2eng.csv";
+        String eventFile = "events2eng.csv";
+        String path = System.getenv("ONOS_ROOT");
+
+        parseTrans(path + "/soon/resources/"+nodeFile, nodeMap);
+        parseTrans(path + "/soon/resources/"+eventFile, eventMap);
+        log.info(nodeMap.toString());
+        log.info(eventMap.toString());
+    }
+
+    /**
+     * 解析中英文
+     * @param file
+     * @param map
+     */
+    private static void parseTrans(String file, Map<String, String> map) {
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+            reader.readLine(); // 去掉表头
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] values = line.split(","); // 中文,英文
+                map.put(values[0], values[1]);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // 时间数据格式
