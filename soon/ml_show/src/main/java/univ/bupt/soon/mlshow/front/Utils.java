@@ -34,6 +34,23 @@ public class Utils {
         }
     }
 
+    public static String levelChToEn (String s) {
+        String level = "";
+        if(s == "紧急"){
+            level = "Critical";
+        }
+        else if(s == "重要"){
+            level = "Major";
+        }
+        else if(s == "次要"){
+            level = "Minor";
+        }
+        else if(s == "告警"){
+            level = "Warning";
+        }
+        return level;
+    }
+
     public static String arrayToString (double[] input) {
         String s = "";
         for(int i=0;i<input.length;i++){
