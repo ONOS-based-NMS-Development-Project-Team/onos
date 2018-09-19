@@ -106,15 +106,14 @@ async def handler(websocket, path):
                         pre_AP_one.append(0)
                 print(pre_AP_one)
                 one_hot = global_networks.networks.one_hot(pre_AP_one, num_class)
-                print("ssssssssss",global_networks.networks.sess.run(one_hot)[:5])
                 Y_OH = np.mat(global_networks.networks.sess.run(one_hot))
             elif inputNum == 30:
                 pre_FC_one = []
-                num_class = 7
+                num_class = 8
                 list2 = Y.tolist()
                 print(list2)
                 for one in list2:
-                    pre_FC_one.append(int(one[0])-1)
+                    pre_FC_one.append(int(one[0]))
                 print(pre_FC_one)
                 one_hot = global_networks.networks.one_hot(pre_FC_one, num_class)
                 Y_OH = np.mat(global_networks.networks.sess.run(one_hot))
@@ -128,7 +127,7 @@ async def handler(websocket, path):
                     a = lossdict[i].tolist()
                     dict = {"loss": a, "remainingTime": 0, "precision": 0}
                     json_str = json.dumps(dict)
-                    string = msg_id + '\n' + '/notify/process' + '\n' + json_str
+                    string = str(msg_id) + '\n' + '/notify/process' + '\n' + json_str
                     await websocket.send(string)
                 print("transported loss end")
                 end = 'train_end'
@@ -139,34 +138,74 @@ async def handler(websocket, path):
             except:
                 return global_networks.networks.reset()
         elif label == "/eval":
+            test_id = content
+            print("needID:", test_id)
+            dataTestSet = data_test_dict[test_id]
+            x = dataTestSet["input"]
+            y = dataTestSet["output"]
+            X = np.mat(x)
+            Y = np.mat(y)
+            if model_para[0] == 36:
+                pre_AP_one = []
+                num_class = 2
+                # trans label
+                list1 = Y.tolist()
+                for one in list1:
+                    if one[0] == 1.0 and one[1] == 0.0:
+                        pre_AP_one.append(1)
+                        # print("one:", one)
+                    else:
+                        pre_AP_one.append(0)
+                print(pre_AP_one)
+                one_hot = global_networks.networks.one_hot(pre_AP_one, num_class)
+                Y_OH = np.mat(global_networks.networks.sess.run(one_hot))
+            elif model_para[0] == 30:
+                pre_FC_one = []
+                num_class = 8
+                list2 = Y.tolist()
+                print(list2)
+                for one in list2:
+                    pre_FC_one.append(int(one[0]))
+                print(pre_FC_one)
+                one_hot = global_networks.networks.one_hot(pre_FC_one, num_class)
+                Y_OH = np.mat(global_networks.networks.sess.run(one_hot))
+                print(Y_OH[:5])
+            else:
+                Y_OH = Y
             try:
-                test_id = content
-                print("needID:", test_id)
-                dataTestSet = data_test_dict[test_id]
-                x = dataTestSet["input"]
-                y = dataTestSet["output"]
-                X = np.mat(x)
-                Y = np.mat(y)
-                acc = global_networks.networks.testResult(X, Y)
+                acc = global_networks.networks.testResult(X, Y_OH)
+                real_eval = []
                 for j in acc:
-                    a = acc[j].tolist()
-                    string = msg_id + '\n' + '/notify/process' + '\n' + test_id + '\n' + a
+                    eval = []
+                    eval.append(j)
+                    real_eval.append(eval)
+                    print(j)
+                    string = str(msg_id) + '\n' + '/notify/eval' + '\n' + str(test_id) + '\n' + str(real_eval)
                     await websocket.send(string)
             except:
-                global_networks.networks.reset()
+                return global_networks.networks.reset()
         elif label == "/apply":
             print("model input:")
             print(content)
             pred_X = np.mat(content)
-            if model_para[0] == 30 or model_para[0] == 36:
+            if model_para[0] == 30:
                 prediction = np.argmax(global_networks.networks.verify(pred_X), axis=1)
                 ppp = []
                 for q in prediction:
                     pred_1 = []
-                    pred_1.append(q+1.0)
+                    pred_1.append(q+0.0)
                     ppp.append(pred_1)
                 print(ppp)
                 json_pred = json.dumps(ppp)
+            elif model_para[0] == 36:
+                prediction_1 = np.argmax(global_networks.networks.verify(pred_X), axis=1)
+                qqq = []
+                for p in prediction_1:
+                    pred_1 = []
+                    pred_1.append(p+0.0)
+                    qqq.append(pred_1)
+                print(qqq)
+                json_pred = json.dumps(qqq)
             else:
                 prediction = global_networks.networks.verify(pred_X)
                 prediction_json = prediction.tolist()
