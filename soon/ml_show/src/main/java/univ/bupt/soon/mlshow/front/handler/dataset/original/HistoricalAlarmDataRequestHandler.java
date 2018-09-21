@@ -121,9 +121,8 @@ public class HistoricalAlarmDataRequestHandler extends TableRequestHandler {
 
     private void populateRow(TableModel.Row row, HistoryAlarmItem item) {
 //        LEVEL, ALARM_SOURCE, NAME, TYPE, LOCATION, PATH_LEVEL, HAPPEN_TIME, CLEAN_TIME, CONFIRM_TIME
-        row.cell(LEVEL, item.getLevel())
-                .cell(ALARM_SRC, item.getAlarm_src())
-                .cell(ALARM_SOURCE, item.getAlarm_src())
+        row.cell(LEVEL,levelChToEn(item.getLevel()))
+                .cell(ALARM_SRC, nodeMap.get(item.getAlarm_src()))
                 .cell(NAME, item.getName())
                 .cell(TYPE, item.getTp())
                 .cell(LOCATION, item.getLocation())

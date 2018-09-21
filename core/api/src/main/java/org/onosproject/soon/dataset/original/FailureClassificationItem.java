@@ -436,6 +436,41 @@ public class FailureClassificationItem implements Item {
                 .toHashCode();
     }
 
+    @Override
+    public String toString() {
+        return  "" + level0 +
+                "," + name0 +
+                "," + node0 +
+                "," + board0 +
+                "," + time0 +
+                "," + level1 +
+                "," + name1 +
+                "," + node1 +
+                "," + board1 +
+                "," + time1 +
+                "," + level2 +
+                "," + name2 +
+                "," + node2 +
+                "," + board2 +
+                "," + time2 +
+                "," + level3 +
+                "," + name3 +
+                "," + node3 +
+                "," + board3 +
+                "," + time3 +
+                "," + level4 +
+                "," + name4 +
+                "," + node4 +
+                "," + board4 +
+                "," + time4 +
+                "," + level5 +
+                "," + name5 +
+                "," + node5 +
+                "," + board5 +
+                "," + time5
+                ;
+    }
+
     public String input() {
         return  "level0=" + level0 +
                 ", name0=" + name0 +

@@ -106,10 +106,10 @@ public class EdgePredictionMessageRequestHandler extends UiMessageHandler {
                             EdgePredictionItem it = (EdgePredictionItem) input.get(a);
                             tm.addRow()
                                     .cell(TIMEPOINT, it.getTimepoint())
-                                    .cell(EDGE_ID, arrayToString(it.getEdge_id()))
+                                    .cell(EDGE_ID, edgeIdParse(it.getEdge_id()))
                                     .cell(MODEL_ID, i)
-                                    .cell(ONE_HOUR_AFTER, result.get(a))
-                                    .cell(TWO_HOURS_BEFORE, arrayToString(it.getTwo_hours_before()))
+                                    .cell(ONE_HOUR_AFTER, waveParse(result.get(a)))
+                                    .cell(TWO_HOURS_BEFORE, waveParse(arrayToString(it.getTwo_hours_before())))
                                     .cell(TRAIN_ID, model.getMlModelDetail().getTrainDatasetId())
                                     .cell(TEST_ID, listToString(model.getTestDataSetId()))
                                     .cell(MODEL_ACCURACY, getStringEvaluate(model.getMlModelDetail().getPerformances()));

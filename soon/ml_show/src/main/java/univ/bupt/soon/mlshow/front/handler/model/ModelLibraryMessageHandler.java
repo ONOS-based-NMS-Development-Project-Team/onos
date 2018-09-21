@@ -604,8 +604,6 @@ public class ModelLibraryMessageHandler extends UiMessageHandler{
             model.setRemainingTime(data.getRemainingTime());
             model.setPrecision(data.getPrecision());
         }
-        @Override
-        public void originData(SegmentForDataset segmentForDataset) {}
 
         @Override
         public void originData(SegmentForDataset segmentForDataset) {

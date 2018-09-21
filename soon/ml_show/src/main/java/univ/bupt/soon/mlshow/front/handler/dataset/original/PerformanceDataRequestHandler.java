@@ -123,7 +123,7 @@ public class PerformanceDataRequestHandler extends TableRequestHandler {
                 .cell(BOARD, item.getBoard())
                 .cell(PORT, item.getPort())
                 .cell(COMPONENT, item.getComponent())
-                .cell(EVENT, item.getEvent())
+                .cell(EVENT, eventMap.get(item.getEvent()))
                 .cell(END_TIME, formatter.format(item.getEnd_time()))
                 .cell(MAX_VAL, item.getMax_val())
                 .cell(CUR_VAL, item.getCur_val())

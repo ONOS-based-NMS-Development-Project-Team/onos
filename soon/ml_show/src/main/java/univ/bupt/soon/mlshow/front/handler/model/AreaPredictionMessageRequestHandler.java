@@ -108,8 +108,8 @@ public class AreaPredictionMessageRequestHandler extends UiMessageHandler {
                                     .cell(AREA_ID, it.getArea_id())
                                     .cell(MODEL_ID, i)
                                     .cell(TIDE, it.getTide())
-                                    .cell(ONE_HOUR_AFTER, result.get(a))
-                                    .cell(TWO_HOURS_BEFORE, it.getTwo_hours_before())//数组
+                                    .cell(ONE_HOUR_AFTER, waveParse(result.get(a)))
+                                    .cell(TWO_HOURS_BEFORE, waveParse(arrayToString(it.getTwo_hours_before())))//数组
                                     .cell(TRAIN_ID, model.getMlModelDetail().getTrainDatasetId())
                                     .cell(TEST_ID, listToString(model.getTestDataSetId()))
                                     .cell(MODEL_ACCURACY, getStringEvaluate(model.getMlModelDetail().getPerformances()));

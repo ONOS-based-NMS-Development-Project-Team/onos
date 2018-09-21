@@ -101,23 +101,13 @@ public class FaultClassificationMessageRequestHandler extends UiMessageHandler {
                         for (int a = 0; a < input.size(); a++) {
                             FailureClassificationItem it = (FailureClassificationItem) input.get(a);
                             tm.addRow()
-<<<<<<< HEAD
-                                    .cell(TIME, it.getTime0())
-                                    .cell(FAULT_TYPE, result.get(a))
-                                    .cell(MODEL_ID, i)
-                                    .cell(TRAIN_ID, model.getMlModelDetail().getTrainDatasetId())
-                                    .cell(TEST_ID, listToString(model.getTestDataSetId()))
-                                    .cell(MODEL_ACCURACY, getStringEvaluate(model.getMlModelDetail().getPerformances()))
-                                    .cell(INPUT, itemToString(it));
-=======
                                 .cell(TIME, it.getTime0())
-                                .cell(FAULT_TYPE, result.get(i))
+                                .cell(FAULT_TYPE, classEnd(result.get(a)))
                                 .cell(MODEL_ID, i)
                                 .cell(TRAIN_ID, model.getMlModelDetail().getTrainDatasetId())
                                 .cell(TEST_ID, listToString(model.getTestDataSetId()))
                                 .cell(MODEL_ACCURACY, getStringEvaluate(model.getMlModelDetail().getPerformances()))
-                                .cell(INPUT, itemToString(it));
->>>>>>> 419a04e43292cde816bdb6e1685e167c23be0984
+                                .cell(INPUT, classInp(it));
                         }
                     }
                 }

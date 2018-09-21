@@ -207,12 +207,12 @@
                          ng-click="modelAction('delete')"
                          ng-class="{active: modelCtrlBtnState.selection}">
                     </div>
-                    <div icon icon-size="42" icon-id="eqMaster"
+                    <div icon icon-size="42" icon-id="chain"
                          tooltip tt-msg="modelEvaluateTip"
                          ng-click="modelAction('evaluate')"
                          ng-class="{active: modelCtrlBtnState.selection}">
                     </div>
-                    <div icon icon-size="42" icon-id="eqMaster"
+                    <div icon icon-size="42" icon-id="m_eqMaster"
                          tooltip tt-msg="modelSetTrainTip"
                          ng-click="modelAction('trainSet')"
                          ng-class="{active: modelCtrlBtnState.selection}">
@@ -847,7 +847,10 @@
                     </table>
                 </div>
             </div>
-            <svg width="960" height="500" area-chart></svg>
+            <!--<canvas edge-chart id="line" class="chart chart-line" chart-data="edgePred.data"-->
+                    <!--chart-labels="edgePred.labels" chart-legend="true"-->
+                    <!--chart-series="edgePred.series" chart-options="edgePred.options" height="100%" >-->
+            <!--</canvas>-->
         </div>
         <div class="raw-data" id="rawData">
             <div class="tabular-header">

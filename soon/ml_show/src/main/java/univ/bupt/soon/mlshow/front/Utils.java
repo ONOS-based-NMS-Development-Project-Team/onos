@@ -2,6 +2,7 @@ package univ.bupt.soon.mlshow.front;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.onosproject.soon.dataset.original.FailureClassificationItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,16 +89,16 @@ public class Utils {
 
     public static String levelChToEn (String s) {
         String level = "";
-        if(s == "紧急"){
+        if(s.equals("紧急")){
             level = "Critical";
         }
-        else if(s == "重要"){
+        else if(s.equals("重要")){
             level = "Major";
         }
-        else if(s == "次要"){
+        else if(s.equals("次要")){
             level = "Minor";
         }
-        else if(s == "告警"){
+        else if(s.equals("告警")){
             level = "Warning";
         }
         return level;
@@ -308,7 +309,7 @@ public class Utils {
     //模型应用
     public static final String RECENT_ITEM_NUM = "recentItemNum";
 
-    public static String alarmInpParse(List<Double> list){
+    public static String alarmInpParse(){
         List<String> display = new ArrayList<>();
         for (int i = 0; i < 35; i++) {
             if (i < 11) {
@@ -347,47 +348,62 @@ public class Utils {
             return result.toString();
         }
 
-
-    public static String alarmOtpParse(List<Double> list){
-        if (list.get(0) == 1.0 && list.get(1) == 0.0){
+    public static String alarmOtpParse(String list){
+        double s = Double.parseDouble(list.substring(1,list.length()-1));
+        if (s == 0.0){
             return String.valueOf(true);
         }else {
             return String.valueOf(false);
         }
     }
 
-    public static String waveParse(Double d){
-        double w = d;
-        BigDecimal bd = new BigDecimal(w*80);
-        return String.valueOf(bd.setScale(0,BigDecimal.ROUND_HALF_UP));
+    public static String waveParse(String d){
+        String result = "";
+        String[] ds = d.split(",");
+        for (int i=0;i<ds.length;i++) {
+            double value = Double.valueOf(ds[i]);
+            value = value * 80;
+            BigDecimal bd = new BigDecimal(value);
+            String s = String.valueOf(bd.setScale(0, BigDecimal.ROUND_HALF_UP));
+            result = result+ "," + s ;
+        }
+
+        return result.substring(1);
     }
 
-    public static String classEnd(List<Double> list) {
-        if (list.get(0) == 1.0) {
+    public static String classEnd(String list) {
+        String s = list.substring(1,list.length()-1);
+        if (s.equals("1.0")) {
             return "Board Failure";
-        } else if (list.get(0) == 2.0) {
+        } else if (s.equals("2.0")) {
             return "Broken of Optical Cable";
-        } else if (list.get(0) == 3.0) {
+        } else if (s.equals("3.0")) {
             return "Clock Failure";
-        } else if (list.get(0) == 4.0) {
+        } else if (s.equals("4.0")) {
             return "Control Card Failure";
-        } else if (list.get(0) == 5.0) {
+        } else if (s.equals("5.0")) {
             return "Equipment Power Off";
-        } else if (list.get(0) == 6.0) {
+        } else if (s.equals("6.0")) {
             return "Loss of Line are Large ";
         } else {
             return "Deterioration of Basic Environment";
         }
     }
 
-    public static String classInp(List<Double> list){
+    public static String classInp(FailureClassificationItem p){
+        String s = p.toString();
+        List<String> qqq = new ArrayList<>();
+        String[] str = s.split(",");
+        for (int j = 0; j < str.length; j++) {
+            qqq.add(str[j]);
+        }
         List<String> level = new ArrayList<>();
         List<String> boards = new ArrayList<>();
         List<String> nodes = new ArrayList<>();
         List<String> names = new ArrayList<>();
         List<String> time = new ArrayList<>();
-        level.add("Important");
-        level.add("Urgent");
+        level.add("Major");
+        level.add("Critical");
         names.add("R_LOS");
         names.add("R_LOF");
         names.add("IN_PWR_LOW");
@@ -460,14 +476,14 @@ public class Utils {
         time.add("2018-5-12-09:35:48");
         time.add("2018-5-12-09:40:23");
         List<String> list3 = new ArrayList<>();
-        for (int i = 0; i <list.size() ; i++) {
+        for (int i = 0; i <qqq.size() ; i++) {
             if (i%5==0){
                 Random random = new Random();
                 int a = random.nextInt(2);
                 list3.add(level.get(a));
             }else if (i%5==1){
                 Random random = new Random();
-                int a = random.nextInt(10);
+                int a = random.nextInt(9);
                 list3.add(names.get(a));
             }else if (i%5==2){
                 Random random = new Random();
@@ -475,14 +491,14 @@ public class Utils {
                 list3.add(nodes.get(a));
             }else if (i%5==3){
                 Random random = new Random();
-                int a = random.nextInt(21);
+                int a = random.nextInt(20);
                 list3.add(boards.get(a));
             }else if (i%5==4){
                 Random random = new Random();
                 int a = random.nextInt(21);
                 list3.add(time.get(a));
             }else
-                log.info("Index out  of bound exception");
+                log.info("Index out of bound exception");
             }
         boolean first = true;
         StringBuilder result = new StringBuilder();

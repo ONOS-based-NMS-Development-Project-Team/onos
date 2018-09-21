@@ -22,11 +22,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import univ.bupt.soon.mlshow.front.MLMessageHandler;
 
+import java.lang.reflect.Array;
 import java.net.URI;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.onosproject.ui.table.TableModel.sortDir;
@@ -140,12 +138,12 @@ public class AlarmPredictionMessageRequestHandler extends UiMessageHandler {
                             AlarmPredictionItem it = (AlarmPredictionItem) input.get(a);
                             tm.addRow()
                                     .cell(INPUT_TYPE, it.getInput_type())
-                                    .cell(ALARM_HAPPEN, result.get(a))
+                                    .cell(ALARM_HAPPEN, alarmOtpParse(result.get(a)))
                                     .cell(MODEL_ID, i)
                                     .cell(TRAIN_ID, model.getMlModelDetail().getTrainDatasetId())
                                     .cell(TEST_ID, listToString(model.getTestDataSetId()))
                                     .cell(MODEL_ACCURACY, getStringEvaluate(model.getMlModelDetail().getPerformances()))
-                                    .cell(INPUT, arrayToString(it.getInput()));
+                                    .cell(INPUT, alarmInpParse());
                         }
                     }
                 }

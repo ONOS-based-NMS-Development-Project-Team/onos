@@ -33,7 +33,7 @@ import java.util.List;
 public class SoonUiComponent implements MLAppRegistry {
 
     private static final String VIEW_ID = "soon";
-    private static final String VIEW_TEXT = "Self Oprimizing Optical Network";
+    private static final String VIEW_TEXT = "Self Optimizing Optical Network";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
