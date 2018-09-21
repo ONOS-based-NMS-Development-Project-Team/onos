@@ -62,14 +62,7 @@ public class LinkPredictionImpl extends ModelControlServiceAbstract {
         //Todo 转化数据
         List<List<Double>> labDataInp = segmentForDataset.getInput();
         List<List<Double>> labDataOutp = segmentForDataset.getInput();
-        List<List<Double>> originDataInp = displayOriginData(labDataInp);
-        List<List<Double>> originDataOup = displayOriginData(labDataOutp);
-        SegmentForDataset sfd = new SegmentForDataset();
-        sfd.setInput(originDataInp);
-        sfd.setInput(originDataOup);
-        foregroundCallback.originData(sfd);
         platformService.sendTrainData(websocketId, segmentForDataset);
-
         segmentForDataset.setTrainData(false);
         segmentForDataset.setDatasetId(testDatasetId);
         platformService.sendTestData(websocketId, segmentForDataset);
@@ -149,16 +142,4 @@ public class LinkPredictionImpl extends ModelControlServiceAbstract {
     }
 
 
-    private List<List<Double>> displayOriginData(List<List<Double>> segmentForDataset){
-        List<List<Double>> tmpIn = Lists.newArrayList();
-        for (List<Double> list : segmentForDataset) {
-            List<Double> tmp = Lists.newArrayList();
-            for (Double dou:list) {
-                Double origin = dou * 60;
-                tmp.add(origin);
-            }
-            tmpIn.add(tmp);
-        }
-        return tmpIn;
-    }
 }

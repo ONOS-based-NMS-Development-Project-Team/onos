@@ -43,7 +43,7 @@ def read_parameters(dict):
         lossFunction = tf.reduce_mean
     elif lossFunction == 'crossentropyloss':
         lossFunction = tf.nn.softmax_cross_entropy_with_logits
-    elif lossFunction == 'l1loss':
+    elif lossFunction == 'l1 loss':
         lossFunction = tf.abs
     batchSize = dict["batchSize"]
     optimizer = dict["optimizer"]

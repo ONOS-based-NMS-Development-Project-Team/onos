@@ -14,6 +14,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import org.omg.CORBA.INTERNAL;
 import org.onosproject.soon.MonitorData;
+import org.onosproject.soon.dataset.dataset.SegmentForDataset;
 import org.onosproject.soon.dataset.original.Item;
 import org.onosproject.soon.foreground.ForegroundCallback;
 import org.onosproject.soon.foreground.MLAppType;
@@ -599,6 +600,11 @@ public class ModelLibraryMessageHandler extends UiMessageHandler{
             model.setLoss(data.getLoss());
             model.setRemainingTime(data.getRemainingTime());
             model.setPrecision(data.getPrecision());
+        }
+
+        @Override
+        public void originData(SegmentForDataset segmentForDataset) {
+            log.info("hhh");
         }
 
     }

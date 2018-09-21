@@ -21,7 +21,7 @@ import java.util.Set;
  * 故障分类的case
  */
 public class FailureClassification extends ModelControlServiceAbstract {
-
+    ForegroundCallback foregroundCallback = null;
 
     public FailureClassification(MLAppType serviceName, String tableName, Class itemClass,
                                  Class platformCallbackClass, DatabaseAdapter database,
@@ -145,6 +145,10 @@ public class FailureClassification extends ModelControlServiceAbstract {
 
     @Override
     public void setForegroundCallback(ForegroundCallback foregroundCallback) {
+<<<<<<< Updated upstream
 
+=======
+        this.foregroundCallback = foregroundCallback;
+>>>>>>> Stashed changes
     }
 }
