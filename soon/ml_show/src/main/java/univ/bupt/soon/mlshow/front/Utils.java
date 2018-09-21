@@ -170,7 +170,7 @@ public class Utils {
             for (String i : map.values()) {
                 s = s + "," + i;
             }
-            return s.substring(1,s.length());
+            return s.substring(1,s.length()-1);
         }
     }
 

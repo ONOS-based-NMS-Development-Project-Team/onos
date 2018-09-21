@@ -145,10 +145,6 @@ public class FailureClassification extends ModelControlServiceAbstract {
 
     @Override
     public void setForegroundCallback(ForegroundCallback foregroundCallback) {
-<<<<<<< Updated upstream
-
-=======
         this.foregroundCallback = foregroundCallback;
->>>>>>> Stashed changes
     }
 }

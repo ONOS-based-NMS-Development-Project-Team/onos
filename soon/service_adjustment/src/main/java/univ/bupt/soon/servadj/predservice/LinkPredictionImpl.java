@@ -60,19 +60,8 @@ public class LinkPredictionImpl extends ModelControlServiceAbstract {
 
         SegmentForDataset segmentForDataset = convertToSegmentForDataset(trainData, trainDatasetId, true);
         //Todo 转化数据
-<<<<<<< HEAD
-//        List<List<Double>> labDataInp = segmentForDataset.getInput();
-//        List<List<Double>> labDataOutp = segmentForDataset.getInput();
-//        List<List<Double>> originDataInp = displayOriginData(labDataInp);
-//        List<List<Double>> originDataOup = displayOriginData(labDataOutp);
-//        SegmentForDataset sfd = new SegmentForDataset();
-//        sfd.setInput(originDataInp);
-//        sfd.setInput(originDataOup);
-//        foregroundCallback.originData(sfd);
-=======
         List<List<Double>> labDataInp = segmentForDataset.getInput();
         List<List<Double>> labDataOutp = segmentForDataset.getInput();
->>>>>>> 419a04e43292cde816bdb6e1685e167c23be0984
         platformService.sendTrainData(websocketId, segmentForDataset);
         segmentForDataset.setTrainData(false);
         segmentForDataset.setDatasetId(testDatasetId);
