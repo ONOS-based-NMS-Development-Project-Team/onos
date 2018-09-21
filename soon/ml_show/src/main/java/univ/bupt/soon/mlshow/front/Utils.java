@@ -478,25 +478,15 @@ public class Utils {
         List<String> list3 = new ArrayList<>();
         for (int i = 0; i <qqq.size() ; i++) {
             if (i%5==0){
-                Random random = new Random();
-                int a = random.nextInt(2);
-                list3.add(level.get(a));
+                list3.add(level.get(0));
             }else if (i%5==1){
-                Random random = new Random();
-                int a = random.nextInt(9);
-                list3.add(names.get(a));
+                list3.add(names.get(2));
             }else if (i%5==2){
-                Random random = new Random();
-                int a = random.nextInt(21);
-                list3.add(nodes.get(a));
+                list3.add(nodes.get(10));
             }else if (i%5==3){
-                Random random = new Random();
-                int a = random.nextInt(20);
-                list3.add(boards.get(a));
+                list3.add(boards.get(13));
             }else if (i%5==4){
-                Random random = new Random();
-                int a = random.nextInt(21);
-                list3.add(time.get(a));
+                list3.add(time.get(15));
             }else
                 log.info("Index out of bound exception");
             }
