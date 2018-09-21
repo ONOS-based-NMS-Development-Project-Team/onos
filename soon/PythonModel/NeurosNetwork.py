@@ -2,6 +2,7 @@ import tensorflow as tf
 import os
 import threading
 import subprocess
+import socket
 
 
 class NeuroNetwork(object):
@@ -186,7 +187,7 @@ class NeuroNetwork(object):
         thread = threading.Thread(target=subprocess.getoutput, args=(cmd,))
         thread.start()
         # subprocess.getoutput(cmd)
-        return 'localhost:' + str(i)
+        return str(self.get_ip_address()) + ':' + str(i)
 
 
     # reset graph
@@ -198,3 +199,13 @@ class NeuroNetwork(object):
     # one-hot code
     def one_hot(self,labels,num_class):
         return tf.one_hot(labels,depth=num_class,axis=1)
+
+
+    def get_ip_address(self):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(('8.8.8.8', 80))
+            ip = s.getsockname()[0]
+        finally:
+            s.close()
+        return ip
