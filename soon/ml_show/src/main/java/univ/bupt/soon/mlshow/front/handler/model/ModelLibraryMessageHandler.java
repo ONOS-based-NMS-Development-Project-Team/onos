@@ -607,6 +607,11 @@ public class ModelLibraryMessageHandler extends UiMessageHandler{
         @Override
         public void originData(SegmentForDataset segmentForDataset) {}
 
+        @Override
+        public void originData(SegmentForDataset segmentForDataset) {
+            log.info("hhh");
+        }
+
     }
 
     private class AlertHandler extends RequestHandler {

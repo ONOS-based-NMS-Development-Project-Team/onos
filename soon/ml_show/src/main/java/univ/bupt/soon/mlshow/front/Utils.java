@@ -1,5 +1,6 @@
 package univ.bupt.soon.mlshow.front;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -21,8 +23,12 @@ public class Utils {
 
     // 性能表中节点,历史告警和当前告警中的告警源的中英文映射
     public static Map<String, String> nodeMap = Maps.newHashMap();
+    // List
+    public static List<String> nodesEng = Lists.newArrayList();
     // 性能表中的性能事件的中英文映射
     public static Map<String, String> eventMap = Maps.newHashMap();
+    // List
+    public static List<String> evetnsEng = Lists.newArrayList();
     // 初始化nodesMap和eventMap
     static {
         String nodeFile = "nodes2eng.csv";
@@ -31,6 +37,9 @@ public class Utils {
 
         parseTrans(path + "/soon/resources/"+nodeFile, nodeMap);
         parseTrans(path + "/soon/resources/"+eventFile, eventMap);
+
+        nodesEng.addAll(nodeMap.values());
+        evetnsEng.addAll(eventMap.values());
         log.info(nodeMap.toString());
         log.info(eventMap.toString());
     }
@@ -298,4 +307,208 @@ public class Utils {
 
     //模型应用
     public static final String RECENT_ITEM_NUM = "recentItemNum";
-}
+
+    public static String alarmInpParse(List<Double> list){
+        List<String> display = new ArrayList<>();
+        for (int i = 0; i < 35; i++) {
+            if (i < 11) {
+                double a = Math.random();
+                double b = a + 38;
+                String s = "-" + b;
+                Double d = new Double(s);
+                String q = "IN_PWR_LOW:" + d;
+                display.add(q);
+            } else if (i < 23) {
+                double a = Math.random();
+                double b = a + 660;
+                String s = "-" + b;
+                Double d = new Double(s);
+                String q = "OUT_PWR_ABN:" + d;
+                display.add(q);
+            } else {
+                double a = Math.random();
+                double b = a + 11;
+                String s = "-" + b;
+                Double d = new Double(s);
+                String q = "R_LOS:" + d;
+                display.add(q);
+            }
+        }
+            boolean first = true;
+            StringBuilder result = new StringBuilder();
+            for (String string : display) {
+            if(first){
+                first = false;
+            }else {
+                result.append(",");
+            }
+            result.append(string);
+        }
+            return result.toString();
+        }
+
+
+    public static String alarmOtpParse(List<Double> list){
+        if (list.get(0) == 1.0 && list.get(1) == 0.0){
+            return String.valueOf(true);
+        }else {
+            return String.valueOf(false);
+        }
+    }
+
+    public static String waveParse(Double d){
+        double w = d;
+        BigDecimal bd = new BigDecimal(w*80);
+        return String.valueOf(bd.setScale(0,BigDecimal.ROUND_HALF_UP));
+    }
+
+    public static String classEnd(List<Double> list) {
+        if (list.get(0) == 1.0) {
+            return "Board Failure";
+        } else if (list.get(0) == 2.0) {
+            return "Broken of Optical Cable";
+        } else if (list.get(0) == 3.0) {
+            return "Clock Failure";
+        } else if (list.get(0) == 4.0) {
+            return "Control Card Failure";
+        } else if (list.get(0) == 5.0) {
+            return "Equipment Power Off";
+        } else if (list.get(0) == 6.0) {
+            return "Loss of Line are Large ";
+        } else {
+            return "Deterioration of Basic Environment";
+        }
+    }
+
+    public static String classInp(List<Double> list){
+        List<String> level = new ArrayList<>();
+        List<String> boards = new ArrayList<>();
+        List<String> nodes = new ArrayList<>();
+        List<String> names = new ArrayList<>();
+        List<String> time = new ArrayList<>();
+        level.add("Important");
+        level.add("Urgent");
+        names.add("R_LOS");
+        names.add("R_LOF");
+        names.add("IN_PWR_LOW");
+        names.add("IN_PWR_HIGH");
+        names.add("TU_LOP");
+        names.add("T_LOSEX");
+        names.add("T_ALOS");
+        names.add("SECU_ALM");
+        names.add("S1_SYN_CHANGE");
+        boards.add("28-N3SL17-1(SDH-1)");
+        boards.add("29-N4SL17-1(SDH-1)");
+        boards.add("28-N3SL18-1(SDH-1)");
+        boards.add("11-N3SL17-1(SDH-1)");
+        boards.add("18-N3SL20-1(SDH-1)");
+        boards.add("28-N3SL23-1(SDH-1)");
+        boards.add("28-N1SF17-1(SDH-1)");
+        boards.add("28-N3SR19-1(SDH-1)");
+        boards.add("30-NF16E7-1(SDH-1)");
+        boards.add("28-N3NLZ7-1(SDH-1)");
+        boards.add("28-N3SL17-1(SDH-2)");
+        boards.add("30-N4LQ18-2(SDH-1)");
+        boards.add("28-N4SL17-2(SDH-1)");
+        boards.add("2-N3SL17-1(SDH-1)");
+        boards.add("28-N56L67-1(SDH-1)");
+        boards.add("45-N3CL17-1(SDH-1)");
+        boards.add("28-O3SLIU-1(SDH-1)");
+        boards.add("28-MI6L89-1(SDH-1)");
+        boards.add("32-UY9L17-1(SDH-1)");
+        boards.add("28-N3IU67-1(SDH-1)");
+        nodes.add("GaoTai");
+        nodes.add("FeiHua-Metro1000");
+        nodes.add("AnShan(ZhongXing)");
+        nodes.add("EDouLi(Siemens)");
+        nodes.add("ZhengZhouBian");
+        nodes.add("AutomationRouter");
+        nodes.add("FengHuo");
+        nodes.add("HuBeiShengDiao(Siemens)");
+        nodes.add(",HuBeiShengDiao-OSN7500");
+        nodes.add("HuBei(HuaWei)");
+        nodes.add("HeBei(HuaWei)");
+        nodes.add("HeBei-ECI");
+        nodes.add("SongShan-XDM500");
+        nodes.add("XiaoGan(Siemens)");
+        nodes.add("BeiDiao(ECI10G-I2-1)");
+        nodes.add("BeiDiao-Siemens103-2");
+        nodes.add("YiTuiYun-GuoDiao-Siemens");
+        nodes.add("HuaBei-NEC WBM");
+        nodes.add("HuaZhongWangDiao-Siemens");
+        nodes.add("HuaZhongWangDiao-Marconi2");
+        nodes.add("HuaZhongWangDiao-Marconi");
+        time.add("2018-5-12-08:20:30");
+        time.add("2018-5-12-08:25:23");
+        time.add("2018-5-12-08:30:36");
+        time.add("2018-5-12-08:35:33");
+        time.add("2018-5-12-08:40:30");
+        time.add("2018-5-12-08:41:30");
+        time.add("2018-5-12-08:43:56");
+        time.add("2018-5-12-08:47:24");
+        time.add("2018-5-12-08:50:56");
+        time.add("2018-5-12-08:55:30");
+        time.add("2018-5-12-08:56:30");
+        time.add("2018-5-12-08:59:30");
+        time.add("2018-5-12-09:10:00");
+        time.add("2018-5-12-09:13:10");
+        time.add("2018-5-12-09:15:13");
+        time.add("2018-5-12-09:19:45");
+        time.add("2018-5-12-09:24:45");
+        time.add("2018-5-12-09:29:43");
+        time.add("2018-5-12-09:32:23");
+        time.add("2018-5-12-09:35:48");
+        time.add("2018-5-12-09:40:23");
+        List<String> list3 = new ArrayList<>();
+        for (int i = 0; i <list.size() ; i++) {
+            if (i%5==0){
+                Random random = new Random();
+                int a = random.nextInt(2);
+                list3.add(level.get(a));
+            }else if (i%5==1){
+                Random random = new Random();
+                int a = random.nextInt(10);
+                list3.add(names.get(a));
+            }else if (i%5==2){
+                Random random = new Random();
+                int a = random.nextInt(21);
+                list3.add(nodes.get(a));
+            }else if (i%5==3){
+                Random random = new Random();
+                int a = random.nextInt(21);
+                list3.add(boards.get(a));
+            }else if (i%5==4){
+                Random random = new Random();
+                int a = random.nextInt(21);
+                list3.add(time.get(a));
+            }else
+                log.info("Index out  of bound exception");
+            }
+        boolean first = true;
+        StringBuilder result = new StringBuilder();
+        for (String string : list3) {
+            if(first){
+                first = false;
+            }else {
+                result.append(",");
+            }
+            result.append(string);
+        }
+        return result.toString();
+        }
+
+        public static String edgeIdParse(double[] arr){
+            List list = new ArrayList();
+            for (int i = 0; i < arr.length; i++) {
+                if (arr[i] == 1.0){
+                    list.add((i+1));
+                }
+            }
+            String edge = "";
+            for (int j = 0; j < list.size(); j++) {
+                String link = String.valueOf(list.get(j));
+                edge = edge + link + "-";
+            }
+            return edge.substring(0,edge.length()-1);
+        }
+    }

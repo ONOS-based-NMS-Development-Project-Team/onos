@@ -121,5 +121,11 @@ public class OriginalDataAccess implements ModelControlService {
     }
 
     @Override
+<<<<<<< HEAD
     public void setForegroundCallback(ForegroundCallback foregroundCallback) {}
+=======
+    public void setForegroundCallback(ForegroundCallback foregroundCallback) {
+        log.info("hhh");
+    }
+>>>>>>> 419a04e43292cde816bdb6e1685e167c23be0984
 }
