@@ -14,6 +14,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import org.omg.CORBA.INTERNAL;
 import org.onosproject.soon.MonitorData;
+import org.onosproject.soon.dataset.dataset.SegmentForDataset;
 import org.onosproject.soon.dataset.original.Item;
 import org.onosproject.soon.foreground.ForegroundCallback;
 import org.onosproject.soon.foreground.MLAppType;
@@ -190,8 +191,11 @@ public class ModelLibraryMessageHandler extends UiMessageHandler{
                 String accuracy = modelAccuracyMap.get(key);
                 modelAccuracy.add(accuracy);
             }
-            return String.join(",",modelAccuracy);
-
+            if(modelAccuracy.size() == 1){
+                return modelAccuracy.get(0);
+            }else {
+                return String.join(",", modelAccuracy);
+            }
         }
     }
 
@@ -552,7 +556,7 @@ public class ModelLibraryMessageHandler extends UiMessageHandler{
         public void modelEvaluation(int msgId, String result) {
             int testId = modelMsgId.get(this.modelId).get(msgId);
             MLModelDetail detail = modelLibraryInfoMap.get(this.modelId).getMlModelDetail();
-            Map<Integer,String> map = detail.getPerformances();
+            Map<Integer,String> map = new ConcurrentHashMap<>();
             map.put(testId,result);
             detail.setPerformances(map);
             modelLibraryInfoMap.get(this.modelId).setMlModelDetail(detail);
@@ -600,6 +604,8 @@ public class ModelLibraryMessageHandler extends UiMessageHandler{
             model.setRemainingTime(data.getRemainingTime());
             model.setPrecision(data.getPrecision());
         }
+        @Override
+        public void originData(SegmentForDataset segmentForDataset) {}
 
     }
 

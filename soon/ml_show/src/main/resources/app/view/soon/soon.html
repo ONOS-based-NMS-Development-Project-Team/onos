@@ -1,69 +1,183 @@
 <div id="ov-soon">
     <div class="soon-left">
-        <div class="soon-left-logo-container">
-            <span class="soon-left-logo" ng-click="defaultSubPage()">
-                <img class="soon-logo" src="app/view/soon/soonLogo.jpg">
-            </span>
-        </div>
-        <div class="soon-left-name-container">
-            <div class="soon-name">
-                <a ng-click="defaultSubPage()">
-                    SOON
-                </a>
+        <div class="soon-left-sidebar-container">
+            <div class="soon-left-sidebar-logo">
+                <div class="soon-left-logo-container">
+                    <span class="soon-left-logo" ng-click="defaultSubPage()">
+                        <img class="soon-logo" src="app/view/soon/soonLogo.png">
+                    </span>
+                </div>
+                <!--<div class="soon-left-name-container">-->
+                    <!--<div class="soon-name">-->
+                        <!--<a ng-click="defaultSubPage()">-->
+                            <!--SOON-->
+                        <!--</a>-->
+                    <!--</div>-->
+                <!--</div>-->
+            </div>
+            <div class="soon-left-content-container">
+                <div class="soon-left-sub-content">
+                    <div class="sub-content-name-container">
+                        <div class="application-name">
+                            <i class="fas fa-angle-double-down"></i>
+                            <a ng-click="applicationContentShow()">
+                                Application
+                            </a>
+                        </div>
+                    </div>
+                    <div class="sub-content-container" ng-show="applicationShow">
+                        <ul >
+                            <li>
+                                <div class="soon-left-content-item-container">
+                                    <i class="fas fa-angle-right"></i>
+                                    <a ng-click="navTo($event)">
+                                        Alarm Predict
+                                    </a>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="soon-left-content-item-container">
+                                    <i class="fas fa-angle-right"></i>
+                                    <a ng-click="navTo($event)">
+                                        Fault Classification
+                                    </a>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="soon-left-content-item-container">
+                                    <i class="fas fa-angle-right"></i>
+                                    <a ng-click="navTo($event)">
+                                        Area Traffic Predict
+                                    </a>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="soon-left-content-item-container">
+                                    <i class="fas fa-angle-right"></i>
+                                    <a ng-click="navTo($event)">
+                                        Link Traffic Predict
+                                    </a>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="soon-left-sub-content">
+                    <div class="sub-content-name-container">
+                        <div class="model-name">
+                            <i class="fas fa-angle-double-down"></i>
+                            <a ng-click="modelContentShow()">
+                                Model
+                            </a>
+                        </div>
+                    </div>
+                    <div class="sub-content-container" ng-show="modelShow">
+                        <ul >
+                            <li>
+                                <div class="soon-left-content-item-container">
+                                    <i class="fas fa-angle-right"></i>
+                                    <a ng-click="navTo($event)">
+                                        Model Library
+                                    </a>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="soon-left-sub-content">
+                    <div class="sub-content-name-container">
+                        <div class="data-name">
+                            <i class="fas fa-angle-double-down"></i>
+                            <a ng-click="dataContentShow()">
+                                Data
+                            </a>
+                        </div>
+                    </div>
+                    <div class="sub-content-container" ng-show="dataShow">
+                        <ul >
+                            <li>
+                                <div class="soon-left-content-item-container">
+                                    <i class="fas fa-angle-right"></i>
+                                    <a ng-click="navTo($event)">
+                                        Raw Data
+                                    </a>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="soon-left-content-item-container">
+                                    <i class="fas fa-angle-right"></i>
+                                    <a ng-click="navTo($event)">
+                                        Data Set
+                                    </a>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <!--<ul class="soon-left-content" id="soonContent">-->
+                    <!--<li>-->
+                        <!--<div class="soon-left-content-item-container">-->
+                            <!--<a ng-click="navTo($event)">-->
+                                <!--Alarm Predict-->
+                            <!--</a>-->
+                        <!--</div>-->
+                    <!--</li>-->
+                    <!--<li>-->
+                        <!--<div class="soon-left-content-item-container">-->
+                            <!--<a ng-click="navTo($event)">-->
+                                <!--Fault Classification-->
+                            <!--</a>-->
+                        <!--</div>-->
+                    <!--</li>-->
+                    <!--<li>-->
+                        <!--<div class="soon-left-content-item-container">-->
+                            <!--<a ng-click="navTo($event)">-->
+                                <!--Area Traffic Predict-->
+                            <!--</a>-->
+                        <!--</div>-->
+                    <!--</li>-->
+                    <!--<li>-->
+                        <!--<div class="soon-left-content-item-container">-->
+                            <!--<a ng-click="navTo($event)">-->
+                                <!--Link Traffic Predict-->
+                            <!--</a>-->
+                        <!--</div>-->
+                    <!--</li>-->
+                    <!--<li>-->
+                        <!--<div class="soon-left-content-item-container">-->
+                            <!--<a ng-click="navTo($event)">-->
+                                <!--Model Library-->
+                            <!--</a>-->
+                        <!--</div>-->
+                    <!--</li>-->
+                    <!--<li>-->
+                        <!--<div class="soon-left-content-item-container">-->
+                            <!--<a ng-click="navTo($event)">-->
+                                <!--Raw Data-->
+                            <!--</a>-->
+                        <!--</div>-->
+                    <!--</li>-->
+                    <!--<li>-->
+                        <!--<div class="soon-left-content-item-container">-->
+                            <!--<a ng-click="navTo($event)">-->
+                                <!--Data Set-->
+                            <!--</a>-->
+                        <!--</div>-->
+                    <!--</li>-->
+                <!--</ul>-->
             </div>
         </div>
-        <div class="soon-left-content-container">
-            <ul class="soon-left-content" id="soonContent">
-                <li>
-                   <div class="soon-left-content-item-container">
-                       <a ng-click="navTo($event)">
-                           Alarm Predict
-                       </a>
-                   </div>
-                </li>
-                <li>
-                    <div class="soon-left-content-item-container">
-                        <a ng-click="navTo($event)">
-                            Fault Classification
-                        </a>
-                    </div>
-                </li>
-                <li>
-                    <div class="soon-left-content-item-container">
-                        <a ng-click="navTo($event)">
-                            Area Traffic Predict
-                        </a>
-                    </div>
-                </li>
-                <li>
-                    <div class="soon-left-content-item-container">
-                        <a ng-click="navTo($event)">
-                            Link Traffic Predict
-                        </a>
-                    </div>
-                </li>
-                <li>
-                    <div class="soon-left-content-item-container">
-                        <a ng-click="navTo($event)">
-                            Model Library
-                        </a>
-                    </div>
-                </li>
-                <li>
-                    <div class="soon-left-content-item-container">
-                        <a ng-click="navTo($event)">
-                            Raw Data
-                        </a>
-                    </div>
-                </li>
-                <li>
-                    <div class="soon-left-content-item-container">
-                        <a ng-click="navTo($event)">
-                            Data Set
-                        </a>
-                    </div>
-                </li>
-            </ul>
+        <div class="soon-left-mechanism-container">
+
+            <span class="soon-left-mechanism-logo">
+                <img class="mechanism-logo" src="app/view/soon/bupt.png">
+            </span>
+            <span class="soon-left-mechanism-logo">
+                <img class="mechanism-logo" src="app/view/soon/dianwang.png">
+            </span>
+            <span class="soon-left-mechanism-logo">
+                <img class="mechanism-logo" src="app/view/soon/huawei.png">
+            </span>
         </div>
         <div class="soon-left-splitter-container">
             <div class="soon-left-splitter" tooltip tt-msg="collapseSidebarTip" ng-click="collapseSidebar()"></div>
@@ -172,40 +286,82 @@
 
                     <div class="separator"></div>
 
-                    <div class="functionStart"
-                         tooltip tt-msg="alarmPredStartTip"
-                         ng-click="alarmPredShow(true)">
-                        <img src="app/view/soon/functionStart.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="functionStart"
+                             tooltip tt-msg="alarmPredStartTip"
+                             ng-click="alarmPredShow(true)">
+                            <i class="fas fa-play">
+                                <div>
+                                    Start
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="functionStop"
-                         tooltip tt-msg="alarmPredStopTip"
-                         ng-click="alarmPredShow(false)">
-                        <img src="app/view/soon/functionStop.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="functionStop"
+                             tooltip tt-msg="alarmPredStopTip"
+                             ng-click="alarmPredShow(false)">
+                            <i class="fas fa-stop">
+                                <div>
+                                    Stop
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showRawData"
-                         tooltip tt-msg="showRawDataTip"
-                         ng-click="showRawDataPerformance()">
-                        <img src="app/view/soon/showRawData.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showRawData"
+                             tooltip tt-msg="showRawDataTip"
+                             ng-click="showRawDataPerformance()">
+                            <i class="fas fa-database">
+                                <div>
+                                    Raw
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showTrainDataSet"
-                         tooltip tt-msg="showTrainDataSetTip"
-                         ng-click="showTrainDataSet()">
-                        <img src="app/view/soon/showTrainDataSet.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showTrainDataSet"
+                             tooltip tt-msg="showTrainDataSetTip"
+                             ng-click="showTrainDataSet()">
+                            <i class="fas fa-database">
+                                <div>
+                                    Train
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showTestDataSet"
-                         tooltip tt-msg="showTestDataSetTip"
-                         ng-click="showTestDataSet()">
-                        <img src="app/view/soon/showTestDataSet.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showTestDataSet"
+                             tooltip tt-msg="showTestDataSetTip"
+                             ng-click="showTestDataSet()">
+                            <i class="fas fa-database">
+                                <div>
+                                    Test
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showModelInformation"
-                         tooltip tt-msg="showModelInformationTip"
-                         ng-click="showModelInformation()">
-                        <img src="app/view/soon/showModelInformation.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showModelInformation"
+                             tooltip tt-msg="showModelInformationTip"
+                             ng-click="showModelInformation()">
+                            <i class="fas fa-info-circle">
+                                <div>
+                                    Raw
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="alarmPredSetting"
-                         tooltip tt-msg="alarmPredSettingTip"
-                         ng-click="alarmPredSetting()">
-                        <img src="app/view/soon/setting.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="alarmPredSetting"
+                             tooltip tt-msg="alarmPredSettingTip"
+                             ng-click="alarmPredSetting()">
+                            <i class="fab fa-adn">
+                                <div>
+                                    Setting
+                                </div>
+                            </i>
+                        </div>
                     </div>
                 </div>
                 <div class="search">
@@ -274,40 +430,82 @@
 
                     <div class="separator"></div>
 
-                    <div class="functionStart"
-                         tooltip tt-msg="faultClassificationStartTip"
-                         ng-click="faultClassificationShow(true)">
-                        <img src="app/view/soon/functionStart.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="functionStart"
+                             tooltip tt-msg="faultClassificationStartTip"
+                             ng-click="faultClassificationShow(true)">
+                            <i class="fas fa-play">
+                                <div>
+                                    Start
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="functionStop"
-                         tooltip tt-msg="faultClassificationStopTip"
-                         ng-click="faultClassificationShow(false)">
-                        <img src="app/view/soon/functionStop.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="functionStop"
+                             tooltip tt-msg="faultClassificationStopTip"
+                             ng-click="faultClassificationShow(false)">
+                            <i class="fas fa-stop">
+                                <div>
+                                    Stop
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showRawData"
-                         tooltip tt-msg="showRawDataTip"
-                         ng-click="showRawDataAlarm()">
-                        <img src="app/view/soon/showRawData.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showRawData"
+                             tooltip tt-msg="showRawDataTip"
+                             ng-click="showRawDataAlarm()">
+                            <i class="fas fa-database">
+                                <div>
+                                    Raw
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showTrainDataSet"
-                         tooltip tt-msg="showTrainDataSetTip"
-                         ng-click="showTrainDataSet()">
-                        <img src="app/view/soon/showTrainDataSet.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showTrainDataSet"
+                             tooltip tt-msg="showTrainDataSetTip"
+                             ng-click="showTrainDataSet()">
+                            <i class="fas fa-database">
+                                <div>
+                                    Train
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showTestDataSet"
-                         tooltip tt-msg="showTestDataSetTip"
-                         ng-click="showTestDataSet()">
-                        <img src="app/view/soon/showTestDataSet.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showTestDataSet"
+                             tooltip tt-msg="showTestDataSetTip"
+                             ng-click="showTestDataSet()">
+                            <i class="fas fa-database">
+                                <div>
+                                    Test
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showModelInformation"
-                         tooltip tt-msg="showModelInformationTip"
-                         ng-click="showModelInformation()">
-                        <img src="app/view/soon/showModelInformation.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showModelInformation"
+                             tooltip tt-msg="showModelInformationTip"
+                             ng-click="showModelInformation()">
+                            <i class="fas fa-info-circle">
+                                <div>
+                                    Info
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="faultClassificationSetting"
-                         tooltip tt-msg="faultClassificationSettingTip"
-                         ng-click="faultClassificationSetting()">
-                        <img src="app/view/soon/setting.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="faultClassificationSetting"
+                             tooltip tt-msg="faultClassificationSettingTip"
+                             ng-click="faultClassificationSetting()">
+                            <i class="fab fa-adn">
+                                <div>
+                                    Setting
+                                </div>
+                            </i>
+                        </div>
                     </div>
                 </div>
                 <div class="search">
@@ -365,50 +563,89 @@
         <div class="area-predict" id="areaPred">
             <div class="tabular-header">
                 <h2>
-                    Area Predict
+                    Area Traffic Predict
                 </h2>
                 <div class="ctrl-btns">
                     <div class="refresh" ng-class="{active: autoRefresh}"
                          icon icon-size="42" icon-id="refresh"
                          tooltip tt-msg="autoRefreshTip"
-                         ng-click="toggleRefresh()"></div>
+                         ng-click="toggleRefresh()">
+                    </div>
 
                     <div class="separator"></div>
 
-                    <div class="functionStart"
-                         tooltip tt-msg="areaPredStartTip"
-                         ng-click="areaPredShow(true)">
-                        <img src="app/view/soon/functionStart.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="functionStart"
+                             tooltip tt-msg="areaPredStartTip"
+                             ng-click="areaPredShow(true)">
+                            <i class="fas fa-play">
+                                <div>
+                                    Start
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="functionStop"
-                         tooltip tt-msg="areaPredStopTip"
-                         ng-click="areaPredShow(false)">
-                        <img src="app/view/soon/functionStop.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="functionStop"
+                             tooltip tt-msg="areaPredStopTip"
+                             ng-click="areaPredShow(false)">
+                            <i class="fas fa-stop">
+                                <div>
+                                    Stop
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showRawData"
-                         tooltip tt-msg="showRawDataTip"
-                         ng-click="showRawDataPerformance()">
-                        <img src="app/view/soon/showRawData.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showRawData"
+                             tooltip tt-msg="showRawDataTip"
+                             ng-click="showRawDataPerformance()">
+                            <i class="fas fa-database">
+                                <div>
+                                    Raw
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showTrainDataSet"
-                         tooltip tt-msg="showTrainDataSetTip"
-                         ng-click="showTrainDataSet()">
-                        <img src="app/view/soon/showTrainDataSet.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showTrainDataSet"
+                             tooltip tt-msg="showTrainDataSetTip"
+                             ng-click="showTrainDataSet()">
+                            <i class="fas fa-database"><div>Train</div></i>
+                        </div>
                     </div>
-                    <div class="showTestDataSet"
-                         tooltip tt-msg="showTestDataSetTip"
-                         ng-click="showTestDataSet()">
-                        <img src="app/view/soon/showTestDataSet.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showTestDataSet"
+                             tooltip tt-msg="showTestDataSetTip"
+                             ng-click="showTestDataSet()">
+                            <i class="fas fa-database">
+                                <div>
+                                    Test
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showModelInformation"
-                         tooltip tt-msg="showModelInformationTip"
-                         ng-click="showModelInformation()">
-                        <img src="app/view/soon/showModelInformation.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showModelInformation"
+                             tooltip tt-msg="showModelInformationTip"
+                             ng-click="showModelInformation()">
+                            <i class="fas fa-info-circle">
+                                <div>
+                                    Info
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="areaPredSetting"
-                         tooltip tt-msg="areaPredSettingTip"
-                         ng-click="areaPredSetting()">
-                        <img src="app/view/soon/setting.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="areaPredSetting"
+                             tooltip tt-msg="areaPredSettingTip"
+                             ng-click="areaPredSetting()">
+                            <i class="fab fa-adn">
+                                <div>
+                                    Setting
+                                </div>
+                            </i>
+                        </div>
                     </div>
                 </div>
                 <div class="search">
@@ -472,7 +709,7 @@
         <div class="edge-predict" id="edgePred">
             <div class="tabular-header">
                 <h2>
-                    Edge Predict
+                    Link Traffic Predict
                 </h2>
                 <div class="ctrl-btns">
                     <div class="refresh" ng-class="{active: autoRefresh}"
@@ -482,40 +719,78 @@
 
                     <div class="separator"></div>
 
-                    <div class="functionStart"
-                         tooltip tt-msg="edgePredStartTip"
-                         ng-click="edgePredShow(true)">
-                        <img src="app/view/soon/functionStart.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="functionStart"
+                             tooltip tt-msg="edgePredStartTip"
+                             ng-click="edgePredShow(true)">
+                            <i class="fas fa-play">
+                                <div>
+                                    Start
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="functionStop"
-                         tooltip tt-msg="edgePredStopTip"
-                         ng-click="edgePredShow(false)">
-                        <img src="app/view/soon/functionStop.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="functionStop"
+                             tooltip tt-msg="edgePredStopTip"
+                             ng-click="edgePredShow(false)">
+                            <i class="fas fa-stop">
+                                <div>
+                                    Stop
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showRawData"
-                         tooltip tt-msg="showRawDataTip"
-                         ng-click="showRawDataPerformance()">
-                        <img src="app/view/soon/showRawData.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showRawData"
+                             tooltip tt-msg="showRawDataTip"
+                             ng-click="showRawDataPerformance()">
+                            <i class="fas fa-database">
+                                <div>
+                                    Raw
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showTrainDataSet"
-                         tooltip tt-msg="showTrainDataSetTip"
-                         ng-click="showTrainDataSet()">
-                        <img src="app/view/soon/showTrainDataSet.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showTrainDataSet"
+                             tooltip tt-msg="showTrainDataSetTip"
+                             ng-click="showTrainDataSet()">
+                            <i class="fas fa-database"><div>Train</div></i>
+                        </div>
                     </div>
-                    <div class="showTestDataSet"
-                         tooltip tt-msg="showTestDataSetTip"
-                         ng-click="showTestDataSet()">
-                        <img src="app/view/soon/showTestDataSet.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showTestDataSet"
+                             tooltip tt-msg="showTestDataSetTip"
+                             ng-click="showTestDataSet()">
+                            <i class="fas fa-database">
+                                <div>
+                                    Test
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showModelInformation"
-                         tooltip tt-msg="showModelInformationTip"
-                         ng-click="showModelInformation()">
-                        <img src="app/view/soon/showModelInformation.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showModelInformation"
+                             tooltip tt-msg="showModelInformationTip"
+                             ng-click="showModelInformation()">
+                            <i class="fas fa-info-circle">
+                                <div>
+                                    Info
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="edgePredSetting"
-                         tooltip tt-msg="edgePredSettingTip"
-                         ng-click="edgePredSetting()">
-                        <img src="app/view/soon/setting.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="edgePredSetting"
+                             tooltip tt-msg="edgePredSettingTip"
+                             ng-click="edgePredSetting()">
+                            <i class="fab fa-adn">
+                                <div>
+                                    Setting
+                                </div>
+                            </i>
+                        </div>
                     </div>
                 </div>
                 <div class="search">
@@ -538,13 +813,13 @@
                 <div class="table-header" soon-sortable-header>
                     <table>
                         <tr>
-                            <td colId="timePoint" sortable col-width="40px"> time point </td>
+                            <td colId="timePoint" sortable col-width="30px"> time point </td>
                             <td colId="edgeId" sortable col-width="20px"> edge id </td>
                             <td colId="modelId" sortable col-width="20px"> model id </td>
-                            <td colId="oneHourAfter" sortable col-width="40px"> one hour after </td>
+                            <td colId="oneHourAfter" sortable col-width="60px"> one hour after </td>
                             <td colId="twoHoursBefore" sortable col-width="60px"> two hours before </td>
                             <td colId="trainDataSetId" sortable col-width="20px"> train data set id </td>
-                            <td colId="testDataSetId" sortable col-width="40px"> test data set id </td>
+                            <td colId="testDataSetId" sortable col-width="30px"> test data set id </td>
                             <td colId="modelAccuracy" sortable col-width="40px"> model accuracy </td>
                         </tr>
                     </table>
@@ -572,6 +847,7 @@
                     </table>
                 </div>
             </div>
+            <svg width="960" height="500" area-chart></svg>
         </div>
         <div class="raw-data" id="rawData">
             <div class="tabular-header">
@@ -586,20 +862,38 @@
 
                     <div class="separator"></div>
 
-                    <div class="showHistoricalAlarm"
-                         tooltip tt-msg="showHistoricalAlarmTip"
-                         ng-click="showHistoricalAlarm()">
-                        <img src="app/view/soon/showHistoricalAlarm.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showHistoricalAlarm"
+                             tooltip tt-msg="showHistoricalAlarmTip"
+                             ng-click="showHistoricalAlarm()">
+                            <i class="fab fa-gripfire">
+                                <div>
+                                    History
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showCurrentAlarm"
-                         tooltip tt-msg="showCurrentAlarmTip"
-                         ng-click="showCurrentAlarm()">
-                        <img src="app/view/soon/showCurrentAlarm.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showCurrentAlarm"
+                             tooltip tt-msg="showCurrentAlarmTip"
+                             ng-click="showCurrentAlarm()">
+                            <i class="fab fa-gripfire">
+                                <div>
+                                    Current
+                                </div>
+                            </i>
+                        </div>
                     </div>
-                    <div class="showPerformanceData"
-                         tooltip tt-msg="showPerformanceDataTip"
-                         ng-click="showPerformanceData()">
-                        <img src="app/view/soon/showPerformanceData.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="showPerformanceData"
+                             tooltip tt-msg="showPerformanceDataTip"
+                             ng-click="showPerformanceData()">
+                            <i class="fab fa-creative-commons-sampling">
+                                <div>
+                                    Performance
+                                </div>
+                            </i>
+                        </div>
                     </div>
                 </div>
                 <div class="search">
@@ -654,12 +948,12 @@
                     <div class="table-header" soon-sortable-header>
                         <table>
                             <tr>
-                                <td colId="level" sortable col-width="20px">level</td>
-                                <td colId="alarmSource" sortable col-width="20px">alarm source</td>
+                                <td colId="level" sortable col-width="16px">level</td>
+                                <td colId="alarmSource" sortable col-width="28px">alarm source</td>
                                 <td colId="name" sortable col-width="20px">name</td>
                                 <td colId="location" sortable col-width="20px">location</td>
-                                <td colId="frequency" sortable col-width="20px">frequency</td>
-                                <td colId="pathLevel" sortable col-width="20px">path level</td>
+                                <td colId="frequency" sortable col-width="16px">frequency</td>
+                                <td colId="pathLevel" sortable col-width="10px">path level</td>
                                 <td colId="firstHappen" sortable col-width="30px">first happen</td>
                                 <td colId="recentHappen" sortable col-width="30px">recent happen</td>
                                 <td colId="cleanTime" sortable col-width="30px">clean time</td>
@@ -702,12 +996,12 @@
                     <div class="table-header" soon-sortable-header>
                         <table>
                             <tr>
-                                <td colId="node" sortable col-width="40px">node</td>
-                                <td colId="board" sortable col-width="40px">board</td>
-                                <td colId="port" sortable col-width="40px">port</td>
-                                <td colId="component" sortable col-width="40px">component</td>
-                                <td colId="event" sortable col-width="40px">event</td>
-                                <td colId="endTime" sortable col-width="40px">end time</td>
+                                <td colId="node" sortable col-width="20px">node</td>
+                                <td colId="board" sortable col-width="20px">board</td>
+                                <td colId="port" sortable col-width="20px">port</td>
+                                <td colId="component" sortable col-width="20px">component</td>
+                                <td colId="event" sortable col-width="30px">event</td>
+                                <td colId="endTime" sortable col-width="30px">end time</td>
                                 <td colId="maxVal" sortable col-width="20px">max value</td>
                                 <td colId="curVal" sortable col-width="20px">current value</td>
                                 <td colId="minVal" sortable col-width="20px">min value</td>
@@ -753,15 +1047,21 @@
 
                     <div class="separator"></div>
 
-                    <div class="dataSetShowSelect"
-                         tooltip tt-msg="dataSetShowSelectTip"
-                         ng-click="dataSetShowSelect()">
-                        <img src="app/view/soon/dataSetShowSelect.png" class="ctrl-imgs">
+                    <div class="btn-container">
+                        <div class="dataSetShowSelect"
+                             tooltip tt-msg="dataSetShowSelectTip"
+                             ng-click="dataSetShowSelect()">
+                            <i class="fas fa-coins">
+                                <div>
+                                    Select
+                                </div>
+                            </i>
+                        </div>
                     </div>
                 </div>
                 <div class="search">
                     <input type="text" ng-model="queryTxt" placeholder="Search"/>
-                    <select ng-model="queryBy" id="dataSetSearchBy">
+                    <select ng-model="queryBy" id="dataSetSearchBy">x zz
                         <option value="" disabled>Search By</option>
                         <option value="$">All Fields</option>
                         <option value="id">id</option>
@@ -858,14 +1158,14 @@
                     <div class="table-header" soon-sortable-header>
                         <table>
                             <tr>
-                                <td colId="dataId" sortable col-width="50px">data id</td>
-                                <td colId="areaId" sortable col-width="50px">area id</td>
-                                <td colId="dataSetId" sortable col-width="50px">data set id</td>
-                                <td colId="dataSetType" sortable col-width="50px">data set Type</td>
-                                <td colId="tide" sortable col-width="50px">tide</td>
-                                <td colId="timePoint" sortable col-width="50px">time point</td>
-                                <td colId="oneHoursAfter" sortable col-width="150px">output</td>
-                                <td colId="twoHoursBefore" sortable col-width="150px">input</td>
+                                <td colId="dataId" sortable col-width="20px">data id</td>
+                                <td colId="areaId" sortable col-width="20px">area id</td>
+                                <td colId="dataSetId" sortable col-width="20px">data set id</td>
+                                <td colId="dataSetType" sortable col-width="20px">data set Type</td>
+                                <td colId="tide" sortable col-width="20px">tide</td>
+                                <td colId="timePoint" sortable col-width="30px">time point</td>
+                                <td colId="oneHoursAfter" sortable col-width="50px">output</td>
+                                <td colId="twoHoursBefore" sortable col-width="50px">input</td>
                             </tr>
                         </table>
                     </div>

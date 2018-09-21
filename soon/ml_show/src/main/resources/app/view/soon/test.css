@@ -2,32 +2,53 @@
 	ONOS GUI --SOON View  --css file
  */
 
-.soon-left{
-    position: absolute;
-    top: 76px;
-    bottom: 0px;
-    float:left;
+.soon-left {
     width:16%;
+    position: fixed;
+    z-index: 10;
+    bottom: 0;
+    top: 48px;
+    left: 0px;
+    visibility: visible;
+}
+.soon-left-sidebar-container{
+    position: absolute;
+    top: 0;
+    bottom: 110px;
+    width: 100%;
     background-color: #f4f5f7;
     overflow-y: auto;
 }
+.soon-left-sidebar-logo {
+    margin: 45px 0 20px 0;
+    display: table;
+    overflow: hidden;
+    table-layout: fixed;
+    width: 100%;
+}
 .soon-left-logo-container{
-    padding: 3px 9px 3px 20px;
+    padding: 0px 9px 0px 30px;
     display: table-cell;
+    width: 48px;
+    min-width: 48px;
 }
 .soon-left-logo {
     cursor: pointer;
 }
-.soon-left-name-container{
-    display: table-cell;
-    vertical-align: middle;
-    padding-right: 10px;
+.soon-left-logo img {
+    max-width: 87px;
+    height: auto;
+    border-radius: 8px;
 }
-.soon-name{
-    vertical-align: middle;
-    text-overflow: ellipsis;
-    overflow: hidden;
-}
+/*.soon-left-name-container{*/
+    /*display: table-cell;*/
+    /*vertical-align: middle;*/
+/*}*/
+/*.soon-name{*/
+    /*vertical-align: middle;*/
+    /*text-overflow: ellipsis;*/
+    /*overflow: hidden;*/
+/*}*/
 #ov-soon a {
     cursor: pointer;
 }
@@ -37,21 +58,55 @@
     cursor: pointer;
 }
 .soon-left-content-container{
-    margin: 50px 10px;
+    margin: 30px 10px;
 }
+.soon-left-sub-content {
+    padding: 0px;
+}
+.sub-content-name-container{
+    padding: 3px 2px;
+}
+.sub-content-container {}
 .soon-left-item-content-container a:active{
     color: #0052CC;
+}
+.soon-left ul {
+    list-style-type: none;
 }
 .soon-left li {
     margin: 10px 0px;
 }
-
+.soon-left-mechanism-container {
+    position: absolute;
+    bottom: 30px;
+    width: 100%;
+}
+.soon-left-mechanism-logo {
+    padding: 0 14px;
+    float: left;
+}
+.soon-left-mechanism-logo img {
+    width: 69px;
+    height: 69px;
+    max-height: 69px;
+    max-width: 69px;
+}
 
 .soon-right{
     margin-left: 16%;
     padding: 0px 20px;
 }
-
+.soon-right .btn-container {
+    padding: 0 10px;
+}
+.btn-container i{
+    font-size: 27px;
+    color: #009fdb;
+}
+.btn-container i div{
+    font-family: 'Open Sans';
+    font-size: 8px;
+}
 /*
  initial subpage --model library
  */
@@ -153,4 +208,20 @@
 }
 #rawDataSearchBy option{
     font-weight: lighter;
+}
+
+
+
+#areaPred .axis--x path {
+    display: none;
+}
+
+#areaPred .line {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 1.5px;
+}
+
+#ov-soon .table-body {
+    height: 600px;
 }

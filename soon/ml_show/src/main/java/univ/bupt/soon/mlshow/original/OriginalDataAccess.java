@@ -119,4 +119,7 @@ public class OriginalDataAccess implements ModelControlService {
     public List<Item> updateData(String s, Class cls) {
         return query.queryData(s, cls);
     }
+
+    @Override
+    public void setForegroundCallback(ForegroundCallback foregroundCallback) {}
 }

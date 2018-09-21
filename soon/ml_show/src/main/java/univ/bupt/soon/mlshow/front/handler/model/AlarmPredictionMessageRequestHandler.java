@@ -137,10 +137,10 @@ public class AlarmPredictionMessageRequestHandler extends UiMessageHandler {
 
                         ModelLibraryInfo model = ModelLibraryMessageHandler.modelLibraryInfoMap.get(i);
                         for (int a = 0; a < input.size(); a++) {
-                            AlarmPredictionItem it = (AlarmPredictionItem) input.get(i);
+                            AlarmPredictionItem it = (AlarmPredictionItem) input.get(a);
                             tm.addRow()
                                     .cell(INPUT_TYPE, it.getInput_type())
-                                    .cell(ALARM_HAPPEN, result.get(i))
+                                    .cell(ALARM_HAPPEN, result.get(a))
                                     .cell(MODEL_ID, i)
                                     .cell(TRAIN_ID, model.getMlModelDetail().getTrainDatasetId())
                                     .cell(TEST_ID, listToString(model.getTestDataSetId()))

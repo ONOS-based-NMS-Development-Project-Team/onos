@@ -99,10 +99,10 @@ public class FaultClassificationMessageRequestHandler extends UiMessageHandler {
 
                         ModelLibraryInfo model = ModelLibraryMessageHandler.modelLibraryInfoMap.get(i);
                         for (int a = 0; a < input.size(); a++) {
-                            FailureClassificationItem it = (FailureClassificationItem) input.get(i);
+                            FailureClassificationItem it = (FailureClassificationItem) input.get(a);
                             tm.addRow()
                                     .cell(TIME, it.getTime0())
-                                    .cell(FAULT_TYPE, result.get(i))
+                                    .cell(FAULT_TYPE, result.get(a))
                                     .cell(MODEL_ID, i)
                                     .cell(TRAIN_ID, model.getMlModelDetail().getTrainDatasetId())
                                     .cell(TEST_ID, listToString(model.getTestDataSetId()))

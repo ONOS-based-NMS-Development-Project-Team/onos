@@ -103,12 +103,12 @@ public class EdgePredictionMessageRequestHandler extends UiMessageHandler {
 
                         ModelLibraryInfo model = ModelLibraryMessageHandler.modelLibraryInfoMap.get(i);
                         for (int a = 0; a < input.size(); a++) {
-                            EdgePredictionItem it = (EdgePredictionItem) input.get(i);
+                            EdgePredictionItem it = (EdgePredictionItem) input.get(a);
                             tm.addRow()
                                     .cell(TIMEPOINT, it.getTimepoint())
                                     .cell(EDGE_ID, arrayToString(it.getEdge_id()))
                                     .cell(MODEL_ID, i)
-                                    .cell(ONE_HOUR_AFTER, result.get(i))
+                                    .cell(ONE_HOUR_AFTER, result.get(a))
                                     .cell(TWO_HOURS_BEFORE, arrayToString(it.getTwo_hours_before()))
                                     .cell(TRAIN_ID, model.getMlModelDetail().getTrainDatasetId())
                                     .cell(TEST_ID, listToString(model.getTestDataSetId()))

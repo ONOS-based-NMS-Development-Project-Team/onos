@@ -66,7 +66,7 @@ public class AreaPredDataSetDataRequestHandler extends TableRequestHandler {
 
     // 查询参数的存储
     private MLAlgorithmType algType;
-    private String isTrain;
+    private Boolean isTrain;
     private int datasetId;
     private int modelId;
 
@@ -112,9 +112,9 @@ public class AreaPredDataSetDataRequestHandler extends TableRequestHandler {
         modelId = st.get("modelId").asInt(-1);
         algType = MLAlgorithmType.FCNNModel.parseStr(at);
         if (datasetType.equals("test")) {
-            isTrain = "false";
+            isTrain = false;
         } else {
-            isTrain = "true";
+            isTrain = true;
         }
         // 推送数据
         TableModel tm = createTableModel();
@@ -141,7 +141,7 @@ public class AreaPredDataSetDataRequestHandler extends TableRequestHandler {
                         .cell(DATA_ID, item.getId())
                         .cell(AREA_ID, item.getArea_id())
                         .cell(DATASET_ID, datasetId)
-                        .cell(DATASET_TYPE, isTrain)
+                        .cell(DATASET_TYPE, getDatasetType(isTrain))
                         .cell(TIDE, item.getTide())
                         .cell(TIMEPOINT, item.getTimepoint())
                         .cell(ONE_HOUR_AFTER, checkNull(item.getOne_hour_after()))

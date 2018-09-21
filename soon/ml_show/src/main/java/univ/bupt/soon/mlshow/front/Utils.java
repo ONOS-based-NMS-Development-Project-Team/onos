@@ -97,13 +97,10 @@ public class Utils {
     public static String arrayToString (double[] input) {
         String s = "";
         for(int i=0;i<input.length;i++){
-            if(i == 1){
-                s = String.valueOf(i);
-            }else {
-                s = s + "," + i;
-            }
+            String a = String.valueOf(input[i]);
+            s = s + ","+ a;
         }
-        return s;
+        return s.substring(1);
     }
 
     public static String setToString (Set<Integer> set) {
@@ -161,10 +158,21 @@ public class Utils {
         }
         else{
             for (String i : map.values()) {
-                s = i + ",";
+                s = s + "," + i;
             }
-            return s;
+            return s.substring(1,s.length());
         }
+    }
+
+    //数据集判断数据集类型
+    public static String getDatasetType (Boolean isTrain) {
+        String s = "";
+        if(isTrain){
+            s = "train";
+        }else {
+            s = "false";
+        }
+        return s;
     }
     // 排序变量
     public static final String FIRST_COL = "firstCol";
@@ -248,7 +256,7 @@ public class Utils {
     public static final String AREA_ID = "areaId";
     public static final String TIDE = "tide";
     public static final String TIMEPOINT = "timePoint";
-    public static final String ONE_HOUR_AFTER = "oneHoursAfter";
+    public static final String ONE_HOUR_AFTER = "oneHourAfter";
     public static final String TWO_HOURS_BEFORE = "twoHoursBefore";
 
     // 边预测

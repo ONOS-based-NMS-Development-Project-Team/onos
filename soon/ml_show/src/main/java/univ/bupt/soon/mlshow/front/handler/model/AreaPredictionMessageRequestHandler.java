@@ -102,13 +102,13 @@ public class AreaPredictionMessageRequestHandler extends UiMessageHandler {
 
                         ModelLibraryInfo model = ModelLibraryMessageHandler.modelLibraryInfoMap.get(i);
                         for (int a = 0; a < input.size(); a++) {
-                            AreaPredictionItem it = (AreaPredictionItem) input.get(i);
+                            AreaPredictionItem it = (AreaPredictionItem) input.get(a);
                             tm.addRow()
                                     .cell(TIMEPOINT, it.getTimepoint())
                                     .cell(AREA_ID, it.getArea_id())
                                     .cell(MODEL_ID, i)
                                     .cell(TIDE, it.getTide())
-                                    .cell(ONE_HOUR_AFTER, result.get(i))
+                                    .cell(ONE_HOUR_AFTER, result.get(a))
                                     .cell(TWO_HOURS_BEFORE, it.getTwo_hours_before())//数组
                                     .cell(TRAIN_ID, model.getMlModelDetail().getTrainDatasetId())
                                     .cell(TEST_ID, listToString(model.getTestDataSetId()))

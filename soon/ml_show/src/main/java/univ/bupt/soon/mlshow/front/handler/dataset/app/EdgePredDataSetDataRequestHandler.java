@@ -65,7 +65,7 @@ public class EdgePredDataSetDataRequestHandler extends TableRequestHandler {
 
     // 查询参数的存储
     private MLAlgorithmType algType;
-    private String isTrain;
+    private Boolean isTrain;
     private int datasetId;
     private int modelId;
 
@@ -111,9 +111,9 @@ public class EdgePredDataSetDataRequestHandler extends TableRequestHandler {
         modelId = st.get("modelId").asInt(-1);
         algType = MLAlgorithmType.FCNNModel.parseStr(at);
         if (datasetType.equals("test")) {
-            isTrain = "false";
+            isTrain = false;
         } else {
-            isTrain = "true";
+            isTrain = true;
         }
         // 推送数据
         TableModel tm = createTableModel();
@@ -140,7 +140,7 @@ public class EdgePredDataSetDataRequestHandler extends TableRequestHandler {
                 tableModel.addRow()
                         .cell(DATA_ID, item.getId())
                         .cell(EDGE_ID, checkNull(item.getEdge_id()))
-                        .cell(DATASET_TYPE, isTrain)
+                        .cell(DATASET_TYPE, getDatasetType(isTrain))
                         .cell(TIMEPOINT, item.getTimepoint())
                         .cell(DATASET_ID, datasetId)
                         .cell(ONE_HOUR_AFTER, checkNull(item.getOne_hour_after()))

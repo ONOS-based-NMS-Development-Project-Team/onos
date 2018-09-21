@@ -130,14 +130,15 @@ public class AlarmPredDataSetDataRequestHandler  extends TableRequestHandler {
     @Override
     protected void populateTable(TableModel tableModel, ObjectNode payload) {
         // TODO 告警预测数据集目前还没得到,因此这里放空
-        List<Item> its = service.updateData(offset, limit);
+        String sql = "SELECT * FROM alarm_prediction WHERE train=" + isTrain + " OFFSET " + offset + " LIMIT " + limit + ";";
+        List<Item> its = service.updateData(sql,AlarmPredictionItem.class);
         for (Item it : its) {
             AlarmPredictionItem tmp = (AlarmPredictionItem) it;
             tableModel.addRow()
-                    .cell(DATA_ID, tmp.getDataid())
+                    .cell(DATA_ID, tmp.getId())
                     .cell(ALARM_HAPPEN, tmp.isAlarm_happen())
-                    .cell(DATASET_ID, "unknown")
-                    .cell(DATASET_TYPE, "unknown")
+                    .cell(DATASET_ID, tmp.getDataid())
+                    .cell(DATASET_TYPE,getDatasetType(isTrain))
                     .cell(INPUT, tmp.getInput());
         }
         if (its.size() != limit) {

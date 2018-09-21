@@ -6,7 +6,7 @@
     'use strict';
 
     //ingected references
-    var $log,$scope,$cookieStore,$interval,$compile,wss,ps,fs,ks,ls,is,ds,mds,tbs,mtbs;
+    var $log,$scope,$interval,$compile,wss,ps,fs,ks,ls,is,ds,mds,tbs,mtbs;
 
     //internal state
     var pStartY,
@@ -100,7 +100,7 @@
             secondDir:'asc'
         },
         defaultAlarmPredDataSetSortParams = {
-            firstCol:'id',
+            firstCol:'dataId',
             firstDir:'asc',
             secondCol:'alarmHappen',
             secondDir:'asc'
@@ -157,14 +157,14 @@
         currentAlarmSearchByText = ['Search By','All Fields','level','alarm source','name','location','frequency','path level'],
         historicalAlarmSearchByValue = ['','$','level','alarmSource','name','type','location','pathLevel'],
         historicalAlarmSearchByText = ['Search By','All Fields','level','alarmSource','name','type','location','path level'],
-        alarmPredDataSetSearchByValue = ['dataId','alarmHappen','inputType','dataSetId','dataSetType','input'],
-        alarmPredDataSetSearchByText = ['id','alarm happen','input type','data set id','data set type','input'],
-        faultClassificationDataSetSearchByValue = ['dataId','faultType','dataSetId','dataSetType','input'],
-        faultClassificationDataSetSearchByText = ['id','fault type','data set id','data set type','input'],
-        areaPredDataSetSearchByValue = ['dataId','edgeId','dataSetId','dataSetType','tide','timePoint','oneHoursAfter','twoHoursBefore'],
-        areaPredDataSetSearchByText = ['id','edge id','data set id','data set type','tide','timePoint','output','input'],
-        edgePredDataSetSearchByValue = ['dataId','areaId','dataSetId','dataSetType','timePoint','oneHoursAfter','twoHoursBefore'],
-        edgePredDataSetSearchByText = ['id','area id','data set id','data set type','timePoint','output','input'],
+        alarmPredDataSetSearchByValue = ['','$','dataId','alarmHappen','inputType','dataSetId','dataSetType','input'],
+        alarmPredDataSetSearchByText = ['Search By','All Fields','id','alarm happen','input type','data set id','data set type','input'],
+        faultClassificationDataSetSearchByValue = ['','$','dataId','faultType','dataSetId','dataSetType','input'],
+        faultClassificationDataSetSearchByText = ['Search By','All Fields','id','fault type','data set id','data set type','input'],
+        areaPredDataSetSearchByValue = ['','$','dataId','edgeId','dataSetId','dataSetType','tide','timePoint','oneHoursAfter','twoHoursBefore'],
+        areaPredDataSetSearchByText = ['Search By','All Fields','id','edge id','data set id','data set type','tide','timePoint','output','input'],
+        edgePredDataSetSearchByValue = ['','$','dataId','areaId','dataSetId','dataSetType','timePoint','oneHoursAfter','twoHoursBefore'],
+        edgePredDataSetSearchByText = ['Search By','All Fields','id','area id','data set id','data set type','timePoint','output','input'],
         modelDetailsPropOrder = ['applicationType','modelId','algorithmType','trainDataSetId','testDataSetId','loss','remainingTime','precision','modelAccuracy'],
         modelDetailsPropOrderText = ['application type','model id','algorithm type','train data set id','test data set id','loss','remaining time','precision in training','model accuracy'],
         appTypeValue = ['','alarm_prediction','failure_classification','business_area_prediction','link_prediction'],
@@ -249,11 +249,11 @@
             d3.select('#'+whichSubPage()).style('display','none');
             d3.select('#faultClassification').style('display','block');
         }
-        if(p === 'Area Predict'){
+        if(p === 'Area Traffic Predict'){
             d3.select('#'+whichSubPage()).style('display','none');
             d3.select('#areaPred').style('display','block');
         }
-        if(p === 'Edge Predict'){
+        if(p === 'Link Traffic Predict'){
             d3.select('#'+whichSubPage()).style('display','none');
             d3.select('#edgePred').style('display','block');
         }
@@ -1115,7 +1115,7 @@
             outputNum = 2;
         }
         if(appType === 'failure_classification'){
-            outputNum = 1;
+            outputNum = 7;
         }
         if(appType === 'business_area_prediction'){
             outputNum = 16;
@@ -1252,10 +1252,10 @@
         if(p === 'Fault Classification'){
             $scope.faultClassification.refreshPromise = $interval($scope.faultClassification.fetchData, refreshInterval);
         }
-        if(p === 'Area Predict'){
+        if(p === 'Area Traffic Predict'){
             $scope.areaPred.refreshPromise = $interval($scope.areaPred.fetchData, refreshInterval);
         }
-        if(p === 'Edge Predict'){
+        if(p === 'Link Traffic Predict'){
             $scope.edgePred.refreshPromise = $interval($scope.edgePred.fetchData, refreshInterval);
         }
         if(p === 'Model Library'){
@@ -1401,6 +1401,11 @@
             $scope.deleteDataSetTip = 'delete this data set';
             $scope.dataSetShowSelectTip = 'select which data set to show';
             $scope.autoRefreshTip = 'toggle auto refresh';
+
+            //sidebar sub content show/hide control
+            $scope.applicationShow = false;
+            $scope.modelShow = false;
+            $scope.dataShow = false;
 
             //data request payloads for each sub page
             $scope.alarmPredModelInfo = {};
@@ -1589,6 +1594,30 @@
             // navigate to default sub page,alarm predict sub page.
             $scope.defaultSubPage = function () {
                 navToSubPage(defaultSubPage);
+            };
+
+            $scope.applicationContentShow = function () {
+                if($scope.applicationShow === true){
+                    $scope.applicationShow = false;
+                }else {
+                    $scope.applicationShow = true;
+                }
+            };
+
+            $scope.modelContentShow = function () {
+                if($scope.modelShow === true){
+                    $scope.modelShow = false;
+                }else {
+                    $scope.modelShow = true;
+                }
+            };
+
+            $scope.dataContentShow = function () {
+                if($scope.dataShow === true){
+                    $scope.dataShow = false;
+                }else {
+                    $scope.dataShow = true;
+                }
             };
 
             // function invoked by control buttons of each sub page
@@ -1827,7 +1856,7 @@
                     $log.debug('Cancel select model to predict alarm');
                 }
                 ds.openDialog(edgePredDialogId,dialogOpts)
-                    .setTitle('edge traffic predict setting')
+                    .setTitle('link traffic predict setting')
                     .addContent(edgePredSettingContent())
                     .addOk(dOK)
                     .addCancel(dCancel)
@@ -1873,8 +1902,8 @@
                     var subpage = $scope.dataSetSelect.appType;
                     $scope.dataSetInfo.setting.algorithmType = $scope.dataSetSelect.algoType;
                     $scope.dataSetInfo.setting.dataSetType = $scope.dataSetSelect.dataSetType;
-                    $scope.dataSetInfo.setting.modelId = $scope.dataSetSelect.modelId;
-                    $scope.dataSetInfo.setting.dataSetId = $scope.dataSetSelect.dataSetId;
+                    $scope.dataSetInfo.setting.modelId = $scope.dataSetSelect.modelId || 0;
+                    $scope.dataSetInfo.setting.dataSetId = $scope.dataSetSelect.dataSetId || 0;
                     if(subpage === 'alarm_prediction'){
                         navToSubPage('Data Set');
                         navToDataSetSubPage('Alarm Predict Data Set');

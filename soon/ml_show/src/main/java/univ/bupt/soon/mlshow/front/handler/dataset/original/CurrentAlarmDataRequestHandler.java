@@ -126,7 +126,7 @@ public class CurrentAlarmDataRequestHandler extends TableRequestHandler {
 //        LEVEL, ALARM_SOURCE, NAME,
 //                FREQUENCY, LOCATION, PATH_LEVEL, FIRST_HAPPEN,
 //                RECENT_HAPPEN, CLEAN_TIME, CONFIRM_TIME, CLEAN, CONFIRM
-        row.cell(LEVEL, item.getLevel())
+        row.cell(LEVEL, levelChToEn(item.getLevel()))
                 .cell(ALARM_SOURCE, item.getAlarm_src())
                 .cell(NAME, item.getName())
                 .cell(FREQUENCY, item.getFrequency())

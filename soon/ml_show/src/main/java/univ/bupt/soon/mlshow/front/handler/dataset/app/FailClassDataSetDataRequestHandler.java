@@ -62,7 +62,7 @@ public class FailClassDataSetDataRequestHandler  extends TableRequestHandler {
 
     // 查询参数的存储
     private MLAlgorithmType algType;
-    private String isTrain;
+    private Boolean isTrain;
     private int datasetId;
     private int modelId;
 
@@ -109,9 +109,9 @@ public class FailClassDataSetDataRequestHandler  extends TableRequestHandler {
         modelId = st.get("modelId").asInt(-1);
         algType = MLAlgorithmType.FCNNModel.parseStr(at);
         if (datasetType.equals("test")) {
-            isTrain = "false";
+            isTrain = false;
         } else {
-            isTrain = "true";
+            isTrain = true;
         }
         // 推送数据
         TableModel tm = createTableModel();
@@ -139,8 +139,8 @@ public class FailClassDataSetDataRequestHandler  extends TableRequestHandler {
                         .cell(DATA_ID, item.getId())
                         .cell(FAULT_TYPE, item.getCls())
                         .cell(DATASET_ID, datasetId)
-                        .cell(DATASET_TYPE, isTrain)
-                        .cell(INPUT_1, item.input_1())
+                        .cell(DATASET_TYPE, getDatasetType(isTrain))
+                        .cell(INPUT_1,item.input_1())
                         .cell(INPUT_2,item.input_2())
                         .cell(INPUT_3,item.input_3())
                         .cell(INPUT_4,item.input_4())
