@@ -835,16 +835,38 @@
 
     //fcnn parameters config form listener
     function inputNumFcnnConfigChange() {
-        $scope.modelFcnnConfigForm.inputNum = this.value;
+            if($scope.modelAddForm.appType === 'alarm_prediction'){
+                $scope.modelFcnnConfigForm.inputNum = this.value || 36;
+            }
+        else if($scope.modelAddForm.appType === 'failure_classification'){
+            $scope.modelFcnnConfigForm.inputNum = this.value || 30;
+        }
+            else if($scope.modelAddForm.appType === 'business_area_prediction'){
+                $scope.modelFcnnConfigForm.inputNum = this.value || 31;
+            }
+            else if($scope.modelAddForm.appType === 'link_prediction'){
+                $scope.modelFcnnConfigForm.inputNum = this.value || 45;
+            }
     }
     function outputNumFcnnConfigChange() {
-        $scope.modelFcnnConfigForm.outputNum = this.value;
+        if($scope.modelAddForm.appType === 'alarm_prediction'){
+            $scope.modelFcnnConfigForm.outputNum = this.value || 2;
+        }
+        else if($scope.modelAddForm.appType === 'failure_classification'){
+            $scope.modelFcnnConfigForm.outputNum = this.value || 8;
+        }
+        else if($scope.modelAddForm.appType === 'business_area_prediction'){
+            $scope.modelFcnnConfigForm.outputNum = this.value || 16;
+        }
+        else if($scope.modelAddForm.appType === 'link_prediction'){
+            $scope.modelFcnnConfigForm.outputNum = this.value || 15;
+        }
     }
     function hiddenNumFcnnConfigChange() {
         var num,node,tr;
         node = d3.select('#modelLibrary-fcnn-dialog-form table');
         d3.selectAll('#hiddenNeuronNumFcnnConfig').remove();
-        $scope.modelFcnnConfigForm.hiddenNum = this.value;
+        $scope.modelFcnnConfigForm.hiddenNum = this.value || 3;
         num = $scope.modelFcnnConfigForm.hiddenNum;
 
         //hidden layer neuron number form show according to the number of hidden layers configured above
@@ -855,34 +877,34 @@
         }
     }
     function activationFunctionFcnnChange() {
-        $scope.modelFcnnConfigForm.activationFunction = this.options[this.selectedIndex].value;
+        $scope.modelFcnnConfigForm.activationFunction = this.options[this.selectedIndex].value || 'relu';
     }
     function weightInitFcnnChange() {
-        $scope.modelFcnnConfigForm.weightInit = this.options[this.selectedIndex].value;
+        $scope.modelFcnnConfigForm.weightInit = this.options[this.selectedIndex].value || 'random';
     }
     function biasInitFcnnChange() {
-        $scope.modelFcnnConfigForm.biasInit = this.options[this.selectedIndex].value;
+        $scope.modelFcnnConfigForm.biasInit = this.options[this.selectedIndex].value || 'random';
     }
     function lossFunctionFcnnChange() {
-        $scope.modelFcnnConfigForm.lossFunction = this.options[this.selectedIndex].value;
+        $scope.modelFcnnConfigForm.lossFunction = this.options[this.selectedIndex].value || 'mseloss';
     }
     function batchSizeFcnnChange() {
-        $scope.modelFcnnConfigForm.batchSize = this.value;
+        $scope.modelFcnnConfigForm.batchSize = this.value  || 5;
     }
     function epochFcnnChange() {
-        $scope.modelFcnnConfigForm.epoch = this.value;
+        $scope.modelFcnnConfigForm.epoch = this.value || 3001;
     }
     function optimizerFcnnChange() {
-        $scope.modelFcnnConfigForm.optimizer = this.options[this.selectedIndex].value;
+        $scope.modelFcnnConfigForm.optimizer = this.options[this.selectedIndex].value || 'sgd';
     }
     function learningRateFcnnChange() {
-        $scope.modelFcnnConfigForm.learningRate = this.value;
+        $scope.modelFcnnConfigForm.learningRate = this.value || 0.01;
     }
     function lrAdjustFcnnChange() {
-        $scope.modelFcnnConfigForm.lrAdjust = this.options[this.selectedIndex].value;
+        $scope.modelFcnnConfigForm.lrAdjust = this.options[this.selectedIndex].value || 'linear';
     }
     function dropoutFcnnChange() {
-        $scope.modelFcnnConfigForm.dropout = this.value;
+        $scope.modelFcnnConfigForm.dropout = this.value || 0;
     }
 
     function getAvailableTrain (itemId) {
@@ -989,7 +1011,7 @@
                 value = nodeList[i].value;
                 valueList.push(value);
             }
-            $scope.modelLibraryInfo.algorithmParams.hiddenLayer = valueList;
+            $scope.modelLibraryInfo.algorithmParams.hiddenLayer = valueList || [90,60,30];
             modelAddPanel.hide();
         }
         function dCancel(){
@@ -1115,7 +1137,7 @@
             outputNum = 2;
         }
         if(appType === 'failure_classification'){
-            outputNum = 7;
+            outputNum = 8;
         }
         if(appType === 'business_area_prediction'){
             outputNum = 16;
