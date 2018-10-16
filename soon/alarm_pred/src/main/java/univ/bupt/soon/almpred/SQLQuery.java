@@ -22,7 +22,7 @@ public class SQLQuery {
     private Connection conn = null;
     private Statement stmt = null;
     private final String JDBC_DRIVER = "org.postgresql.Driver";
-    private final String DB_URL = "jdbc:postgresql://10.108.69.165:5432/ecoc2018";
+    private final String DB_URL = "jdbc:postgresql://localhost:5432/ecoc2018";
     private final String USER = "postgres";
     private final String PASS = "bupt";
 

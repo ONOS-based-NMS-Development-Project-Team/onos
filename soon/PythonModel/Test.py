@@ -1,6 +1,8 @@
 import json
 import numpy as np
 import subprocess
+import fcntl
+import struct
 import os
 from ReadFile import read_parameters
 from NeurosNetwork import NeuroNetwork
@@ -117,10 +119,14 @@ def is_json(myjson):
     return True
 
 
+def get_ip_address():
+    try:
+        s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    finally:
+        s.close()
+    return ip
+
 if __name__ == '__main__':
-    list =[1,2,3]
-    list1 = tf.one_hot(indices=list,depth=4,axis=1)
-    sess = tf.Session()
-    print(list)
-    print(np.mat(sess.run(list1)))
-    print(sess.run(list1))
+    print(get_ip_address())

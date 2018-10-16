@@ -240,7 +240,7 @@ if __name__ == '__main__':
     # global i
     j = 0
     global_networks = threading.local()
-    start_server = websockets.serve(ws_handler=handler, host='10.108.70.177', port=9999, max_size=100*1024*1024)
+    start_server = websockets.serve(ws_handler=handler, host='localhost', port=9999, max_size=100*1024*1024)
     print("开始监听。。。。")
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()

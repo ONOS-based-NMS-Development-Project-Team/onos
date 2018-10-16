@@ -73,7 +73,10 @@ public class SoonWebsocket implements WebSocket.OnTextMessage, WebSocket.OnContr
                 case URL_NOTIFY:
                     // 得到TensorBoard的URL
                     // 通知URL获取
-                    URI uri = URI.create(content);
+                    String c = content.replace("<",".");
+                    c = c.replace(">", ":");
+                    log.info(c);
+                    URI uri = URI.create("http://"+c);
                     pcb.ResultUrl(msgId, uri);
                     break;
                 case PROCESS_NOTIFY:
