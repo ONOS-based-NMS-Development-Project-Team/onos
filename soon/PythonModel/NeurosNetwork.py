@@ -187,7 +187,7 @@ class NeuroNetwork(object):
         thread = threading.Thread(target=subprocess.getoutput, args=(cmd,))
         thread.start()
         # subprocess.getoutput(cmd)
-        rtn = str(self.get_ip_address()).replace(".","<") + '>' + str(i)
+        rtn = str(self.get_ip_address()).replace(".", "<") + '>' + str(i)
         print("return ip address")
         print(rtn)
         return rtn
@@ -195,7 +195,7 @@ class NeuroNetwork(object):
 
     # reset graph
     def reset(self):
-        # self.sess.close()
+        self.sess.close()
         return tf.reset_default_graph()
 
 

@@ -580,7 +580,7 @@ public class ModelLibraryMessageHandler extends UiMessageHandler{
 
         @Override
         public void ResultUrl(int msgId, URI uri) {
-            modelLibraryInfoMap.get(this.modelId).setModelLink("https://"+uri.toASCIIString());
+            modelLibraryInfoMap.get(this.modelId).setModelLink(uri.toASCIIString());
              //alertHandler.urlAlert(this.modelId,uri);
         }
 

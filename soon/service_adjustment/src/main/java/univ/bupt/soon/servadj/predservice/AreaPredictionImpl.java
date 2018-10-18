@@ -82,7 +82,7 @@ public class AreaPredictionImpl extends ModelControlServiceAbstract {
         SegmentForDataset sfd = new SegmentForDataset();
         sfd.setInput(originDataInp);
         sfd.setInput(originDataOup);
-        foregroundCallback.originData(sfd);
+        //foregroundCallback.originData(sfd);
 
         // 两次传输,一次作为训练集,一次作为测试集
         segment.setDatasetId(trainDatasetId);

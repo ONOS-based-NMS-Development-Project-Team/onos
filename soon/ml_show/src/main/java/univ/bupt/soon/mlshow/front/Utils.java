@@ -359,7 +359,8 @@ public class Utils {
 
     public static String waveParse(String d){
         String result = "";
-        String[] ds = d.split(",");
+        String str = d.substring(1,d.length()-1);
+        String[] ds = str.split(",");
         for (int i=0;i<ds.length;i++) {
             double value = Double.valueOf(ds[i]);
             value = value * 80;
