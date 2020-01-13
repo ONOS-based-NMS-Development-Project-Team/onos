@@ -66,7 +66,8 @@
 .sub-content-name-container{
     padding: 3px 2px;
 }
-.sub-content-container {}
+.sub-content-container {
+}
 .soon-left-item-content-container a:active{
     color: #0052CC;
 }
@@ -115,7 +116,7 @@
 }
 #alarmPred,#faultClassification,#areaPred,#edgePred,#dataSet,
 #alarmPredDataSet,#faultClassificationDataSet,#areaPredDataSet,
-#edgePredDataSet,#rawData,#historicalAlarm,#currentAlarm,
+#edgePredDataSet,#rawData,#historicalAlarm,#currentAlarm,#KnowledgeGraph,
 #performance{
     display: none;
 }

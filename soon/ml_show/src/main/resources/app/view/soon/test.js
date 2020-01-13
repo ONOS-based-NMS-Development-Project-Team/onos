@@ -2,6 +2,8 @@
  ONOS GUI -- SOON VIEW MODULE
  */
 
+
+
 (function(){
     'use strict';
 
@@ -268,6 +270,11 @@
         if(p === 'Data Set'){
             d3.select('#'+whichSubPage()).style('display','none');
             d3.select('#dataSet').style('display','block');
+        }
+        //！ 点击二级菜单时，在页面右侧显示id为KnowledgeGraph的元素的内容
+        if(p === 'Knowledge Graph'){
+            d3.select('#'+whichSubPage()).style('display','none');
+            d3.select('#KnowledgeGraph').style('display','block');
         }
         startRefresh(p);
         $log.log('navigate to '+p+' sub page');
@@ -1304,6 +1311,7 @@
         if(p === 'Performance'){
             $scope.performance.refreshPromise = $interval($scope.performance.fetchData, refreshInterval);
         }
+        //！ 需要给Knowledge Graph一项添加条件语句吗
     }
 
     function stopRefresh(p){
@@ -1369,6 +1377,7 @@
                 $scope.edgePredDataSet.refreshPromise = null;
             }
         }
+        //！ 需要给Knowledge Graph添加条件语句吗
 
     }
 
@@ -1428,6 +1437,7 @@
             $scope.applicationShow = false;
             $scope.modelShow = false;
             $scope.dataShow = false;
+            $scope.graphShow = false;
 
             //data request payloads for each sub page
             $scope.alarmPredModelInfo = {};
@@ -1462,6 +1472,7 @@
             $scope.historicalAlarm = {};
             $scope.currentAlarm = {};
             $scope.performance = {};
+            //！ 需要给Knowledge Graph一项创建一个对象吗
 
             $scope.modelLibrary.tableData = [];
             $scope.modelLibrary.changedData = [];
@@ -1641,6 +1652,14 @@
                     $scope.dataShow = true;
                 }
             };
+            //！ 显示/隐藏子菜单
+            $scope.graphContentShow = function () {
+                if($scope.graphShow === true){
+                    $scope.graphShow = false;
+                }else {
+                    $scope.graphShow = true;
+                }
+            };
 
             // function invoked by control buttons of each sub page
                     //application sub page functions
@@ -1805,6 +1824,222 @@
                 modelDetailsPanel.show();
             };
 
+            $scope.ShowSimpleKG = function () {
+                // 基于准备好的dom，初始化echarts实例
+                var myChart = echarts.init(document.getElementById('main'));
+                var categories = [];
+                for (var i = 0; i < 2; i++) {
+                    categories[i] = {
+                        name: '类目' + i
+                    };
+                }
+                var option = {
+                    // 图的标题
+                    title: {
+                        text: 'ECharts 关系图'
+                    },
+                    // 提示框的配置
+                    tooltip: {
+                        formatter: function (x) {
+                            return x.data.des;
+                        }
+                    },
+                    // 工具箱
+                    toolbox: {
+                        // 显示工具箱
+                        show: true,
+                        feature: {
+                            mark: {
+                                show: true
+                            },
+                            // 还原
+                            restore: {
+                                show: true
+                            },
+                            // 保存为图片
+                            saveAsImage: {
+                                show: true
+                            }
+                        }
+                    },
+                    legend: [{
+                        // selectedMode: 'single',
+                        data: categories.map(function (a) {
+                            return a.name;
+                        })
+                    }],
+                    series: [{
+                        type: 'graph', // 类型:关系图
+                        layout: 'force', //图的布局，类型为力导图
+                        symbolSize: 40, // 调整节点的大小
+                        roam: true, // 是否开启鼠标缩放和平移漫游。默认不开启。如果只想要开启缩放或者平移,可以设置成 'scale' 或者 'move'。设置成 true 为都开启
+                        edgeSymbol: ['circle', 'arrow'],
+                        edgeSymbolSize: [2, 10],
+                        edgeLabel: {
+                            normal: {
+                                textStyle: {
+                                    fontSize: 20
+                                }
+                            }
+                        },
+                        force: {
+                            repulsion: 2500,
+                            edgeLength: [10, 50]
+                        },
+                        draggable: true,
+                        lineStyle: {
+                            normal: {
+                                width: 2,
+                                color: '#4b565b',
+                            }
+                        },
+                        edgeLabel: {
+                            normal: {
+                                show: true,
+                                formatter: function (x) {
+                                    return x.data.name;
+                                }
+                            }
+                        },
+                        label: {
+                            normal: {
+                                show: true,
+                                textStyle: {}
+                            }
+                        },
+
+                        // 数据
+                        data: [{
+                            name: 'node01',
+                            des: 'nodedes01',
+                            symbolSize: 70,
+                            category: 0,
+                        }, {
+                            name: 'node02',
+                            des: 'nodedes02',
+                            symbolSize: 50,
+                            category: 1,
+                        }, {
+                            name: 'node03',
+                            des: 'nodedes3',
+                            symbolSize: 50,
+                            category: 1,
+                        }, {
+                            name: 'node04',
+                            des: 'nodedes04',
+                            symbolSize: 50,
+                            category: 1,
+                        }, {
+                            name: 'node05',
+                            des: 'nodedes05',
+                            symbolSize: 50,
+                            category: 1,
+                        }],
+                        links: [{
+                            source: 'node01',
+                            target: 'node02',
+                            name: 'link01',
+                            des: 'link01des'
+                        }, {
+                            source: 'node01',
+                            target: 'node03',
+                            name: 'link02',
+                            des: 'link02des'
+                        }, {
+                            source: 'node01',
+                            target: 'node04',
+                            name: 'link03',
+                            des: 'link03des'
+                        }, {
+                            source: 'node01',
+                            target: 'node05',
+                            name: 'link04',
+                            des: 'link05des'
+                        }],
+                        categories: categories,
+                    }]
+                };
+                myChart.setOption(option);
+            };
+
+            //！ 添加一个复杂的知识图谱
+            $scope.ShowComplexKG = function () {
+                var myChart = echarts.init(document.getElementById('main'));
+                var option;
+                myChart.showLoading();
+                $.get('http://localhost:8181/onos/ui/les-miserables.gexf', function(xml) {
+                    myChart.hideLoading();
+
+                    var graph = echarts.dataTool.gexf.parse(xml);
+                    var categories = [];
+                    for(var i = 0; i < 9; i++) {
+                        categories[i] = {
+                            name: '类目' + i
+                        };
+                    }
+                    graph.nodes.forEach(function(node) {
+                        node.itemStyle = null;
+                        node.value = node.symbolSize;
+                        node.symbolSize /= 1.5;
+                        node.label = {
+                            normal: {
+                                show: node.symbolSize > 30
+                            }
+                        };
+                        node.category = node.attributes.modularity_class;
+                    });
+                    option = {
+                        title: {
+                            text: 'Les Miserables',
+                            subtext: 'Default layout',
+                            top: 'bottom',
+                            left: 'right'
+                        },
+                        tooltip: {},
+                        legend: [{
+                            // selectedMode: 'single',
+                            data: categories.map(function(a) {
+                                return a.name;
+                            })
+                        }],
+                        animationDuration: 1500,
+                        animationEasingUpdate: 'quinticInOut',
+                        series: [{
+                            name: 'Les Miserables',
+                            type: 'graph',
+                            layout: 'none',
+                            data: graph.nodes,
+                            links: graph.links,
+                            categories: categories,
+                            roam: true,
+                            focusNodeAdjacency: true,
+                            itemStyle: {
+                                normal: {
+                                    borderColor: '#fff',
+                                    borderWidth: 1,
+                                    shadowBlur: 10,
+                                    shadowColor: 'rgba(0, 0, 0, 0.3)'
+                                }
+                            },
+                            label: {
+                                position: 'right',
+                                formatter: '{b}'
+                            },
+                            lineStyle: {
+                                color: 'source',
+                                curveness: 0.3
+                            },
+                            emphasis: {
+                                lineStyle: {
+                                    width: 10
+                                }
+                            }
+                        }]
+                    };
+
+                    myChart.setOption(option);
+                }, 'xml');
+            }
             $scope.alarmPredSetting = function () {
                 function dOK(){
                     $scope.alarmPredModelInfo.modelId = $scope.alarmPredSettingForm.modelId;

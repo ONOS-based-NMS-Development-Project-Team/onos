@@ -114,6 +114,29 @@
                         </ul>
                     </div>
                 </div>
+                <!--！  添加侧边栏菜单以及子菜单  -->
+                <div class="soon-left-sub-content">
+                    <div class="sub-content-name-container">
+                        <div class="graph-name">
+                            <i class="fas fa-angle-double-down"></i>
+                            <a ng-click="graphContentShow()">
+                                Graph
+                            </a>
+                        </div>
+                    </div>
+                    <div class="sub-content-container" ng-show="graphShow">
+                        <ul >
+                            <li>
+                                <div class="soon-left-content-item-container">
+                                    <i class="fas fa-angle-right"></i>
+                                    <a ng-click="navTo($event)">
+                                        Knowledge Graph
+                                    </a>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
                 <!--<ul class="soon-left-content" id="soonContent">-->
                     <!--<li>-->
                         <!--<div class="soon-left-content-item-container">-->
@@ -1235,6 +1258,41 @@
                         </table>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div class="knowledge-graph" id="KnowledgeGraph">
+            <div class="tabular-header">
+                <h2>
+                    Knowledge Graph
+                </h2>
+                <div class="ctrl-btns">
+                    <div class="separator"></div>
+                    <div class="btn-container">
+                        <div class="ShowSimpleKG"
+                             tooltip tt-msg="Show the Simple KG"
+                             ng-click="ShowSimpleKG()">
+                            <i class="fas fa-coins">
+                                <div>
+                                    Simple KG
+                                </div>
+                            </i>
+                        </div>
+                    </div>
+                    <div class="btn-container">
+                        <div class="ShowComplexKG"
+                             tooltip tt-msg="Show the ShowComplex KG"
+                             ng-click="ShowComplexKG()">
+                            <i class="fas fa-coins">
+                                <div>
+                                    Complex KG
+                                </div>
+                            </i>
+                        </div>
+                    </div>
+                </div>
+                <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+                <div id="main" style="width:1000px;height:800px"></div>
+
             </div>
         </div>
     </div>
