@@ -207,6 +207,9 @@
         if(d3.select('#dataSet').style('display') === 'block'){
             subPageLocate = 'dataSet';
         }
+        if(d3.select('#KnowledgeGraph').style('display') === 'block'){
+            subPageLocate = 'KnowledgeGraph';
+        }
         return subPageLocate;
     }
 
@@ -1835,9 +1838,9 @@
                 }
                 var option = {
                     // 图的标题
-                    title: {
+                    /*title: {
                         text: 'ECharts 关系图'
-                    },
+                    },*/
                     // 提示框的配置
                     tooltip: {
                         formatter: function (x) {
@@ -1847,7 +1850,7 @@
                     // 工具箱
                     toolbox: {
                         // 显示工具箱
-                        show: true,
+                        show: false,
                         feature: {
                             mark: {
                                 show: true
