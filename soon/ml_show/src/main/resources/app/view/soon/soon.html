@@ -1270,29 +1270,35 @@
 
                     <div class="btn-container">
                         <div class="ShowSimpleKG"
-                             tooltip tt-msg="Show the Simple KG"
+                             tooltip tt-msg="showSimpleKGTip"
                              ng-click="ShowSimpleKG()">
                             <i class="fas fa-coins">
                                 <div>
-                                    Simple KG
+                                    Graph Style 1
                                 </div>
                             </i>
                         </div>
                     </div>
                     <div class="btn-container">
                         <div class="ShowComplexKG"
-                             tooltip tt-msg="Show the Complex KG"
+                             tooltip tt-msg="showComplexKGTip"
                              ng-click="ShowComplexKG()">
                             <i class="fas fa-coins">
                                 <div>
-                                    Complex KG
+                                    Graph Style 2
                                 </div>
                             </i>
                         </div>
                     </div>
                 </div>
                 <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
-                <div id="main" style="width:1000px;height:800px"></div>
+                <div class="knowledge-graph-subpage" id="graphstyle1">
+                    <div id="main1" style="width:1000px;height:800px"></div>
+                </div>
+
+                <div class="knowledge-graph-subpage" id="graphstyle2">
+                    <div id="main2" style="width:1000px;height:800px"></div>
+                </div>
 
             </div>
         </div>

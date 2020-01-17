@@ -230,6 +230,7 @@
         return subPageLocate;
     }
 
+
     function whichRawDataSubPage(){
         var subPageLocate;
         if(d3.select('#historicalAlarm').style('display') === 'block'){
@@ -240,6 +241,17 @@
         }
         if(d3.select('#performance').style('display') === 'block'){
             subPageLocate = 'performance';
+        }
+        return subPageLocate;
+    }
+
+    function whichKnowledgeGraphSubPage(){
+        var subPageLocate;
+        if(d3.select('#graphstyle1').style('display') === 'block'){
+            subPageLocate = 'graphstyle1';
+        }
+        if(d3.select('#graphstyle2').style('display') === 'block'){
+            subPageLocate = 'graphstyle2';
         }
         return subPageLocate;
     }
@@ -311,6 +323,17 @@
         }
         startRefresh(p);
         $log.log('navigate to raw data '+p+'sub page');
+    }
+
+    function navToKnowledgeGraphSubPage(p){
+        if(p === 'Graph Style 1'){
+            d3.select('#'+whichKnowledgeGraphSubPage()).style('display','none');
+            d3.select('#graphstyle1').style('display','block');
+        }
+        if(p === 'Graph Style 2'){
+            d3.select('#'+whichKnowledgeGraphSubPage()).style('display','none');
+            d3.select('#graphstyle2').style('display','block');
+        }
     }
 
     function navToDataSetSubPage(p){
@@ -1435,6 +1458,8 @@
             $scope.deleteDataSetTip = 'delete this data set';
             $scope.dataSetShowSelectTip = 'select which data set to show';
             $scope.autoRefreshTip = 'toggle auto refresh';
+            $scope.showSimpleKGTip = 'show graph style 1';
+            $scope.showComplexKGTip = 'show graph style 2';
 
             //sidebar sub content show/hide control
             $scope.applicationShow = false;
@@ -1828,15 +1853,18 @@
             };
 
             $scope.ShowSimpleKG = function () {
+                navToSubPage('Knowledge Graph');
+                navToKnowledgeGraphSubPage('Graph Style 1')
                 // 基于准备好的dom，初始化echarts实例
-                var myChart = echarts.init(document.getElementById('main'));
+                var myChart = echarts.init(document.getElementById('main1'));
                 var categories = [];
+                var option_simple
                 for (var i = 0; i < 2; i++) {
                     categories[i] = {
                         name: '类目' + i
                     };
                 }
-                var option = {
+                var option_simple = {
                     // 图的标题
                     /*title: {
                         text: 'ECharts 关系图'
@@ -1962,13 +1990,15 @@
                         categories: categories,
                     }]
                 };
-                myChart.setOption(option);
+                myChart.setOption(option_simple);
             };
 
             //！ 添加一个复杂的知识图谱
             $scope.ShowComplexKG = function () {
-                var myChart = echarts.init(document.getElementById('main'));
-                var option;
+                navToSubPage('Knowledge Graph');
+                navToKnowledgeGraphSubPage('Graph Style 2')
+                var myChart = echarts.init(document.getElementById('main2'));
+                var option_complex;
                 myChart.showLoading();
                 $.get('http://localhost:8181/onos/ui/les-miserables.gexf', function(xml) {
                     myChart.hideLoading();
@@ -1991,7 +2021,7 @@
                         };
                         node.category = node.attributes.modularity_class;
                     });
-                    option = {
+                    option_complex = {
                         title: {
                             text: 'Les Miserables',
                             subtext: 'Default layout',
@@ -2040,7 +2070,7 @@
                         }]
                     };
 
-                    myChart.setOption(option);
+                    myChart.setOption(option_complex);
                 }, 'xml');
             }
             $scope.alarmPredSetting = function () {
