@@ -120,7 +120,7 @@
                         <div class="graph-name">
                             <i class="fas fa-angle-double-down"></i>
                             <a ng-click="graphContentShow()">
-                                Graph
+                                Knowledge Graph
                             </a>
                         </div>
                     </div>
@@ -130,10 +130,35 @@
                                 <div class="soon-left-content-item-container">
                                     <i class="fas fa-angle-right"></i>
                                     <a ng-click="navTo($event)">
-                                        Knowledge Graph
+                                        Sample Raw Semi-structured Data
                                     </a>
                                 </div>
                             </li>
+                            <li>
+                                <div class="soon-left-content-item-container">
+                                    <i class="fas fa-angle-right"></i>
+                                    <a ng-click="navTo($event)">
+                                        Entity Selection
+                                    </a>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="soon-left-content-item-container">
+                                    <i class="fas fa-angle-right"></i>
+                                    <a ng-click="navTo($event)">
+                                        Knowledge Extraction
+                                    </a>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="soon-left-content-item-container">
+                                    <i class="fas fa-angle-right"></i>
+                                    <a ng-click="navTo($event)">
+                                        Alarm Knowledge Graph
+                                    </a>
+                                </div>
+                            </li>
+                            
                         </ul>
                     </div>
                 </div>
@@ -1260,14 +1285,315 @@
                 </div>
             </div>
         </div>
+        <div class="sample-data" id="SampleData">
+            <h1 class="topictitle1">MS_RDI</h1>
+            <div>
+                <div class="alarmdesc">
+                    
+                    <div class="alarmdescbody">
+                        <h3 class="sectiontitle">Alarm explanation</h3>
+                        <p>The MS_RDI alarm indicates that the last three digits of K2 
+                            in the signal received by the line are "110", and the remote multiplex section reception fails.</p>
+                    </div>
+                </div>
+                
+                <div class="alarmattrs">
+                    <h3 class="sectiontitle">Alarm attributes</h3>
+                    <div class="alarmattrsbody">
+                        <table cellpadding="4" cellspacing="0" summary="" border="1" class="simpletableborder">
+                            <tr>
+                                <th valign="bottom" align="left" id="mcps1.2.2.1.1">Alarm level</th>
+                                <th valign="bottom" align="left" id="mcps1.2.2.1.2">Alarm type</th>
+                            </tr>
+                            <tr>
+                                <td valign="top" headers="mcps1.2.2.1.1"><p>secondary</p>
+                                </td>
+                                <td valign="top" headers="mcps1.2.2.1.2"><p>communication</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="alarmparameters">
+                    <h3 class="sectiontitle">Alarm parameters</h3>
+                    <div class="alarmparametersbody">
+                        <p>none</p>
+                    </div>
+                </div>
+                    
+                <div class="impactonsystem">
+                    <h3 class="sectiontitle">Impact on the system</h3>
+                    <div class="impactonsystembody">
+                        <p>If this alarm is generated, it indicates that the last three digits of K2 in 
+                            the signal received on the optical port of the circuit board are “110”. unavailable.</p>
+                    </div>
+                </div>
+                    
+                <div class="possiblecauses">
+                    <h3 class="sectiontitle">Possible Causes</h3>
+                    <div class="alarmpossbody">
+                        <p>The possible reasons for the alarm MS_RDI are as follows:</p>
+                    <ul><li><p>The peer station received the R_LOS/R_LOC/R_LOF/MS_AIS/B2_EXC alarm.</p>
+                    </li><li>The receiving part of the peer station is faulty.</li><li>This site sends a partial failure.</li></ul>
+                    </div>
+                </div>
+            </div>
+        
+            <!--<div class="tabular-header">
+                <h1>
+                    Sample of an Alarm Knowledge Manual for Commercial Optical Network Devices
+                </h1>
+                <h2>
+                    The manual document of alarm <b>R_LOS</b>
+                </h2>
+            </div>
+            <div class="demo-body">
+                <img src="app/view/soon/rlos.png" width=100% height=100%>
+            </div>-->
+            
+        </div>
+        <div class="entity-selection" id="EntitySelection">
+            <div class="tabular-header">
+                <h2>
+                    Entity Selection
+                </h2>
+                <div class="search">
+                    <input type="text" ng-model="queryTxt" placeholder="Search"/>
+                    <select ng-model="queryBy">
+                        <option value="" disabled>Search By</option>
+                        <option value="$">All Fields</option>
+                        <option value="alarmName">alarm name</option>
+                        <option value="alarmType">alarm type</option>
+                        <option value="alarmLevel">alarm level</option>
+                    </select>
+                </div>
+                <div class="ctrl-btns">
+                    <div class="refresh" ng-class="{active: autoRefresh}"
+                         icon icon-size="42" icon-id="refresh"
+                         tooltip tt-msg="autoRefreshTip"
+                         ng-click="toggleRefresh()"></div>
+
+                    <div class="separator"></div>
+                    
+                    <div>
+                        <input id="fileUpload" type="file"/>
+                        <button ng-click="importfile()">Upload</button>
+                    </div> 
+                </div>
+            </div>
+
+            <div class="entity-nodata-subpage" id="entity-nodata"> 
+                <div class="summary-list" soon-table-resize>
+                    <div class="table-header" soon-sortable-header>
+                        <table class="demo1" id="demo">
+                            <tr>
+                                <td>alarm</td>
+                                <td>explaination</td>
+                                <td>type</td>
+                                <td>level</td>
+                                <td>impact</td>
+                                <td>causes</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="table-body">
+                        <table class="demo1">
+                            <tr ng-if="nodata" class="no-data">
+                                <td colspan="6">
+                                    {{alarm.annots}}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="entity-data-subpage" id="entity-data"> 
+                <div class="summary-list" soon-table-resize>
+                    <div class="table-header" soon-sortable-header>
+                        <table class="demo1" id="demo">
+                            <tr>
+                                <td>alarm</td>
+                                <td>explaination</td>
+                                <td>type</td>
+                                <td>level</td>
+                                <td>impact</td>
+                                <td>causes</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="table-body">
+                        <table class="demo1">
+                            <tr><td ng-repeat="x in alarm1">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm2">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm3">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm4">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm5">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm6">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm7">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm8">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm9">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm10">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm11">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm12">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm13">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm14">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm15">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm16">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm17">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm18">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in alarm19">{{x}}</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>      
+        <div class="knowledge-extraction" id="KnowledgeExtraction">
+            <div class="tabular-header">
+                <h2>
+                    Knowledge Extraction
+                </h2>
+                <div class="search">
+                    <input type="text" ng-model="queryTxt" placeholder="Search"/>
+                    <select ng-model="queryBy">
+                        <option value="" disabled>Search By</option>
+                        <option value="$">All Fields</option>
+                        <option value="datasetTtpe">dataset type</option>
+                        <option value="datasetID">dataset id</option>
+                        <option value="entityName">entity</option>
+                        <option value="relationName">relation</option>
+                    </select>
+                </div>
+                <div class="ctrl-btns">
+                    <div class="refresh" ng-class="{active: autoRefresh}"
+                         icon icon-size="42" icon-id="refresh"
+                         tooltip tt-msg="autoRefreshTip"
+                         ng-click="toggleRefresh()"></div>
+
+                    <div class="separator"></div>
+                    
+                    <div icon icon-size="42" icon-id="play"
+                         tooltip tt-msg="knowledgeextractionStartTip"
+                         ng-click="startExtraction()">
+                    </div>
+                    <div icon icon-size="42" icon-id="garbage"
+                         tooltip tt-msg="entitydatasetDeleteTip"
+                         ng-click="deleteEntitydataset()">
+                    </div>
+                    <div icon icon-size="42" icon-id="plus"
+                         tooltip tt-msg="entityAddTip()">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="entity-nodata-subpage" id="entitydataset-nodata"> 
+                <div class="summary-list" soon-table-resize>
+                    <div class="table-header" soon-sortable-header>
+                        <table class="demo1" id="demo">
+                            <tr>
+                                <td>dataset type</td>
+                                <td>dataset id</td>
+                                <td>number of entities</td>
+                                <td>size of dataset</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="table-body">
+                        <table class="demo1">
+                            <tr ng-if="nodata" class="no-data">
+                                <td colspan="4">
+                                    no alarm entity dataset found
+                                </td>
+                            </tr>
+
+                            <tr ng-if="!nodata">
+                                <td>alarm entity</td>
+                                <td>1</td>
+                                <td>19</td>
+                                <td>342KB</td>
+                            </tr>
+
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="entity-data-subpage" id="entitydataset-data"> 
+                <div class="summary-list" soon-table-resize>
+                    <div class="table-header" soon-sortable-header>
+                        <table class="demo1" id="demo">
+                            <tr>
+                                <td>source entity</td>
+                                <td>relation</td>
+                                <td>target entity</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="table-body">
+                        <table class="demo1">
+                            <tr><td ng-repeat="x in triple1">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple2">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple3">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple4">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple5">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple6">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple7">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple8">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple9">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple10">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple11">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple12">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple13">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple14">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple15">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple16">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple17">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple18">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple19">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple20">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple21">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple22">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple23">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple24">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple25">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple26">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple27">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple28">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple29">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple30">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple31">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple32">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple33">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple34">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple35">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple36">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple37">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple38">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple39">{{x}}</td></tr>
+                            <tr><td ng-repeat="x in triple40">{{x}}</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
         <div class="knowledge-graph" id="KnowledgeGraph">
             <div class="tabular-header">
                 <h2>
                     Knowledge Graph
                 </h2>
                 <div class="ctrl-btns">
+                    <div class="refresh" ng-class="{active: autoRefresh}"
+                         icon icon-size="42" icon-id="refresh"
+                         tooltip tt-msg="autoRefreshTip"
+                         ng-click="toggleRefresh()">
+                    </div>
                     <div class="separator"></div>
-
                     <div class="btn-container">
                         <div class="ShowSimpleKG"
                              tooltip tt-msg="showSimpleKGTip"
@@ -1291,16 +1617,18 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="demo-body">
                 <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
                 <div class="knowledge-graph-subpage" id="graphstyle1">
-                    <div id="main1" style="width:1000px;height:800px"></div>
+                    <div id="main1" style="width:1500px;height:800px"></div>
                 </div>
 
                 <div class="knowledge-graph-subpage" id="graphstyle2">
-                    <div id="main2" style="width:1000px;height:800px"></div>
+                    <div id="main2" style="width:1500px;height:800px"></div>
                 </div>
-
             </div>
+            
         </div>
     </div>
 </div>

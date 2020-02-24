@@ -184,6 +184,9 @@
         if(id === 'edgePredDataSet') {
             tableScope = scope.edgePredDataSet;
         }
+        if(id == 'KnowledgeExtraction'){
+            tableScope = scope.KnowledgeExtraction;
+        }
         return tableScope;
     }
 

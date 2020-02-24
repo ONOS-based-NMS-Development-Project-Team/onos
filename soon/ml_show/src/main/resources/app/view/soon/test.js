@@ -184,7 +184,7 @@
         fcnnParamsText = ['input neuron number','output neuron number','hidden layer neuron number','activation function','weight init','bias init','batch size','epoch','learning rate','learning rate adjust','loss function','optimizer'];
 
 
-        function whichSubPage(){
+    function whichSubPage(){
         var subPageLocate;
         if(d3.select('#alarmPred').style('display') === 'block'){
             subPageLocate = 'alarmPred';
@@ -209,6 +209,15 @@
         }
         if(d3.select('#KnowledgeGraph').style('display') === 'block'){
             subPageLocate = 'KnowledgeGraph';
+        }
+        if(d3.select('#SampleData').style('display') === 'block'){
+            subPageLocate = 'SampleData';
+        }
+        if(d3.select('#EntitySelection').style('display') === 'block'){
+            subPageLocate = 'EntitySelection';
+        }
+        if(d3.select('#KnowledgeExtraction').style('display') === 'block'){
+            subPageLocate = 'KnowledgeExtraction';
         }
         return subPageLocate;
     }
@@ -287,9 +296,21 @@
             d3.select('#dataSet').style('display','block');
         }
         //！ 点击二级菜单时，在页面右侧显示id为KnowledgeGraph的元素的内容
-        if(p === 'Knowledge Graph'){
+        if(p === 'Alarm Knowledge Graph'){
             d3.select('#'+whichSubPage()).style('display','none');
             d3.select('#KnowledgeGraph').style('display','block');
+        }
+        if(p === 'Sample Raw Semi-structured Data'){
+            d3.select('#'+whichSubPage()).style('display','none');
+            d3.select('#SampleData').style('display','block');
+        }
+        if(p === 'Entity Selection'){
+            d3.select('#'+whichSubPage()).style('display','none');
+            d3.select('#EntitySelection').style('display','block');
+        }
+        if(p === 'Knowledge Extraction'){
+            d3.select('#'+whichSubPage()).style('display','none');
+            d3.select('#KnowledgeExtraction').style('display','block');
         }
         startRefresh(p);
         $log.log('navigate to '+p+' sub page');
@@ -1428,7 +1449,6 @@
             ls = _ls_;
             mtbs = _mtbs_;
 
-
             //button tips
             $scope.collapseSidebarTip = 'collapse the sidebar';
             $scope.alarmPredStartTip = 'start alarm predict application';
@@ -1460,6 +1480,9 @@
             $scope.autoRefreshTip = 'toggle auto refresh';
             $scope.showSimpleKGTip = 'show graph style 1';
             $scope.showComplexKGTip = 'show graph style 2';
+            $scope.knowledgeextractionStartTip = 'start knowledge extraction';
+            $scope.entitydatasetDeleteTip = 'delete entity dataset';
+            $scope.entityAddTip = 'add an entity';
 
             //sidebar sub content show/hide control
             $scope.applicationShow = false;
@@ -1500,7 +1523,72 @@
             $scope.historicalAlarm = {};
             $scope.currentAlarm = {};
             $scope.performance = {};
-            //！ 需要给Knowledge Graph一项创建一个对象吗
+            $scope.alarm = {}
+            
+            //knowledge相关对象
+            $scope.alarm.tableData = [];
+            $scope.nodata = true;
+            //$scope.entity.annots = 'no alarm entity dataset found';
+            $scope.alarm.annots = 'no alarm entity found';
+            $scope.alarm1 = ["MS_RDI", "Remote multiplex section receiving failure", "Communication", "Secondary", "The opposite service is not available", "The fault of the sending board at the local end;the The fault of the receiving board at the opposite end;"];
+            $scope.alarm2 = ["R_LOS", "Signal loss on the receiving side of the line", "Communication", "Urgent", "Line receiving side service interruption", "Physical link interruption;Excessive line loss;Optical power overload"];
+            $scope.alarm3 = ["AU_AIS","Management unit alarm indication signal","Communication","Important","Channel level service interruption without network protection","Service configuration error;"];
+            $scope.alarm4 = ["R_LOF","Frame loss on receiving side of line","Communication","Urgent","Service interruption","The optical interface rates at both ends of the optical fiber are inconsistent;"];
+            $scope.alarm5 = ["R_OOF","Frame out of step on receiving side of line","Communication","Urgent","Service interruption","Loose or unclean optical fiber connector;"];
+            $scope.alarm6 = ["MS_AIS","The multiplexing section signal corresponding to the optical port reporting the alarm is not available","Communication","Important","Service interruption","The primary and standby cross clocks of upstream stations are not in place;"];
+            $scope.alarm7 = ["TU_AIS","TU alarm indication","Communication","Important","Service interruption on TU channel","Data configuration error;"];
+            $scope.alarm8 = ["TU_LOP","TU pointer missing","Communication","Important","Service interruption on TU channel","The receiving error code of the local terminal is too large;"];
+            $scope.alarm9 = ["UP_E1_AIS","All uplink E1 signals are '1'","Communication","Secondary","E1 signal not available","T_ALOS alarm exists on the single board of the branch connecting 2Mbit / s signal at the docking end"];
+            $scope.alarm10 = ["T_ALOS","EI or T1 interface analog signal lost","Communication","Important","PDH Service interruption","E1 or T1 service is not connected;"];
+            $scope.alarm11 = ["HP_LOM","High order channel complex frame loss","Communication","Important","Vc-12 service unavailable","Service configuration error;"];
+            $scope.alarm12 = ["BIP_EXC","Single board low order bip-2 error code out of limit","Service quality","Secondary","May cause signal error code out of limit switching","Abnormal optical power value;"];
+            $scope.alarm13 =  ["BIP_SD","Low order signal bip-2 degradation of single board","Service quality","Secondary","May cause signal degradation and switching","Abnormal optical power value;"];
+            $scope.alarm14 = ["B1_EXC","Error code overrun of regeneration section (B1) of line received signal","Service quality","Secondary","Serious deterioration of transmission service quality","Abnormal optical power value;"];
+            $scope.alarm15 = ["LP_REI","Remote bit error indication of low order channel","Communication","Secondary","It has no impact on the service of the station, but only indicates that there is a bit error in the reception of the low-order channel of the end station","Accompanying alarm, triggered by BIP_SD, etc"];
+            $scope.alarm16 = ["ALM_E1RAI","Remote E1 link alarm prompt","Communication","Secondary","Service downward direction interrupted","Physical link interruption"];
+            $scope.alarm17 = ["LFA","E1 base frame out of step alarm","Communication","Important","May cause congestion of IMA port and loss of user cell","Abnormal traffic flow on the cross side"];
+            $scope.alarm18 = ["LCD","Cell bound loss alarm","Communication","Important","All connected services in the receiving direction of the port are interrupted","Single board ATM processing chip exception"];
+            $scope.alarm19 = ["RFA","Frame E1 / T1 alarm","Communication","Secondary","It has no impact on the service of the station, only indicates that LFA alarm is generated at the opposite end","LFA alarm is generated at the opposite end"];
+            
+            $scope.triple1 = ["Local sending board failure","reason_of","MS_RDI"];
+            $scope.triple2 = ["R_LOS","derive","MS_RDI"];
+            $scope.triple3 = ["R_LOF","derive","MS_RDI"];
+            $scope.triple4 = ["MS_AIS","derive","MS_RDI"];
+            $scope.triple5 = ["R_OOF","derive","MS_RDI"];
+            $scope.triple6 = ["Physical link interruption","reason_of","R_LOS"];
+            $scope.triple7 = ["Excessive line loss","reason_of","R_LOS"];
+            $scope.triple8 = ["Service configuration error","reason_of","AU_AIS"];
+            $scope.triple9 = ["MS_AIS","derive","AU_AIS"];
+            $scope.triple10 = ["R_LOS","derive","AU_AIS"];
+            $scope.triple11 = ["R_LOF","reason_of","AU_AIS"];
+            $scope.triple12 = ["Loose or unclean optical fiber connector","reason_of","R_LOF"];
+            $scope.triple13 = ["R_LOS","derive","MS_AIS"];
+            $scope.triple14 = ["R_LOF","derive","MS_AIS"];
+            $scope.triple15 = ["Loose or unclean optical fiber connector","reason_of","R_OOF"];
+            $scope.triple16 = ["Data configuration error","reason_of","TU_AIS"];
+            $scope.triple17 = ["AU_AIS","derive","TU_AIS"];
+            $scope.triple18 = ["HP_LOM","derive","TU_AIS"];
+            $scope.triple19 = ["TU_LOP","derive","UP_E1_AIS"];
+            $scope.triple20 = ["UP_E1_AIS","derived_by","T_ALOS"];
+            $scope.triple21 = ["Service configuration error","reason_of","HP_LOM"];
+            $scope.triple22 = ["Abnormal optical power value","reason_of","BIP_EXC"];
+            $scope.triple23 = ["BIP_EXC","caused_by","Cross board failure"];
+            $scope.triple24 = ["B1_EXC","derive","BIP_EXC"];
+            $scope.triple25 = ["Abnormal optical power value","reason_of","BIP_SD"];
+            $scope.triple26 = ["Cross board failure","reason_of","BIP_SD"];
+            $scope.triple27 = ["B1_EXC","derive","BIP_SD"];
+            $scope.triple28 = ["Abnormal optical power value","reason_of","B1_EXC"];
+            $scope.triple29 = ["Cross board failure","reason_of","B1_EXC"];
+            $scope.triple30 = ["LP_REI","derived_by","BIP_SD"];
+            $scope.triple31 = ["Physical link interruption","reason_of","ALM_E1RAI"];
+            $scope.triple32 = ["T_ALOS","derive","ALM_E1RAI"];
+            $scope.triple33 = ["UP_E1_AIS","derive","ALM_E1RAI"];
+            $scope.triple34 = ["TU_LOP","derive","LFA"];
+            $scope.triple36 = ["TU_AIS","derive","LFA"];
+            $scope.triple37 = ["LCD","derived_by","R_LOS"];
+            $scope.triple38 = ["R_LOF","derive","LCD"];
+            $scope.triple39 = ["MS_AIS","derive","LCD"];
+            $scope.triple40 = ["LFA","derive","RFA"];
 
             $scope.modelLibrary.tableData = [];
             $scope.modelLibrary.changedData = [];
@@ -1859,11 +1947,23 @@
                 var myChart = echarts.init(document.getElementById('main1'));
                 var categories = [];
                 var option_simple
-                for (var i = 0; i < 2; i++) {
+                categories[0] = {
+                    name: 'fault entity'
+                };
+                categories[1] = {
+                    name: 'ugent'
+                };
+                categories[2] = {
+                    name: 'important'
+                };
+                categories[3] = {
+                    name: 'secondary'
+                };
+                /*for (var i = 0; i < 4; i++) {
                     categories[i] = {
                         name: '类目' + i
                     };
-                }
+                }*/
                 var option_simple = {
                     // 图的标题
                     /*title: {
@@ -1904,6 +2004,9 @@
                         layout: 'force', //图的布局，类型为力导图
                         symbolSize: 40, // 调整节点的大小
                         roam: true, // 是否开启鼠标缩放和平移漫游。默认不开启。如果只想要开启缩放或者平移,可以设置成 'scale' 或者 'move'。设置成 true 为都开启
+                        legendHoverLink: true,
+                        hoverAnimation: true,
+                        focusNodeAdjacency: true,
                         edgeSymbol: ['circle', 'arrow'],
                         edgeSymbolSize: [2, 10],
                         edgeLabel: {
@@ -1926,7 +2029,7 @@
                         },
                         edgeLabel: {
                             normal: {
-                                show: true,
+                                show: false,
                                 formatter: function (x) {
                                     return x.data.name;
                                 }
@@ -1935,63 +2038,320 @@
                         label: {
                             normal: {
                                 show: true,
+                                position: 'right',
                                 textStyle: {}
                             }
                         },
 
                         // 数据
                         data: [{
-                            name: 'node01',
-                            des: 'nodedes01',
-                            symbolSize: 70,
+                            name: 'Local sending board failure',
+                            des: 'fault reason',
+                            symbolSize: 60,
                             category: 0,
                         }, {
-                            name: 'node02',
-                            des: 'nodedes02',
+                            name: 'Physical link interruption',
+                            des: 'fault reason',
+                            symbolSize: 60,
+                            category: 0,
+                        }, {
+                            name: 'Abnormal optical power value',
+                            des: 'fault reason',
+                            symbolSize: 60,
+                            category: 0,
+                        }, {
+                            name: 'Cross board failure',
+                            des: 'fault reason',
+                            symbolSize: 60,
+                            category: 0,
+                        }, {
+                            name: 'Service configuration error',
+                            des: 'fault reason',
+                            symbolSize: 60,
+                            category: 0,
+                        }, {
+                            name: 'Data configuration error',
+                            des: 'fault reason',
+                            symbolSize: 60,
+                            category: 0,
+                        }, {
+                            name: 'Excessive line loss',
+                            des: 'fault reason',
+                            symbolSize: 60,
+                            category: 0,
+                        }, {
+                            name: 'Loose or unclean optical fiber connector',
+                            des: 'fault reason',
+                            symbolSize: 60,
+                            category: 0,
+                        }, {
+                            name: 'R_LOS',
+                            des: 'Signal loss on the receiving side of the line',
                             symbolSize: 50,
                             category: 1,
                         }, {
-                            name: 'node03',
-                            des: 'nodedes3',
+                            name: 'R_LOF',
+                            des: 'Frame loss on receiving side of line',
                             symbolSize: 50,
                             category: 1,
                         }, {
-                            name: 'node04',
-                            des: 'nodedes04',
+                            name: 'R_OOF',
+                            des: 'Frame out of step on receiving side of line',
                             symbolSize: 50,
                             category: 1,
                         }, {
-                            name: 'node05',
-                            des: 'nodedes05',
-                            symbolSize: 50,
-                            category: 1,
+                            name: 'AU_AIS',
+                            des: 'Management unit alarm indication signal',
+                            symbolSize: 35,
+                            category: 2,
+                        }, {
+                            name: 'TU_AIS',
+                            des: 'TU alarm indication',
+                            symbolSize: 35,
+                            category: 2,
+                        }, {
+                            name: 'TU_LOP',
+                            des: 'TU pointer missing',
+                            symbolSize: 35,
+                            category: 2,
+                        }, {
+                            name: 'T_ALOS',
+                            des: 'EI or T1 interface analog signal lost',
+                            symbolSize: 35,
+                            category: 2,
+                        }, {
+                            name: 'HP_LOM',
+                            des: 'High order channel complex frame loss',
+                            symbolSize: 35,
+                            category: 2,
+                        }, {
+                            name: 'LFA',
+                            des: 'E1 base frame out of step alarm',
+                            symbolSize: 35,
+                            category: 2,
+                        }, {
+                            name: 'LCD',
+                            des: 'Cell bound loss alarm',
+                            symbolSize: 35,
+                            category: 2,
+                        }, {
+                            name: 'MS_RDI',
+                            des: 'Remote multiplex section receiving failure',
+                            symbolSize: 25,
+                            category: 3,
+                        }, {
+                            name: 'UP_E1_AIS',
+                            des: 'All uplink E1 signals are "1"',
+                            symbolSize: 25,
+                            category: 3,
+                        }, {
+                            name: 'BIP_EXC',
+                            des: 'Single board low order bip-2 error code out of limit',
+                            symbolSize: 25,
+                            category: 3,
+                        }, {
+                            name: 'BIP_SD',
+                            des: 'Low order signal bip-2 degradation of single board',
+                            symbolSize: 25,
+                            category: 3,
+                        }, {
+                            name: 'LP_REI',
+                            des: 'Remote bit error indication of low order channel',
+                            symbolSize: 25,
+                            category: 3,
+                        }, {
+                            name: 'ALM_E1RAI',
+                            des: 'Remote E1 link alarm prompt',
+                            symbolSize: 25,
+                            category: 3,
+                        }, {
+                            name: 'RFA',
+                            des: 'Frame E1 / T1 alarm',
+                            symbolSize: 25,
+                            category: 3,
                         }],
+
                         links: [{
-                            source: 'node01',
-                            target: 'node02',
-                            name: 'link01',
-                            des: 'link01des'
+                            source: 'Local sending board failure',
+                            target: 'MS_RDI',
+                            des: 'reason_of'
                         }, {
-                            source: 'node01',
-                            target: 'node03',
-                            name: 'link02',
-                            des: 'link02des'
+                            source: 'R_LOS',
+                            target: 'MS_RDI',
+                            des: 'derive'
                         }, {
-                            source: 'node01',
-                            target: 'node04',
-                            name: 'link03',
-                            des: 'link03des'
+                            source: 'R_LOF',
+                            target: 'MS_RDI',
+                            des: 'derive'
                         }, {
-                            source: 'node01',
-                            target: 'node05',
-                            name: 'link04',
-                            des: 'link05des'
+                            source: 'MS_AIS',
+                            target: 'MS_RDI',
+                            des: 'derive'
+                        },{
+                            source: 'R_OOF',
+                            target: 'MS_RDI',
+                            des: 'derive'
+                        },{
+                            source: 'Physical link interruption',
+                            target: 'R_LOS',
+                            des: 'reason_of'
+                        },{
+                            source: 'Excessive line loss',
+                            target: 'R_LOS',
+                            des: 'reason_of'
+                        },{
+                            source: 'Service configuration error',
+                            target: 'AU_AIS',
+                            des: 'reason_of'
+                        },{
+                            source: 'R_LOS',
+                            target: 'AU_AIS',
+                            des: 'derive'
+                        },{
+                            source: 'MS_AIS',
+                            target: 'AU_AIS',
+                            des: 'derive'
+                        },{
+                            source: 'R_LOF',
+                            target: 'MS_AIS',
+                            des: 'derive'
+                        },{
+                            source: 'Loose or unclean optical fiber connector',
+                            target: 'R_LOF',
+                            des: 'reason_of'
+                        },{
+                            source: 'R_LOS',
+                            target: 'MS_AIS',
+                            des: 'derive'
+                        },{
+                            source: 'R_LOF',
+                            target: 'MS_AIS',
+                            des: 'derive'
+                        },{
+                            source: 'Loose or unclean optical fiber connector',
+                            target: 'R_OOF',
+                            des: 'reason_of'
+                        },{
+                            source: 'Data configuration error',
+                            target: 'TU_AIS',
+                            des: 'reason_of'
+                        },{
+                            source: 'AU_AIS',
+                            target: 'TU_AIS',
+                            des: 'derive'
+                        },{
+                            source: 'HP_LOM',
+                            target: 'TU_AIS',
+                            des: 'reason_of'
+                        },{
+                            source: 'TU_LOP',
+                            target: 'UP_E1_AIS',
+                            des: 'derive'
+                        },{
+                            source: 'UP_E1_AIS',
+                            target: 'T_ALOS',
+                            des: 'derived_by'
+                        },{
+                            source: 'Service configuration error',
+                            target: 'HP_LOM',
+                            des: 'reason_of'
+                        },{
+                            source: 'BIP_EXC',
+                            target: 'Cross board failure',
+                            des: 'caused_by'
+                        },{
+                            source: 'Abnormal optical power value',
+                            target: 'BIP_EXC',
+                            des: 'reason_of'
+                        },{
+                            source: 'B1_EXC',
+                            target: 'BIP_EXC',
+                            des: 'derive'
+                        },{
+                            source: 'Abnormal optical power value',
+                            target: 'BIP_SD',
+                            des: 'reason_of'
+                        },{
+                            source: 'Cross board failure',
+                            target: 'BIP_SD',
+                            des: 'reason_of'
+                        },{
+                            source: 'B1_EXC',
+                            target: 'BIP_SD',
+                            des: 'derive'
+                        },{
+                            source: 'Abnormal optical power value',
+                            target: 'B1_EXC',
+                            des: 'reason_of'
+                        },{
+                            source: 'Cross board failure',
+                            target: 'B1_EXC',
+                            des: 'reason_of'
+                        },{
+                            source: 'LP_REI',
+                            target: 'BIP_SD',
+                            des: 'derived_by'
+                        },{
+                            source: 'Physical link interruption',
+                            target: 'ALM_E1RAI',
+                            des: 'reason_of'
+                        },{
+                            source: 'T_ALOS',
+                            target: 'ALM_E1RAI',
+                            des: 'derive'
+                        },{
+                            source: 'UP_E1_AIS',
+                            target: 'ALM_E1RAI',
+                            des: 'derive'
+                        },{
+                            source: 'TU_LOP',
+                            target: 'LFA',
+                            des: 'derive'
+                        },{
+                            source: 'TU_AIS',
+                            target: 'LFA',
+                            des: 'derive'
+                        },{
+                            source: 'LCD',
+                            target: 'R_LOS',
+                            des: 'derived_by'
+                        },{
+                            source: 'R_LOF',
+                            target: 'LCD',
+                            des: 'derive'
+                        },{
+                            source: 'MS_AIS',
+                            target: 'LCD',
+                            des: 'derive'
+                        },{
+                            source: 'LFA',
+                            target: 'RFA',
+                            des: 'derive'
                         }],
                         categories: categories,
                     }]
                 };
                 myChart.setOption(option_simple);
             };
+
+            $scope.importfile = function(){
+                setTimeout(showentitydata,2000);
+                function showentitydata() {
+                    navToSubPage('EntitySelection');
+                    d3.select('#entity-nodata').style('display','none');
+                    d3.select('#entity-data').style('display','block');
+                }
+                $scope.nodata = false;
+            }
+
+            $scope.startExtraction = function(){
+                setTimeout(showextractionresult,2000);
+                function showextractionresult(){
+                    d3.select('#entitydataset-nodata').style('display','none');
+                    navToSubPage('KnowledgeExtraction');
+                    d3.select('#entitydataset-data').style('display','block');
+                }
+            }
 
             //！ 添加一个复杂的知识图谱
             $scope.ShowComplexKG = function () {
@@ -2000,17 +2360,17 @@
                 var myChart = echarts.init(document.getElementById('main2'));
                 var option_complex;
                 myChart.showLoading();
-                $.get('http://localhost:8181/onos/ui/les-miserables.gexf', function(xml) {
+                $.getJSON('http://localhost:8181/onos/ui/les-miserables-v2.json', function(json) {
                     myChart.hideLoading();
 
-                    var graph = echarts.dataTool.gexf.parse(xml);
+                    var graph = json;
                     var categories = [];
                     for(var i = 0; i < 9; i++) {
                         categories[i] = {
                             name: '类目' + i
                         };
                     }
-                    graph.nodes.forEach(function(node) {
+                    /* graph.nodes.forEach(function(node) {
                         node.itemStyle = null;
                         node.value = node.symbolSize;
                         node.symbolSize /= 1.5;
@@ -2020,7 +2380,7 @@
                             }
                         };
                         node.category = node.attributes.modularity_class;
-                    });
+                    }); */
                     option_complex = {
                         title: {
                             text: 'Les Miserables',
@@ -2028,32 +2388,85 @@
                             top: 'bottom',
                             left: 'right'
                         },
-                        tooltip: {},
-                        legend: [{
+                        tooltip: {
+                            trigger: 'item',
+                            // 内容格式器，支持字符串模板、回调函数2种形式。此为回调函数形式
+                            formatter:function(params){
+                                if(params.data.source){
+                                    // 边上的提示框，之后可以补增判断逻辑，以确定动词是derive还是reason of
+                                    return params.data.sourceName + ' derives/reason of ' + params.data.targetName;
+                                }
+                                else{
+                                    // 节点上的提示框，<br>是换行
+                                    return  '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 18px;padding-bottom: 7px;margin-bottom: 7px">' + 
+                                    params.name + '</div>' + 
+                                    'Explaination：' + params.data.explaination + '<br>' +
+                                    'Level: ' + params.data.level + '<br>' +
+                                    'Type: ' + params.data.type;
+                                }
+                            }
+                        },
+                        /* legend: [{
                             // selectedMode: 'single',
                             data: categories.map(function(a) {
                                 return a.name;
                             })
-                        }],
-                        animationDuration: 1500,
-                        animationEasingUpdate: 'quinticInOut',
+                        }], */
+                        // animationDuration: 1500,
+                        // animationEasingUpdate: 'quinticInOut',
                         series: [{
                             name: 'Les Miserables',
                             type: 'graph',
-                            layout: 'none',
-                            data: graph.nodes,
-                            links: graph.links,
+                            layout: 'force',
+                            force: {
+                                repulsion: 200,
+                                edgeLength: [10, 50]
+                            },
+                            data: graph.nodes.map(function(node) {
+                                return {
+                                    name: node.name,
+                                    id: node.id,
+                                    symbolSize: node.size,
+                                    //！ 难以置信！之前力引导图的问题(初始布局超出视图)竟然会是
+                                    // 下面两行代码导致的
+                                    // x: node.x,
+                                    // y: node.y,
+                                    explaination: node.explaination,
+                                    level: node.level,
+                                    type: node.type,
+                                    itemStyle: {
+                                        normal: {
+                                            color: node.color
+                                        }
+                                    }
+                                };
+                            }),
+                            
+                            edges: graph.edges.map(function(edge) {
+                                return {
+                                    id: edge.id,
+                                    //  貌似必须得有source和target，不然就显示不出来边
+                                    source: edge.sourceID,
+                                    target: edge.targetID,
+                                    sourceName: edge.sourceName,
+                                    targetName: edge.targetName
+                                };
+                            }),
+                            // links: graph.links,
                             categories: categories,
                             roam: true,
+                            // 边两端的标记以及大小，source端无标记，target端为箭头。
+                            // edgeSymbol: ['none', 'arrow'],
+                            // edgeSymbolSize: 10,
                             focusNodeAdjacency: true,
-                            itemStyle: {
+                            /* itemStyle: {
                                 normal: {
                                     borderColor: '#fff',
                                     borderWidth: 1,
                                     shadowBlur: 10,
                                     shadowColor: 'rgba(0, 0, 0, 0.3)'
                                 }
-                            },
+                            }, */
                             label: {
                                 position: 'right',
                                 formatter: '{b}'
@@ -2064,14 +2477,15 @@
                             },
                             emphasis: {
                                 lineStyle: {
-                                    width: 10
+                                    label: {fontWeight: "bold"},
+                                    lineStyle: {width: 5}
                                 }
                             }
                         }]
                     };
 
                     myChart.setOption(option_complex);
-                }, 'xml');
+                });
             }
             $scope.alarmPredSetting = function () {
                 function dOK(){

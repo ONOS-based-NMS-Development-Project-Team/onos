@@ -117,7 +117,7 @@
 #alarmPred,#faultClassification,#areaPred,#edgePred,#dataSet,
 #alarmPredDataSet,#faultClassificationDataSet,#areaPredDataSet,
 #edgePredDataSet,#rawData,#historicalAlarm,#currentAlarm,#KnowledgeGraph,
-#performance{
+#SampleData,#EntitySelection,#KnowledgeExtraction,#performance{
     display: none;
 }
 
@@ -207,9 +207,9 @@
     top:55px;
     right:20px;
 }
-#rawDataSearchBy option{
+/*#rawDataSearchBy option{
     font-weight: lighter;
-}
+}*/
 
 
 
@@ -224,5 +224,11 @@
 }
 
 #ov-soon .table-body {
-    height: 600px;
+    height: 1000px;
+}
+
+
+.demo1 {
+    width: 1140px;
+    text-align: center;
 }
