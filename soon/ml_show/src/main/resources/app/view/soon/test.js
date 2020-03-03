@@ -1,5 +1,5 @@
 /*
- ONOS GUI -- SOON VIEW MODULE
+ONOS GUI -- SOON VIEW MODULE
  */
 
 
@@ -1253,12 +1253,12 @@
         var p,
             testId,
             testDataSetId = [];
-         p = document.querySelectorAll('.modelEvaluateCheckbox:checked');
-         for(var i=0;i<p.length;i++){
-             testId = p[i].value;
-             testDataSetId.push(testId);
-         }
-         $scope.modelLibraryInfo.testDataSetId = testDataSetId;
+        p = document.querySelectorAll('.modelEvaluateCheckbox:checked');
+        for(var i=0;i<p.length;i++){
+            testId = p[i].value;
+            testDataSetId.push(testId);
+        }
+        $scope.modelLibraryInfo.testDataSetId = testDataSetId;
     }
 
     //set train data set function
