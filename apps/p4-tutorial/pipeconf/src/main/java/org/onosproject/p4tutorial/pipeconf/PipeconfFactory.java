@@ -16,11 +16,6 @@
 
 package org.onosproject.p4tutorial.pipeconf;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.onosproject.driver.pipeline.DefaultSingleTablePipeline;
 import org.onosproject.net.behaviour.Pipeliner;
 import org.onosproject.net.device.PortStatisticsDiscovery;
@@ -32,6 +27,11 @@ import org.onosproject.net.pi.model.PiPipelineModel;
 import org.onosproject.net.pi.service.PiPipeconfService;
 import org.onosproject.p4runtime.model.P4InfoParser;
 import org.onosproject.p4runtime.model.P4InfoParserException;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,10 +49,10 @@ public final class PipeconfFactory {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     public static final PiPipeconfId PIPECONF_ID = new PiPipeconfId("p4-tutorial-pipeconf");
-    private static final URL P4INFO_URL = PipeconfFactory.class.getResource("/mytunnel.p4info");
+    private static final URL P4INFO_URL = PipeconfFactory.class.getResource("/mytunnel_p4info.txt");
     private static final URL BMV2_JSON_URL = PipeconfFactory.class.getResource("/mytunnel.json");
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     private PiPipeconfService piPipeconfService;
 
     @Activate
@@ -70,7 +70,7 @@ public final class PipeconfFactory {
     public void deactivate() {
         // Unregisters the pipeconf at component deactivation.
         try {
-            piPipeconfService.remove(PIPECONF_ID);
+            piPipeconfService.unregister(PIPECONF_ID);
         } catch (IllegalStateException e) {
             log.warn("{} haven't been registered", PIPECONF_ID);
         }

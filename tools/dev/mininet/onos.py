@@ -63,6 +63,7 @@ KarafPort = 8101	# ssh port indicating karaf is running
 GUIPort = 8181		# GUI/REST port
 OpenFlowPort = 6653 	# OpenFlow port
 CopycatPort = 9876      # Copycat port
+DebugPort = 5005      # JVM debug port
 
 def defaultUser():
     "Return a reasonable default user"
@@ -98,7 +99,7 @@ def initONOSEnv():
     environ[ 'ONOS_USER' ] = defaultUser()
     ONOS_USER = sd( 'ONOS_USER', defaultUser() )
     ONOS_APPS = sd( 'ONOS_APPS',
-                     'drivers,openflow,fwd,proxyarp,mobility' )
+                     'gui,drivers,openflow,fwd,proxyarp,mobility' )
     JAVA_OPTS = sd( 'JAVA_OPTS', '-Xms128m -Xmx512m' )
     # ONOS_WEB_{USER,PASS} isn't respected by onos-karaf:
     environ.update( ONOS_WEB_USER='karaf', ONOS_WEB_PASS='karaf' )
@@ -110,7 +111,7 @@ def initONOSEnv():
 def updateNodeIPs( env, nodes ):
     "Update env dict and environ with node IPs"
     # Get rid of stale junk
-    for var in 'ONOS_NIC', 'ONOS_CELL', 'ONOS_INSTANCES':
+    for var in 'ONOS_CELL', 'ONOS_INSTANCES':
         env[ var ] = ''
     for var in environ.keys():
         if var.startswith( 'OC' ):
@@ -126,7 +127,7 @@ def updateNodeIPs( env, nodes ):
     return env
 
 
-tarDefaultPath = 'buck-out/gen/tools/package/onos-package/onos.tar.gz'
+tarDefaultPath = "bazel-out/k8-fastbuild/bin/onos.tar.gz"
 
 def unpackONOS( destDir='/tmp', run=quietRun ):
     "Unpack ONOS and return its location"
@@ -279,7 +280,7 @@ class ONOSNode( Controller ):
         self.cmd( 'export PATH=%s:%s:$PATH' % ( onosbin, karafbin ) )
         self.cmd( 'cd', self.ONOS_HOME )
         self.ucmd( 'mkdir -p config && '
-                   'onos-gen-partitions config/cluster.json',
+                   'onos-gen-default-cluster  config/cluster.json --nodes ',
                    ' '.join( node.IP() for node in nodes ) )
 
     def intfsDown( self ):
@@ -396,6 +397,11 @@ class ONOSNode( Controller ):
                       ( self.IP(), self.IP(), CopycatPort )
             if nodeStr in result:
                 break
+
+            # just break if state is active
+            if "state=ACTIVE" in result:
+                break
+
             info( '.' )
             self.sanityCheck()
             time.sleep( 1 )
@@ -454,7 +460,7 @@ class ONOSCluster( Controller ):
             topo = RenamedTopo( topo, *args, hnew='onos', **kwargs )
         self.ipBase = kwargs.pop( 'ipBase', '192.168.123.0/24' )
         self.forward = kwargs.pop( 'forward',
-                                   [ KarafPort, GUIPort, OpenFlowPort ] )
+                                   [ KarafPort, GUIPort, OpenFlowPort, DebugPort ] )
         self.debug = kwargs.pop('debug', 'False') == 'True'
 
         super( ONOSCluster, self ).__init__( name, inNamespace=False )

@@ -16,12 +16,6 @@
 package org.onosproject.openstacknetworking.impl;
 
 import com.google.common.collect.ImmutableSet;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onlab.util.KryoNamespace;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
@@ -37,6 +31,11 @@ import org.onosproject.store.service.MapEventListener;
 import org.onosproject.store.service.Serializer;
 import org.onosproject.store.service.StorageService;
 import org.onosproject.store.service.Versioned;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.Set;
@@ -50,6 +49,7 @@ import static org.onosproject.openstacknetworking.api.InstancePort.State.ACTIVE;
 import static org.onosproject.openstacknetworking.api.InstancePort.State.INACTIVE;
 import static org.onosproject.openstacknetworking.api.InstancePort.State.MIGRATED;
 import static org.onosproject.openstacknetworking.api.InstancePort.State.MIGRATING;
+import static org.onosproject.openstacknetworking.api.InstancePort.State.REMOVE_PENDING;
 import static org.onosproject.openstacknetworking.api.InstancePortEvent.Type.OPENSTACK_INSTANCE_MIGRATION_ENDED;
 import static org.onosproject.openstacknetworking.api.InstancePortEvent.Type.OPENSTACK_INSTANCE_MIGRATION_STARTED;
 import static org.onosproject.openstacknetworking.api.InstancePortEvent.Type.OPENSTACK_INSTANCE_PORT_DETECTED;
@@ -62,8 +62,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Manages the inventory of openstack instance port using a {@code ConsistentMap}.
  */
-@Service
-@Component(immediate = true)
+@Component(immediate = true, service = InstancePortStore.class)
 public class DistributedInstancePortStore
         extends AbstractStore<InstancePortEvent, InstancePortStoreDelegate>
         implements InstancePortStore {
@@ -80,10 +79,10 @@ public class DistributedInstancePortStore
             .register(InstancePort.State.class)
             .build();
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected StorageService storageService;
 
     private final ExecutorService eventExecutor = newSingleThreadExecutor(
@@ -161,29 +160,37 @@ public class DistributedInstancePortStore
         public void event(MapEvent<String, InstancePort> event) {
             switch (event.type()) {
                 case INSERT:
-                    log.debug("Instance port created");
-                    eventExecutor.execute(() ->
-                            notifyDelegate(new InstancePortEvent(
-                                    OPENSTACK_INSTANCE_PORT_DETECTED,
-                                    event.newValue().value()))
-                    );
+                    eventExecutor.execute(() -> processInstancePortMapInsertion(event));
                     break;
                 case UPDATE:
-                    log.debug("Instance port updated");
-                    eventExecutor.execute(() -> processInstancePortUpdate(event));
+                    eventExecutor.execute(() -> processInstancePortMapUpdate(event));
                     break;
                 case REMOVE:
-                    log.debug("Instance port removed");
-                    eventExecutor.execute(() ->
-                            notifyDelegate(new InstancePortEvent(
-                                    OPENSTACK_INSTANCE_PORT_VANISHED,
-                                    event.oldValue().value()))
-                    );
+                    eventExecutor.execute(() -> processInstancePortMapRemoval(event));
                     break;
                 default:
                     log.error("Unsupported instance port event type");
                     break;
             }
+        }
+
+        private void processInstancePortMapUpdate(MapEvent<String, InstancePort> event) {
+            log.debug("Instance port updated");
+            processInstancePortUpdate(event);
+        }
+
+        private void processInstancePortMapInsertion(MapEvent<String, InstancePort> event) {
+            log.debug("Instance port created");
+            notifyDelegate(new InstancePortEvent(
+                    OPENSTACK_INSTANCE_PORT_DETECTED,
+                    event.newValue().value()));
+        }
+
+        private void processInstancePortMapRemoval(MapEvent<String, InstancePort> event) {
+            log.debug("Instance port removed");
+            notifyDelegate(new InstancePortEvent(
+                    OPENSTACK_INSTANCE_PORT_VANISHED,
+                    event.oldValue().value()));
         }
 
         private void processInstancePortUpdate(MapEvent<String, InstancePort> event) {
@@ -221,6 +228,11 @@ public class DistributedInstancePortStore
 
             // this should be auto-transition
             if (oldState == MIGRATED && newState == ACTIVE) {
+                return;
+            }
+
+            // we do not trigger instance port update for pending state transition
+            if (newState == REMOVE_PENDING) {
                 return;
             }
 

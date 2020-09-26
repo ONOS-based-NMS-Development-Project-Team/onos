@@ -1,10 +1,7 @@
-COMPILE_DEPS = CORE_DEPS + NETTY + [
-    "@org_apache_karaf_shell_console//jar",
-    "//cli:onos-cli",
-]
+COMPILE_DEPS = CORE_DEPS + NETTY + CLI
 
 osgi_jar_with_tests(
-    import_packages = "*,org.onosproject.cli.net",
+    karaf_command_packages = ["org.onosproject.provider.nil.cli"],
     resources = glob(["src/main/resources/**"]),
     resources_root = "src/main/resources",
     deps = COMPILE_DEPS,

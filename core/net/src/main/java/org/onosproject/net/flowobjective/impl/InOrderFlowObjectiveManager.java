@@ -18,19 +18,17 @@ package org.onosproject.net.flowobjective.impl;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.RemovalNotification;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalListeners;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Service;
 import org.onlab.util.Tools;
 import org.onlab.util.Tools.LogLevel;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.flowobjective.FilteringObjQueueKey;
 import org.onosproject.net.flowobjective.FilteringObjective;
+import org.onosproject.net.flowobjective.FlowObjectiveService;
 import org.onosproject.net.flowobjective.FlowObjectiveStoreDelegate;
 import org.onosproject.net.flowobjective.ForwardingObjQueueKey;
 import org.onosproject.net.flowobjective.ForwardingObjective;
@@ -40,31 +38,43 @@ import org.onosproject.net.flowobjective.Objective;
 import org.onosproject.net.flowobjective.ObjectiveContext;
 import org.onosproject.net.flowobjective.ObjectiveError;
 import org.onosproject.net.flowobjective.ObjectiveEvent;
+import org.onosproject.net.flowobjective.ObjectiveQueueKey;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.ComponentContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static org.onlab.util.Tools.groupedThreads;
 
-@Component(immediate = true, enabled = true)
-@Service
+@Component(immediate = true, service = FlowObjectiveService.class)
 public class InOrderFlowObjectiveManager extends FlowObjectiveManager {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     // TODO Make queue timeout configurable
-    static final int OBJ_TIMEOUT_MS = 15000;
+    static final int DEFAULT_OBJ_TIMEOUT = 15000;
+    int objTimeoutMs = DEFAULT_OBJ_TIMEOUT;
 
     private Cache<FilteringObjQueueKey, Objective> filtObjQueueHead;
     private Cache<ForwardingObjQueueKey, Objective> fwdObjQueueHead;
     private Cache<NextObjQueueKey, Objective> nextObjQueueHead;
     private ScheduledExecutorService cacheCleaner;
+    private ExecutorService filtCacheEventExecutor;
+    private ExecutorService fwdCacheEventExecutor;
+    private ExecutorService nextCacheEventExecutor;
 
     private ListMultimap<FilteringObjQueueKey, Objective> filtObjQueue =
             Multimaps.synchronizedListMultimap(ArrayListMultimap.create());
@@ -76,65 +86,46 @@ public class InOrderFlowObjectiveManager extends FlowObjectiveManager {
     final FlowObjectiveStoreDelegate delegate = new InternalStoreDelegate();
 
     @Activate
-    protected void activate() {
-        super.activate();
+    protected void activate(ComponentContext context) {
+        super.activate(context);
 
-        // TODO Clean up duplicated code
+        filtCacheEventExecutor = newSingleThreadExecutor(groupedThreads("onos/flowobj", "cache-event-filt", log));
+        fwdCacheEventExecutor = newSingleThreadExecutor(groupedThreads("onos/flowobj", "cache-event-fwd", log));
+        nextCacheEventExecutor = newSingleThreadExecutor(groupedThreads("onos/flowobj", "cache-event-next", log));
+
+        RemovalListener<ObjectiveQueueKey, Objective> removalListener = notification -> {
+            Objective obj = notification.getValue();
+            switch (notification.getCause()) {
+                case EXPIRED:
+                case COLLECTED:
+                case SIZE:
+                    obj.context().ifPresent(c -> c.onError(obj, ObjectiveError.INSTALLATIONTIMEOUT));
+                    break;
+                case EXPLICIT: // No action when the objective completes correctly
+                case REPLACED: // No action when a pending forward or next objective gets executed
+                default:
+                    break;
+            }
+        };
         filtObjQueueHead = CacheBuilder.newBuilder()
-                .expireAfterWrite(OBJ_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                .removalListener((RemovalNotification<FilteringObjQueueKey, Objective> notification) -> {
-                    Objective obj = notification.getValue();
-                    switch (notification.getCause()) {
-                        case EXPIRED:
-                        case COLLECTED:
-                        case SIZE:
-                            obj.context().ifPresent(c -> c.onError(obj, ObjectiveError.INSTALLATIONTIMEOUT));
-                            break;
-                        case EXPLICIT: // No action when the objective completes correctly
-                        case REPLACED: // No action when a pending forward or next objective gets executed
-                        default:
-                            break;
-                    }
-                }).build();
+                .expireAfterWrite(objTimeoutMs, TimeUnit.MILLISECONDS)
+                .removalListener(RemovalListeners.asynchronous(removalListener, filtCacheEventExecutor))
+                .build();
         fwdObjQueueHead = CacheBuilder.newBuilder()
-                .expireAfterWrite(OBJ_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                .removalListener((RemovalNotification<ForwardingObjQueueKey, Objective> notification) -> {
-                    Objective obj = notification.getValue();
-                    switch (notification.getCause()) {
-                        case EXPIRED:
-                        case COLLECTED:
-                        case SIZE:
-                            obj.context().ifPresent(c -> c.onError(obj, ObjectiveError.INSTALLATIONTIMEOUT));
-                            break;
-                        case EXPLICIT: // No action when the objective completes correctly
-                        case REPLACED: // No action when a pending forward or next objective gets executed
-                        default:
-                            break;
-                    }
-                }).build();
+                .expireAfterWrite(objTimeoutMs, TimeUnit.MILLISECONDS)
+                .removalListener(RemovalListeners.asynchronous(removalListener, fwdCacheEventExecutor))
+                .build();
         nextObjQueueHead = CacheBuilder.newBuilder()
-                .expireAfterWrite(OBJ_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                .removalListener((RemovalNotification<NextObjQueueKey, Objective> notification) -> {
-                    Objective obj = notification.getValue();
-                    switch (notification.getCause()) {
-                        case EXPIRED:
-                        case COLLECTED:
-                        case SIZE:
-                            obj.context().ifPresent(c -> c.onError(obj, ObjectiveError.INSTALLATIONTIMEOUT));
-                            break;
-                        case EXPLICIT: // No action when the objective completes correctly
-                        case REPLACED: // No action when a pending forward or next objective gets executed
-                        default:
-                            break;
-                    }
-                }).build();
+                .expireAfterWrite(objTimeoutMs, TimeUnit.MILLISECONDS)
+                .removalListener(RemovalListeners.asynchronous(removalListener, nextCacheEventExecutor))
+                .build();
 
         cacheCleaner = newSingleThreadScheduledExecutor(groupedThreads("onos/flowobj", "cache-cleaner", log));
         cacheCleaner.scheduleAtFixedRate(() -> {
             filtObjQueueHead.cleanUp();
             fwdObjQueueHead.cleanUp();
             nextObjQueueHead.cleanUp();
-        }, 0, OBJ_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        }, 0, objTimeoutMs, TimeUnit.MILLISECONDS);
 
         // Replace store delegate to make sure pendingForward and pendingNext are resubmitted to
         // execute()
@@ -146,6 +137,10 @@ public class InOrderFlowObjectiveManager extends FlowObjectiveManager {
     protected void deactivate() {
         cacheCleaner.shutdown();
         clearQueue();
+
+        filtCacheEventExecutor.shutdown();
+        fwdCacheEventExecutor.shutdown();
+        nextCacheEventExecutor.shutdown();
 
         super.deactivate();
     }
@@ -161,20 +156,7 @@ public class InOrderFlowObjectiveManager extends FlowObjectiveManager {
         // Inject ObjectiveContext such that we can get notified when it is completed
         Objective.Builder objBuilder = originalObjective.copy();
         Optional<ObjectiveContext> originalContext = originalObjective.context();
-        ObjectiveContext context = new ObjectiveContext() {
-            @Override
-            public void onSuccess(Objective objective) {
-                log.trace("Flow objective onSuccess {}", objective);
-                dequeue(deviceId, objective, null);
-                originalContext.ifPresent(c -> c.onSuccess(objective));
-            }
-            @Override
-            public void onError(Objective objective, ObjectiveError error) {
-                log.warn("Flow objective onError {}. Reason = {}", objective, error);
-                dequeue(deviceId, objective, error);
-                originalContext.ifPresent(c -> c.onError(objective, error));
-            }
-        };
+        ObjectiveContext context = new InOrderObjectiveContext(deviceId, originalContext.orElse(null));
 
         // Preserve Objective.Operation
         Objective objective;
@@ -319,13 +301,17 @@ public class InOrderFlowObjectiveManager extends FlowObjectiveManager {
 
         if (obj instanceof FilteringObjective) {
             FilteringObjQueueKey k = new FilteringObjQueueKey(deviceId, priority, ((FilteringObjective) obj).key());
-            filtObjQueueHead.invalidate(k);
+            if (!Objects.equals(ObjectiveError.INSTALLATIONTIMEOUT, error)) {
+                filtObjQueueHead.invalidate(k);
+            }
             filtObjQueue.remove(k, obj);
             remaining = filtObjQueue.get(k);
         } else if (obj instanceof ForwardingObjective) {
             ForwardingObjQueueKey k =
                     new ForwardingObjQueueKey(deviceId, priority, ((ForwardingObjective) obj).selector());
-            fwdObjQueueHead.invalidate(k);
+            if (!Objects.equals(ObjectiveError.INSTALLATIONTIMEOUT, error)) {
+                fwdObjQueueHead.invalidate(k);
+            }
             fwdObjQueue.remove(k, obj);
             remaining = fwdObjQueue.get(k);
         } else if (obj instanceof NextObjective) {
@@ -346,7 +332,9 @@ public class InOrderFlowObjectiveManager extends FlowObjectiveManager {
                 }
             }
             NextObjQueueKey k = new NextObjQueueKey(deviceId, obj.id());
-            nextObjQueueHead.invalidate(k);
+            if (!Objects.equals(ObjectiveError.INSTALLATIONTIMEOUT, error)) {
+                nextObjQueueHead.invalidate(k);
+            }
             nextObjQueue.remove(k, obj);
             remaining = nextObjQueue.get(k);
         } else {
@@ -428,6 +416,44 @@ public class InOrderFlowObjectiveManager extends FlowObjectiveManager {
                             pendNexts.size(), event.subject());
                     // execute pending nexts one by one
                     pendNexts.forEach(p -> execute(p.deviceId(), p.flowObjective()));
+                }
+            }
+        }
+    }
+
+    final class InOrderObjectiveContext implements ObjectiveContext {
+        private final DeviceId deviceId;
+        private final ObjectiveContext originalContext;
+        // Prevent onSuccess from being executed after onError is called
+        // i.e. when the context actually succeed after the cache timeout
+        private final AtomicBoolean failed;
+
+        InOrderObjectiveContext(DeviceId deviceId, ObjectiveContext originalContext) {
+            this.deviceId = deviceId;
+            this.originalContext = originalContext;
+            this.failed = new AtomicBoolean(false);
+        }
+
+        @Override
+        public void onSuccess(Objective objective) {
+            log.trace("Flow objective onSuccess {}", objective);
+
+            if (!failed.get()) {
+                dequeue(deviceId, objective, null);
+                if (originalContext != null) {
+                    originalContext.onSuccess(objective);
+                }
+            }
+
+        }
+        @Override
+        public void onError(Objective objective, ObjectiveError error) {
+            log.warn("Flow objective onError {}. Reason = {}", objective, error);
+
+            if (!failed.getAndSet(true)) {
+                dequeue(deviceId, objective, error);
+                if (originalContext != null) {
+                    originalContext.onError(objective, error);
                 }
             }
         }

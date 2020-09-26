@@ -161,6 +161,25 @@ public class HostResourceTest extends ResourceTest {
                 }
             }
 
+            //  Check host auxLocations
+            if (jsonHost.get("auxLocations") != null) {
+                final JsonArray jsonAuxLocations = jsonHost.get("auxLocations").asArray();
+                final Set<HostLocation> expectedAuxLocations = host.auxLocations();
+                if (jsonAuxLocations.size() != expectedAuxLocations.size()) {
+                    reason = "auxLocations arrays differ in size";
+                    return false;
+                }
+
+                jsonIterator = jsonAuxLocations.iterator();
+                locIterator = expectedAuxLocations.iterator();
+                while (jsonIterator.hasNext()) {
+                    boolean result = verifyLocation(jsonIterator.next().asObject(), locIterator.next());
+                    if (!result) {
+                        return false;
+                    }
+                }
+            }
+
             //  Check Ip Addresses
             final JsonArray jsonHostIps = jsonHost.get("ipAddresses").asArray();
             final Set<IpAddress> expectedHostIps = host.ipAddresses();
@@ -217,7 +236,7 @@ public class HostResourceTest extends ResourceTest {
         @Override
         public boolean matchesSafely(JsonArray json) {
             boolean hostFound = false;
-            final int expectedAttributes = 8;
+            final int expectedAttributes = 9;
             for (int jsonHostIndex = 0; jsonHostIndex < json.size();
                  jsonHostIndex++) {
 

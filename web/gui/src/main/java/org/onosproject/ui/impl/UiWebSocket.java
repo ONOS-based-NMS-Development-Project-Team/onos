@@ -18,7 +18,8 @@ package org.onosproject.ui.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.eclipse.jetty.websocket.WebSocket;
+import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.WebSocketAdapter;
 import org.onlab.osgi.ServiceDirectory;
 import org.onlab.osgi.ServiceNotFoundException;
 import org.onosproject.cluster.ClusterService;
@@ -39,6 +40,7 @@ import org.onosproject.ui.impl.topo.Topo2Jsonifier;
 import org.onosproject.ui.impl.topo.Topo2OverlayCache;
 import org.onosproject.ui.impl.topo.Topo2TrafficMessageHandler;
 import org.onosproject.ui.impl.topo.Topo2ViewMessageHandler;
+import org.onosproject.ui.impl.topo.Traffic2Overlay;
 import org.onosproject.ui.impl.topo.UiTopoSession;
 import org.onosproject.ui.impl.topo.model.UiSharedTopologyModel;
 import org.onosproject.ui.lion.LionBundle;
@@ -47,15 +49,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import static org.onosproject.ui.impl.UiWebSocketServlet.PING_DELAY_MS;
+
 /**
  * Web socket capable of interacting with the Web UI.
  */
-public class UiWebSocket
-        implements UiConnection, WebSocket.OnTextMessage, WebSocket.OnControl {
+
+public class UiWebSocket extends WebSocketAdapter implements UiConnection {
 
     private static final Logger log = LoggerFactory.getLogger(UiWebSocket.class);
 
@@ -82,16 +87,13 @@ public class UiWebSocket
 
     private static final long MAX_AGE_MS = 30_000;
 
-    private static final byte PING = 0x9;
-    private static final byte PONG = 0xA;
     private static final byte[] PING_DATA = new byte[]{(byte) 0xde, (byte) 0xad};
+    private static final ByteBuffer PING = ByteBuffer.wrap(PING_DATA);
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final ServiceDirectory directory;
     private final UiTopoSession topoSession;
 
-    private Connection connection;
-    private FrameConnection control;
     private String userName;
     private String currentView;
 
@@ -171,10 +173,10 @@ public class UiWebSocket
     /**
      * Issues a close on the connection.
      */
-    synchronized void close() {
+    void close() {
         destroyHandlersAndOverlays();
-        if (connection.isOpen()) {
-            connection.close();
+        if (isConnected()) {
+            getSession().close();
         }
     }
 
@@ -183,15 +185,17 @@ public class UiWebSocket
      *
      * @return true if idle or closed
      */
-    synchronized boolean isIdle() {
+    boolean isIdle() {
         long quietFor = System.currentTimeMillis() - lastActive;
         boolean idle = quietFor > MAX_AGE_MS;
-        if (idle || (connection != null && !connection.isOpen())) {
+        if (idle || isNotConnected()) {
             log.debug("IDLE (or closed) websocket [{} ms]", quietFor);
             return true;
-        } else if (connection != null) {
+
+        } else if (isConnected() && quietFor > PING_DELAY_MS) {
             try {
-                control.sendControl(PING, PING_DATA, 0, PING_DATA.length);
+                getRemote().sendPing(PING);
+                lastActive = System.currentTimeMillis();
             } catch (IOException e) {
                 log.warn("Unable to send ping message due to: ", e);
             }
@@ -200,26 +204,24 @@ public class UiWebSocket
     }
 
     @Override
-    public synchronized void onOpen(Connection connection) {
-        this.connection = connection;
-        this.control = (FrameConnection) connection;
+    public void onWebSocketConnect(Session session) {
+        super.onWebSocketConnect(session);
         try {
             topoSession.init();
             createHandlersAndOverlays();
             sendBootstrapData();
             sendUberLionBundle();
+            lastActive = System.currentTimeMillis();
             log.info("GUI client connected -- user <{}>", userName);
 
         } catch (ServiceNotFoundException e) {
             log.warn("Unable to open GUI connection; services have been shut-down", e);
-            this.connection.close();
-            this.connection = null;
-            this.control = null;
+            getSession().close();
         }
     }
 
     @Override
-    public synchronized void onClose(int closeCode, String message) {
+    public void onWebSocketClose(int closeCode, String reason) {
         try {
             try {
                 tokenService().revokeToken(sessionToken);
@@ -234,47 +236,47 @@ public class UiWebSocket
         } catch (Exception e) {
             log.warn("Unexpected error", e);
         }
+        super.onWebSocketClose(closeCode, reason);
         log.info("GUI client disconnected [close-code={}, message={}]",
-                 closeCode, message);
+                 closeCode, reason);
     }
 
     @Override
-    public boolean onControl(byte controlCode, byte[] data, int offset, int length) {
-        lastActive = System.currentTimeMillis();
-        return true;
-    }
-
-    @Override
-    public void onMessage(String data) {
+    public void onWebSocketText(String data) {
         lastActive = System.currentTimeMillis();
         try {
             ObjectNode message = (ObjectNode) mapper.reader().readTree(data);
             String type = message.path(EVENT).asText(UNKNOWN);
 
-//            if (sessionToken == null) {
-//                authenticate(type, message);
-//
-//            } else {
-            UiMessageHandler handler = handlers.get(type);
-            if (handler != null) {
-                log.debug("RX message: {}", message);
-                handler.process(message);
+            if (sessionToken == null) {
+                authenticate(type, message);
             } else {
-                log.warn("No GUI message handler for type {}", type);
+                UiMessageHandler handler = handlers.get(type);
+                if (handler != null) {
+                    log.debug("RX message: {}", message);
+                    handler.process(message);
+                } else {
+                    log.warn("No GUI message handler for type {}", type);
+                }
             }
-//            }
 
-        } catch (Exception e) {
-            log.warn("Unable to parse GUI message {} due to {}", data, e);
+        } catch (Error | Exception e) {
+            log.warn("Unable to parse GUI message {} due to", data, e);
             log.debug("Boom!!!", e);
         }
     }
 
     @Override
+    public void onWebSocketBinary(byte[] payload, int offset, int length) {
+        lastActive = System.currentTimeMillis();
+        log.warn("Binary messages are currently not supported");
+    }
+
+    @Override
     public synchronized void sendMessage(ObjectNode message) {
         try {
-            if (connection.isOpen()) {
-                connection.sendMessage(message.toString());
+            if (isConnected()) {
+                getRemote().sendString(message.toString());
                 log.debug("TX message: {}", message);
             }
         } catch (IOException e) {
@@ -322,8 +324,10 @@ public class UiWebSocket
 
         handlerCrossConnects(handlerInstances);
 
-        log.debug("#handlers = {}, #overlays = {}",
-                  handlers.size(), overlayCache.size());
+        overlay2Cache.switchOverlay(null, Traffic2Overlay.OVERLAY_ID);
+
+        log.debug("#handlers = {}, #overlays = Topo: {}, Topo2: {}",
+                  handlers.size(), overlayCache.size(), overlay2Cache.size());
     }
 
     private Map<String, LionBundle> generateLionMap(UiExtensionService service) {
@@ -350,6 +354,7 @@ public class UiWebSocket
     private void authenticate(String type, ObjectNode message) {
         if (!AUTHENTICATION.equals(type)) {
             log.warn("WebSocket not authenticated: {}", message);
+            sendMessage(ERROR, notAuthorized(null));
             close();
             return;
         }
@@ -370,7 +375,7 @@ public class UiWebSocket
     private ObjectNode notAuthorized(UiSessionToken token) {
         return objectNode()
                 .put("message", "invalid authentication token")
-                .put("badToken", token.toString());
+                .put("badToken", token != null ? token.toString() : "null");
     }
 
     private void registerOverlays(UiExtension ext) {
@@ -402,6 +407,7 @@ public class UiWebSocket
                     handlers.get(Topo2TrafficMessageHandler.class);
             if (topo2traffic != null) {
                 topo2mh.setTrafficHandler(topo2traffic);
+                topo2traffic.setOverlayCache(overlay2Cache);
             } else {
                 log.error("No topo2 traffic handler found");
             }

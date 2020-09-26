@@ -20,8 +20,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Option;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.routing.bgp.BgpInfoService;
 import org.onosproject.routing.bgp.BgpSession;
@@ -31,6 +32,7 @@ import java.util.Collection;
 /**
  * Command to show the BGP neighbors.
  */
+@Service
 @Command(scope = "onos", name = "bgp-neighbors",
          description = "Lists the BGP neighbors")
 public class BgpNeighborsListCommand extends AbstractShellCommand {
@@ -53,7 +55,7 @@ public class BgpNeighborsListCommand extends AbstractShellCommand {
         "  4 Octet AS Capability: %s %s";
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         BgpInfoService service = AbstractShellCommand.get(BgpInfoService.class);
         Collection<BgpSession> bgpSessions = service.getBgpSessions();
 

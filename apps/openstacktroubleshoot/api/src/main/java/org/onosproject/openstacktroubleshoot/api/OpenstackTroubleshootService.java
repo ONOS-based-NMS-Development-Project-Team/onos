@@ -15,13 +15,44 @@
  */
 package org.onosproject.openstacktroubleshoot.api;
 
+import org.onosproject.openstacknetworking.api.InstancePort;
+
 /**
  * Openstack troubleshoot interface.
  */
 public interface OpenstackTroubleshootService {
 
     /**
-     * A dummy method.
+     * Troubleshoot traffic direction.
      */
-    void dummy();
+    enum Direction {
+
+        /**
+         * Signifies that EAST_WEST troubleshoot case.
+         */
+        EAST_WEST,
+
+        /**
+         * Signifies that NORTH_SOUTH troubleshoot case.
+         */
+        NORTH_SOUTH,
+    }
+
+    /**
+     * Checks a single VM-to-Vm connectivity.
+     *
+     * @param srcInstancePort source instance port
+     * @param dstInstancePort destination instance port
+     * @return reachability
+     */
+    Reachability probeEastWest(InstancePort srcInstancePort,
+                               InstancePort dstInstancePort);
+
+    /**
+     * Checks a single router-to-VM connectivity.
+     *
+     * @param dstInstancePort destination instance port
+     * @return reachability
+     */
+    Reachability probeNorthSouth(InstancePort dstInstancePort);
 }

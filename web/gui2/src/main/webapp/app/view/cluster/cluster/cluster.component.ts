@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {SortDir, TableBaseImpl, TableResponse} from '../../../fw/widget/table.base';
-import {FnService} from '../../../fw/util/fn.service';
-import {LoadingService} from '../../../fw/layer/loading.service';
-import {LogService} from '../../../log.service';
-import {WebSocketService} from '../../../fw/remote/websocket.service';
-import {LionService} from '../../../fw/util/lion.service';
+import {
+    FnService,
+    LogService,
+    WebSocketService,
+    LionService,
+    SortDir, TableBaseImpl, TableResponse
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 
 /**
  * Model of the response from WebSocket
@@ -48,7 +49,9 @@ interface Cluster {
 @Component({
   selector: 'onos-cluster',
   templateUrl: './cluster.component.html',
-  styleUrls: ['./cluster.component.css', './cluster.theme.css', '../../../fw/widget/table.css', '../../../fw/widget/table.theme.css']
+  styleUrls: ['./cluster.component.css', './cluster.theme.css',
+      '../../../../../../../../gui2-fw-lib/lib/widget/table.css',
+      '../../../../../../../../gui2-fw-lib/lib/widget/table.theme.css']
 })
 
 export class ClusterComponent extends TableBaseImpl implements OnInit, OnDestroy {
@@ -57,12 +60,11 @@ export class ClusterComponent extends TableBaseImpl implements OnInit, OnDestroy
 
     constructor(
         protected fs: FnService,
-        protected ls: LoadingService,
         protected log: LogService,
         protected lion: LionService,
         protected wss: WebSocketService,
     ) {
-        super(fs, ls, log, wss, 'cluster');
+        super(fs, log, wss, 'cluster');
         this.responseCallback = this.clusterResponseCb;
 
         this.sortParams = {

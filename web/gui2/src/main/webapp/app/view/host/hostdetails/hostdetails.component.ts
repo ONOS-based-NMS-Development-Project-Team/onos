@@ -16,13 +16,12 @@
 
 import { Component, Input, OnInit, OnDestroy, OnChanges } from '@angular/core';
 import { trigger, state, style, animate, transition } from '@angular/animations';
-
-import { FnService } from '../../../fw/util/fn.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { LogService } from '../../../log.service';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
-
-import { DetailsPanelBaseImpl } from '../../../fw/widget/detailspanel.base';
+import {
+    FnService,
+    LogService,
+    DetailsPanelBaseImpl,
+    WebSocketService
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 
 /**
  * The details view when a host row is clicked from the Host view
@@ -40,7 +39,7 @@ import { DetailsPanelBaseImpl } from '../../../fw/widget/detailspanel.base';
     selector: 'onos-hostdetails',
     templateUrl: './hostdetails.component.html',
     styleUrls: ['./hostdetails.component.css',
-        '../../../fw/widget/panel.css', '../../../fw/widget/panel-theme.css'
+        '../../../../../../../../gui2-fw-lib/lib/widget/panel.css', '../../../../../../../../gui2-fw-lib/lib/widget/panel-theme.css'
     ],
     animations: [
         trigger('hostDetailsState', [
@@ -62,11 +61,10 @@ export class HostDetailsComponent extends DetailsPanelBaseImpl implements OnInit
 
     constructor(
         protected fs: FnService,
-        protected ls: LoadingService,
         protected log: LogService,
         protected wss: WebSocketService
     ) {
-        super(fs, ls, log, wss, 'host');
+        super(fs, log, wss, 'host');
     }
 
     ngOnInit() {

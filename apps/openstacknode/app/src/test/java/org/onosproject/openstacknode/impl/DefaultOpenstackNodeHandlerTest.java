@@ -70,8 +70,10 @@ import org.onosproject.net.flow.instructions.ExtensionTreatment;
 import org.onosproject.net.flow.instructions.ExtensionTreatmentType;
 import org.onosproject.net.provider.ProviderId;
 import org.onosproject.openstacknode.api.DefaultOpenstackNode;
+import org.onosproject.openstacknode.api.DpdkConfig;
+import org.onosproject.openstacknode.api.KeystoneConfig;
+import org.onosproject.openstacknode.api.NeutronConfig;
 import org.onosproject.openstacknode.api.NodeState;
-import org.onosproject.openstacknode.api.OpenstackAuth;
 import org.onosproject.openstacknode.api.OpenstackNode;
 import org.onosproject.openstacknode.api.OpenstackPhyInterface;
 import org.onosproject.openstacknode.api.OpenstackSshAuth;
@@ -97,7 +99,7 @@ import static org.onosproject.net.device.DeviceEvent.Type.DEVICE_ADDED;
 import static org.onosproject.net.device.DeviceEvent.Type.DEVICE_AVAILABILITY_CHANGED;
 import static org.onosproject.net.device.DeviceEvent.Type.PORT_ADDED;
 import static org.onosproject.net.device.DeviceEvent.Type.PORT_REMOVED;
-import static org.onosproject.openstacknode.api.Constants.DEFAULT_TUNNEL;
+import static org.onosproject.openstacknode.api.Constants.VXLAN_TUNNEL;
 import static org.onosproject.openstacknode.api.Constants.INTEGRATION_BRIDGE;
 import static org.onosproject.openstacknode.api.Constants.PATCH_INTG_BRIDGE;
 import static org.onosproject.openstacknode.api.Constants.PATCH_ROUT_BRIDGE;
@@ -367,7 +369,7 @@ public class DefaultOpenstackNodeHandlerTest {
         assertEquals(ERR_STATE_NOT_MATCH, COMPLETE,
                 testNodeManager.node(COMPUTE_3_HOSTNAME).state());
         TEST_DEVICE_SERVICE.removePort(COMPUTE_3_INTG_DEVICE, createPort(
-                COMPUTE_3_INTG_DEVICE, DEFAULT_TUNNEL));
+                COMPUTE_3_INTG_DEVICE, VXLAN_TUNNEL));
         assertEquals(ERR_STATE_NOT_MATCH, INCOMPLETE,
                 testNodeManager.node(COMPUTE_3_HOSTNAME).state());
 
@@ -423,7 +425,8 @@ public class DefaultOpenstackNodeHandlerTest {
                 intgBridge.id(),
                 ipAddr,
                 ipAddr,
-                null, null, state, phyIntfs, controllers, null, null, null);
+                null, null, state, phyIntfs, controllers,
+                null, null, null, null);
     }
 
     private static OpenstackNode createGatewayNode(String hostname,
@@ -438,8 +441,8 @@ public class DefaultOpenstackNodeHandlerTest {
                 intgBridge.id(),
                 ipAddr,
                 ipAddr,
-                null, uplinkPort, state,
-                null, null, null, null, null);
+                null, uplinkPort, state, null, null, null, null, null,
+                null);
     }
 
     private static final class TestDevice extends DefaultDevice {
@@ -499,9 +502,10 @@ public class DefaultOpenstackNodeHandlerTest {
                                   NodeState state,
                                   Set<OpenstackPhyInterface> phyIntfs,
                                   Set<ControllerInfo> controllers,
-                                  OpenstackAuth auth,
-                                  String endPoint,
-                                  OpenstackSshAuth sshAuth) {
+                                  OpenstackSshAuth sshAuth,
+                                  DpdkConfig dpdkConfig,
+                                  KeystoneConfig keystoneConfig,
+                                  NeutronConfig neutronConfig) {
             super(hostname,
                     type,
                     intgBridge,
@@ -512,13 +516,14 @@ public class DefaultOpenstackNodeHandlerTest {
                     state,
                     phyIntfs,
                     controllers,
-                    auth,
-                    endPoint,
-                    sshAuth);
+                    sshAuth,
+                    dpdkConfig,
+                    keystoneConfig,
+                    neutronConfig);
         }
 
         @Override
-        public PortNumber tunnelPortNum() {
+        public PortNumber vxlanTunnelPortNum() {
             return PortNumber.portNumber(1);
         }
 

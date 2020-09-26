@@ -15,12 +15,13 @@
  */
 import { Component, Input, OnChanges, OnDestroy, OnInit } from '@angular/core';
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { DetailsPanelBaseImpl } from '../../../fw/widget/detailspanel.base';
-import { FnService } from '../../../fw/util/fn.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { LogService } from '../../../log.service';
-import { IconService } from '../../../fw/svg/icon.service';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
+import {
+    FnService,
+    IconService,
+    LogService,
+    DetailsPanelBaseImpl,
+    WebSocketService
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 
 /**
  * The details view when a port row is clicked from the Port view
@@ -37,7 +38,7 @@ import { WebSocketService } from '../../../fw/remote/websocket.service';
 @Component({
     selector: 'onos-portdetails',
     templateUrl: './portdetails.component.html',
-    styleUrls: ['./portdetails.component.css', '../../../fw/widget/panel.css', '../../../fw/widget/panel-theme.css'],
+    styleUrls: ['./portdetails.component.css', '../../../../../../../../gui2-fw-lib/lib/widget/panel.css', '../../../../../../../../gui2-fw-lib/lib/widget/panel-theme.css'],
     animations: [
         trigger('portDetailsState', [
             state('true', style({
@@ -58,12 +59,11 @@ export class PortDetailsComponent extends DetailsPanelBaseImpl implements OnInit
     @Input() devId: string;
 
     constructor(protected fs: FnService,
-        protected ls: LoadingService,
         protected log: LogService,
         protected is: IconService,
         protected wss: WebSocketService
     ) {
-        super(fs, ls, log, wss, 'port');
+        super(fs, log, wss, 'port');
     }
 
     ngOnInit() {

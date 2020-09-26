@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {SvgModule} from '../../fw/svg/svg.module';
-import {WidgetModule} from '../../fw/widget/widget.module';
-import {ClusterComponent} from './cluster/cluster.component';
-import {ClusterRoutingModule} from './cluster-routing.module';
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Gui2FwLibModule } from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
+import { ClusterComponent } from './cluster/cluster.component';
 import { ClusterDetailsDirective } from './cluster-details.directive';
+import {RouterModule} from '@angular/router';
 
 @NgModule({
     imports: [
         CommonModule,
-        SvgModule,
-        ClusterRoutingModule,
-        WidgetModule
+        Gui2FwLibModule,
+        RouterModule.forChild([{path: '', component: ClusterComponent}]),
     ],
     declarations: [ClusterComponent, ClusterDetailsDirective]
 })

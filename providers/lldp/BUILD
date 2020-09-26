@@ -1,7 +1,5 @@
-COMPILE_DEPS = CORE_DEPS + NETTY + JACKSON + [
-    "@org_apache_karaf_shell_console//jar",
+COMPILE_DEPS = CORE_DEPS + NETTY + JACKSON + CLI + [
     "//providers/lldpcommon:onos-providers-lldpcommon",
-    "//cli:onos-cli",
 ]
 
 BUNDLES = [
@@ -10,6 +8,7 @@ BUNDLES = [
 ]
 
 osgi_jar_with_tests(
+    karaf_command_packages = ["org.onosproject.provider.lldp.cli"],
     test_deps = TEST_ADAPTERS,
     deps = COMPILE_DEPS,
 )

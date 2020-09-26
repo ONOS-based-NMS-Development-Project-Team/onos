@@ -18,10 +18,14 @@ package org.onosproject.cli.net;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.onosproject.net.ConnectPoint.deviceConnectPoint;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.net.completer.AnnotationKeysCompleter;
+import org.onosproject.cli.net.completer.PeerConnectPointCompleter;
 import org.onosproject.net.ConnectPoint;
 import org.onosproject.net.DefaultAnnotations;
 import org.onosproject.net.Link;
@@ -36,11 +40,12 @@ import org.onosproject.net.provider.ProviderId;
 /**
  * Annotates network link model.
  */
+@Service
 @Command(scope = "onos", name = "annotate-link",
          description = "Annotates network model entities")
 public class AnnotateLinkCommand extends AbstractShellCommand {
 
-    static final ProviderId PID = new ProviderId("cli", "org.onosproject.cli", true);
+    static final ProviderId PID = new ProviderId("cli", "org.onosproject.cli");
 
     @Option(name = "--both",
             description = "Add to both direction")
@@ -48,16 +53,19 @@ public class AnnotateLinkCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "srcConnectPoint", description = "source Connect Point",
             required = true, multiValued = false)
+    @Completion(ConnectPointCompleter.class)
     private String srcCp = null;
 
     @Argument(index = 1, name = "dstConnectPoint", description = "destination Connect Point",
             required = true, multiValued = false)
+    @Completion(PeerConnectPointCompleter.class)
     private String dstCp = null;
 
 
 
     @Argument(index = 2, name = "key", description = "Annotation key",
             required = true, multiValued = false)
+    @Completion(AnnotationKeysCompleter.class)
     private String key = null;
 
     @Argument(index = 3, name = "value",
@@ -67,7 +75,7 @@ public class AnnotateLinkCommand extends AbstractShellCommand {
 
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         LinkService service = get(LinkService.class);
         ConnectPoint src = deviceConnectPoint(srcCp);
         ConnectPoint dst = deviceConnectPoint(dstCp);

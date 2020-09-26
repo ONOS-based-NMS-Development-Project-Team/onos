@@ -1,5 +1,4 @@
 COMPILE_DEPS = CORE_DEPS + JACKSON + CLI + [
-    "//incubator/api:onos-incubator-api",
     "//apps/routing-api:onos-apps-routing-api",
     "//apps/route-service/api:onos-apps-route-service-api",
 ]
@@ -10,6 +9,7 @@ BUNDLES = [
 ]
 
 osgi_jar_with_tests(
+    karaf_command_packages = ["org.onosproject.pim.cli"],
     resources = glob(["src/main/resources/**"]),
     resources_root = "src/main/resources",
     deps = COMPILE_DEPS,

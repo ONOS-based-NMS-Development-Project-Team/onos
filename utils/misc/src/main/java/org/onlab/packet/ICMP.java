@@ -31,9 +31,6 @@ public class ICMP extends BasePacket {
 
     public static final byte TYPE_ECHO_REQUEST = 0x08;
     public static final byte TYPE_ECHO_REPLY = 0x00;
-    //Uses CODE_ECHO_REPLY instead.
-    @Deprecated
-    public static final byte SUBTYPE_ECHO_REPLY = 0x00;
 
     public static final byte CODE_ECHO_REPLY = 0x00;
     public static final byte CODE_ECHO_REQEUST = 0x00;
@@ -267,7 +264,7 @@ public class ICMP extends BasePacket {
 
         icmpReply.setPayload(icmpRequest.getPayload());
         icmpReply.setIcmpType(ICMP.TYPE_ECHO_REPLY);
-        icmpReply.setIcmpCode(ICMP.SUBTYPE_ECHO_REPLY);
+        icmpReply.setIcmpCode(ICMP.CODE_ECHO_REPLY);
         icmpReply.setChecksum((short) 0);
         ipReply.setPayload(icmpReply);
 

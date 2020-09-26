@@ -17,8 +17,9 @@ package org.onosproject.cli.net;
 
 import java.util.List;
 
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.cluster.ClusterService;
 import org.onosproject.cluster.ControllerNode;
@@ -26,7 +27,6 @@ import org.onosproject.cluster.NodeId;
 import org.onosproject.store.primitives.PartitionAdminService;
 import org.onosproject.store.service.PartitionClientInfo;
 import org.onosproject.store.service.PartitionInfo;
-import org.onosproject.store.service.StorageAdminService;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,6 +37,7 @@ import com.google.common.collect.Ordering;
 /**
  * Command to list the database partitions in the system.
  */
+@Service
 @Command(scope = "onos", name = "partitions",
         description = "Lists information about partitions in the system")
 public class PartitionsListCommand extends AbstractShellCommand {
@@ -172,10 +173,9 @@ public class PartitionsListCommand extends AbstractShellCommand {
     }
 
     @Override
-    protected void execute() {
-        StorageAdminService storageAdminService = get(StorageAdminService.class);
+    protected void doExecute() {
+        PartitionAdminService partitionAdminService = get(PartitionAdminService.class);
         if (reportClientInfo) {
-            PartitionAdminService partitionAdminService = get(PartitionAdminService.class);
             List<PartitionClientInfo> partitionClientInfo = partitionAdminService.partitionClientInfo();
             if (outputJson()) {
                 print("%s", jsonForClientInfo(partitionClientInfo));
@@ -183,7 +183,7 @@ public class PartitionsListCommand extends AbstractShellCommand {
                 displayPartitionClients(partitionClientInfo);
             }
         } else {
-            List<PartitionInfo> partitionInfo = storageAdminService.getPartitionInfo();
+            List<PartitionInfo> partitionInfo = partitionAdminService.partitionInfo();
             if (outputJson()) {
                 print("%s", json(partitionInfo));
             } else {

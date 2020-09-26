@@ -743,7 +743,8 @@ public class TopologyViewMessageHandler extends TopologyViewMessageHandlerBase {
     //=======================================================================
 
     // Converts highlights to JSON format and sends the message to the client
-    void sendHighlights(Highlights highlights) {
+    @Override
+    public void sendHighlights(Highlights highlights) {
         sendMessage(highlightsMessage(highlights));
     }
 
@@ -775,13 +776,16 @@ public class TopologyViewMessageHandler extends TopologyViewMessageHandlerBase {
         // Send optical first, others later for layered rendering
         for (Device device : services.device().getDevices()) {
             if ((device.type() == Device.Type.ROADM) ||
-                    (device.type() == Device.Type.OTN)) {
+                    (device.type() == Device.Type.OTN) ||
+                    (device.type() == Device.Type.OLS) ||
+                    (device.type() == Device.Type.TERMINAL_DEVICE)) {
                 sendMessage(deviceMessage(new DeviceEvent(DEVICE_ADDED, device)));
             }
         }
         for (Device device : services.device().getDevices()) {
             if ((device.type() != Device.Type.ROADM) &&
-                    (device.type() != Device.Type.OTN) && device.type() != Device.Type.CONTROLLER) {
+                    (device.type() != Device.Type.OTN) && (device.type() != Device.Type.OLS) &&
+                    (device.type() != Device.Type.TERMINAL_DEVICE) && (device.type() != Device.Type.CONTROLLER)) {
                 sendMessage(deviceMessage(new DeviceEvent(DEVICE_ADDED, device)));
             }
         }

@@ -17,12 +17,7 @@ package org.onosproject.net.packet.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
+import org.onlab.util.ItemNotFoundException;
 import org.onosproject.cluster.ClusterService;
 import org.onosproject.cluster.NodeId;
 import org.onosproject.core.ApplicationId;
@@ -59,12 +54,22 @@ import org.onosproject.net.packet.PacketStore;
 import org.onosproject.net.packet.PacketStoreDelegate;
 import org.onosproject.net.provider.AbstractProviderRegistry;
 import org.onosproject.net.provider.AbstractProviderService;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.onosproject.net.packet.PacketInFilter;
+import org.onosproject.net.packet.PacketInFilter.FilterAction;
 import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.onlab.util.Tools.groupedThreads;
@@ -77,8 +82,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Provides a basic implementation of the packet SB &amp; NB APIs.
  */
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = { PacketService.class, PacketProviderRegistry.class })
 public class PacketManager
         extends AbstractProviderRegistry<PacketProvider, PacketProviderService>
         implements PacketService, PacketProviderRegistry {
@@ -93,22 +97,22 @@ public class PacketManager
 
     private final PacketStoreDelegate delegate = new InternalStoreDelegate();
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ClusterService clusterService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DeviceService deviceService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DriverService driverService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected PacketStore store;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected FlowObjectiveService objectiveService;
 
     private ExecutorService eventHandlingExecutor;
@@ -121,6 +125,8 @@ public class PacketManager
 
     private ApplicationId appId;
     private NodeId localNodeId;
+
+    private List<PacketInFilter> filters = new CopyOnWriteArrayList<>();
 
     @Activate
     public void activate() {
@@ -137,7 +143,7 @@ public class PacketManager
                 if (device != null) {
                     pushRule(device, request);
                 } else {
-                    log.info("Device is not ready yet. Skip processing packet requests {}", request);
+                    log.info("Device is not ready yet; not processing packet request {}", request);
                 }
             } else {
                 pushToAllDevices(request);
@@ -187,6 +193,16 @@ public class PacketManager
                 break;
             }
         }
+    }
+
+    @Override
+    public void addFilter(PacketInFilter filter) {
+        filters.add(filter);
+    }
+
+    @Override
+    public void removeFilter(PacketInFilter filter) {
+        filters.remove(filter);
     }
 
     @Override
@@ -281,10 +297,15 @@ public class PacketManager
     private void pushToAllDevices(PacketRequest request) {
         log.debug("Pushing packet request {} to all devices", request);
         for (Device device : deviceService.getDevices()) {
-            Driver driver = driverService.getDriver(device.id());
-            if (driver != null &&
-                    Boolean.parseBoolean(driver.getProperty(SUPPORT_PACKET_REQUEST_PROPERTY))) {
-                pushRule(device, request);
+            try {
+                Driver driver = driverService.getDriver(device.id());
+                if (driver != null &&
+                        Boolean.parseBoolean(driver.getProperty(SUPPORT_PACKET_REQUEST_PROPERTY))) {
+                    pushRule(device, request);
+                }
+            } catch (ItemNotFoundException e) {
+                log.warn("Device driver not found for {}; not processing packet request {}",
+                         device.id(), request);
             }
         }
     }
@@ -306,6 +327,10 @@ public class PacketManager
      */
     private void pushRule(Device device, PacketRequest request) {
         if (!device.type().equals(Device.Type.SWITCH)) {
+            return;
+        }
+
+        if (!deviceService.isAvailable(device.id())) {
             return;
         }
 
@@ -364,6 +389,19 @@ public class PacketManager
         store.emit(packet);
     }
 
+    @Override
+    public List<PacketInFilter> getFilters() {
+        return ImmutableList.copyOf(filters);
+    }
+
+    @Override
+    public void clearFilters() {
+        for (PacketInFilter filter: filters) {
+            filter.stop();
+        }
+        filters.clear();
+    }
+
     private void localEmit(OutboundPacket packet) {
         Device device = deviceService.getDevice(packet.sendThrough());
         if (device == null) {
@@ -391,8 +429,53 @@ public class PacketManager
             super(provider);
         }
 
+        /**
+         * Loops through all packet filters and checks if the filter is
+         * enabled and allowed to be processed.
+         * It increments the counter to track the pending packets to be
+         * processed based on the filter selected.
+         *
+         * @param context PackerContext holding the packet information
+         * @return FilterAction Action decided for the based on the filter applied
+         */
+        private FilterAction prePacketProcess(PacketContext context) {
+            FilterAction filterAction = FilterAction.FILTER_INVALID;
+            for (PacketInFilter filter: filters) {
+                filterAction = filter.preProcess(context);
+                if (filterAction == FilterAction.FILTER_DISABLED) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("{}: filter is disabled during pre processing", filter.name());
+                    }
+                    continue;
+                }
+                if (filterAction == FilterAction.PACKET_DENY) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("{}: overflow counter after dropping packet is: {}", filter.name(),
+                                filter.droppedPackets());
+                    }
+                    break;
+                }
+                if (filterAction == FilterAction.PACKET_ALLOW) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("{}: counter after picked for processing is: {}", filter.name(),
+                                  filter.pendingPackets());
+                    }
+                    break;
+                }
+            }
+            return filterAction;
+        }
+
         @Override
         public void processPacket(PacketContext context) {
+            FilterAction filterAction = prePacketProcess(context);
+
+            if (filterAction == FilterAction.PACKET_DENY) {
+                if (log.isTraceEnabled()) {
+                    log.trace("The packet is dropped as crossed the maxcount");
+                }
+                return;
+            }
             // TODO filter packets sent to processors based on registrations
             for (ProcessorEntry entry : processors) {
                 try {
@@ -490,7 +573,7 @@ public class PacketManager
                     }
                     pushRulesToDevice(device);
                 } catch (Exception e) {
-                    log.warn("Failed to process {}", event, e);
+                    log.warn("Failed to process {}: {}", event, e.getMessage());
                 }
             });
         }

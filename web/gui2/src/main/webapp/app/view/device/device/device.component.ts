@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 import { Component, OnInit, OnDestroy} from '@angular/core';
-import { FnService } from '../../../fw/util/fn.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { LogService } from '../../../log.service';
-import { TableBaseImpl, TableResponse, SortDir } from '../../../fw/widget/table.base';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
+
+import {
+    FnService,
+    LogService,
+    WebSocketService,
+    SortDir, TableBaseImpl, TableResponse
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
+
 import { ActivatedRoute, Router } from '@angular/router';
 
 /**
@@ -54,7 +57,7 @@ interface Device {
 @Component({
     selector: 'onos-device',
     templateUrl: './device.component.html',
-    styleUrls: ['./device.component.css', './device.theme.css', '../../../fw/widget/table.css', '../../../fw/widget/table.theme.css']
+    styleUrls: ['./device.component.css', './device.theme.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.theme.css']
 })
 export class DeviceComponent extends TableBaseImpl implements OnInit, OnDestroy {
 
@@ -67,13 +70,12 @@ export class DeviceComponent extends TableBaseImpl implements OnInit, OnDestroy 
 
     constructor(
         protected fs: FnService,
-        protected ls: LoadingService,
         protected log: LogService,
         protected as: ActivatedRoute,
         protected router: Router,
         protected wss: WebSocketService,
     ) {
-        super(fs, ls, log, wss, 'device');
+        super(fs, log, wss, 'device');
         this.responseCallback = this.deviceResponseCb;
 
         this.as.queryParams.subscribe(params => {
@@ -108,7 +110,7 @@ export class DeviceComponent extends TableBaseImpl implements OnInit, OnDestroy 
     }
 
     navto(path) {
-        this.log.debug('navigate');
+        this.log.debug('navigate to', path);
         if (this.selId) {
             this.router.navigate([path], { queryParams: { devId: this.selId } });
         }

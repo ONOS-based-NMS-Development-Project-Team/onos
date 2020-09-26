@@ -16,13 +16,14 @@
 package org.onosproject.ofagent.cli;
 
 import com.google.common.collect.Sets;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.packet.IpAddress;
 import org.onlab.packet.TpPort;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.incubator.net.virtual.NetworkId;
-import org.onosproject.incubator.net.virtual.TenantId;
+import org.onosproject.net.TenantId;
 import org.onosproject.incubator.net.virtual.VirtualNetworkService;
 import org.onosproject.ofagent.api.OFAgent;
 import org.onosproject.ofagent.api.OFAgentAdminService;
@@ -37,6 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Creates a new OFAagent.
  */
+@Service
 @Command(scope = "onos", name = "ofagent-create", description = "Add a new ofagent")
 public class OFAgentCreateCommand extends AbstractShellCommand {
 
@@ -52,7 +54,7 @@ public class OFAgentCreateCommand extends AbstractShellCommand {
     private String[] strCtrls = {};
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         Set<OFController> ctrls = Sets.newHashSet();
         for (String strCtrl : strCtrls) {
             if (!isValidController(strCtrl)) {

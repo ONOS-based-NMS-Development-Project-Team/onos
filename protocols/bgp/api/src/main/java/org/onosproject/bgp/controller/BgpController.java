@@ -151,6 +151,27 @@ public interface BgpController {
     Set<BgpLinkListener> linkListener();
 
     /**
+     * Register a listener for BGP Prefix message events.
+     *
+     * @param listener the listener to notify
+     */
+    void addPrefixListener(BgpPrefixListener listener);
+
+    /**
+     * Unregister a listener for BGP Prefix message events.
+     *
+     * @param listener the listener to unregister
+     */
+    void removePrefixListener(BgpPrefixListener listener);
+
+    /**
+     * Returns set of BGP prefix listeners.
+     *
+     * @return set of BGP prefix listeners
+     */
+    Set<BgpPrefixListener> prefixListener();
+
+    /**
      * Stores the exceptions occurred during an active session.
      *
      * @param peerId BGP peer id
@@ -200,4 +221,9 @@ public interface BgpController {
      */
     Set<BgpRouteListener> routeListener();
 
+    /**
+     * Helper function to notify the controller if the topology has changed.
+     * Controller will decide if route-refresh needs to be triggered
+     */
+    void notifyTopologyChange();
 }

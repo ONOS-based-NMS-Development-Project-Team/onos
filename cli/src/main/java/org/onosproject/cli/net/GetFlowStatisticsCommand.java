@@ -16,9 +16,11 @@
 
 package org.onosproject.cli.net;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.ConnectPoint;
 import org.onosproject.net.Device;
@@ -42,12 +44,14 @@ import static org.onosproject.net.PortNumber.portNumber;
 /**
  * Fetches flow statistics with a flow type and instruction type.
  */
+@Service
 @Command(scope = "onos", name = "get-flow-stats",
         description = "Fetches flow stats for a connection point with given flow type and instruction type")
 public class GetFlowStatisticsCommand extends AbstractShellCommand {
     @Argument(index = 0, name = "devicePort",
             description = "Device[/Port] connectPoint Description",
             required = true, multiValued = false)
+    @Completion(ConnectPointCompleter.class)
     String devicePort = null;
 
     @Option(name = "-s", aliases = "--summary",
@@ -79,7 +83,7 @@ public class GetFlowStatisticsCommand extends AbstractShellCommand {
     String instructionType = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         DeviceService deviceService = get(DeviceService.class);
         FlowStatisticService flowStatsService = get(FlowStatisticService.class);
 

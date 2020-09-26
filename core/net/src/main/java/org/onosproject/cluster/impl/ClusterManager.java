@@ -15,25 +15,11 @@
  */
 package org.onosproject.cluster.impl;
 
-import java.time.Instant;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.karaf.system.SystemService;
-import org.onlab.packet.IpAddress;
 import org.onosproject.cluster.ClusterAdminService;
 import org.onosproject.cluster.ClusterEvent;
 import org.onosproject.cluster.ClusterEventListener;
 import org.onosproject.cluster.ClusterMetadata;
-import org.onosproject.cluster.ClusterMetadataDiff;
-import org.onosproject.cluster.ClusterMetadataEvent;
-import org.onosproject.cluster.ClusterMetadataEventListener;
 import org.onosproject.cluster.ClusterService;
 import org.onosproject.cluster.ClusterStore;
 import org.onosproject.cluster.ClusterStoreDelegate;
@@ -42,9 +28,17 @@ import org.onosproject.cluster.Node;
 import org.onosproject.cluster.NodeId;
 import org.onosproject.core.Version;
 import org.onosproject.event.AbstractListenerManager;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import java.time.Instant;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.onosproject.security.AppGuard.checkPermission;
 import static org.onosproject.security.AppPermission.Type.CLUSTER_READ;
@@ -53,8 +47,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Implementation of the cluster service.
  */
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = {ClusterService.class, ClusterAdminService.class})
 public class ClusterManager
         extends AbstractListenerManager<ClusterEvent, ClusterEventListener>
         implements ClusterService, ClusterAdminService {
@@ -65,14 +58,13 @@ public class ClusterManager
 
     private ClusterStoreDelegate delegate = new InternalStoreDelegate();
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ClusterStore store;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected SystemService systemService;
 
     private final AtomicReference<ClusterMetadata> currentMetadata = new AtomicReference<>();
-    private final InternalClusterMetadataListener metadataListener = new InternalClusterMetadataListener();
 
     @Activate
     public void activate() {
@@ -138,56 +130,11 @@ public class ClusterManager
         return store.getLastUpdatedInstant(nodeId);
     }
 
-    @Override
-    public void formCluster(Set<ControllerNode> nodes) {
-        formCluster(nodes, DEFAULT_PARTITION_SIZE);
-    }
-
-    @Override
-    public void formCluster(Set<ControllerNode> nodes, int partitionSize) {
-        log.warn("formCluster is deprecated");
-    }
-
-    @Override
-    public ControllerNode addNode(NodeId nodeId, IpAddress ip, int tcpPort) {
-        checkNotNull(nodeId, INSTANCE_ID_NULL);
-        checkNotNull(ip, "IP address cannot be null");
-        checkArgument(tcpPort > 5000, "TCP port must be > 5000");
-        return store.addNode(nodeId, ip, tcpPort);
-    }
-
-    @Override
-    public void removeNode(NodeId nodeId) {
-        checkNotNull(nodeId, INSTANCE_ID_NULL);
-        store.removeNode(nodeId);
-    }
-
     // Store delegate to re-post events emitted from the store.
     private class InternalStoreDelegate implements ClusterStoreDelegate {
         @Override
         public void notify(ClusterEvent event) {
             post(event);
-        }
-    }
-
-    /**
-     * Processes metadata by adding and removing nodes from the cluster.
-     */
-    private synchronized void processMetadata(ClusterMetadata metadata) {
-        try {
-            ClusterMetadataDiff examiner =
-                    new ClusterMetadataDiff(currentMetadata.get(), metadata);
-            examiner.nodesAdded().forEach(node -> addNode(node.id(), node.ip(), node.tcpPort()));
-            examiner.nodesRemoved().forEach(this::removeNode);
-        } finally {
-            currentMetadata.set(metadata);
-        }
-    }
-
-    private class InternalClusterMetadataListener implements ClusterMetadataEventListener {
-        @Override
-        public void event(ClusterMetadataEvent event) {
-            processMetadata(event.subject());
         }
     }
 }

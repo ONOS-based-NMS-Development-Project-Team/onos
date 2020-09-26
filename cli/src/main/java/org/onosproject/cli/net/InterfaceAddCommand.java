@@ -17,12 +17,15 @@
 package org.onosproject.cli.net;
 
 import com.google.common.collect.Lists;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onlab.packet.MacAddress;
 import org.onlab.packet.VlanId;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.PlaceholderCompleter;
 import org.onosproject.net.intf.Interface;
 import org.onosproject.net.intf.InterfaceAdminService;
 import org.onosproject.net.ConnectPoint;
@@ -33,6 +36,7 @@ import java.util.List;
 /**
  * Adds a new interface configuration.
  */
+@Service
 @Command(scope = "onos", name = "interface-add",
         description = "Adds a new configured interface")
 public class InterfaceAddCommand extends AbstractShellCommand {
@@ -40,10 +44,12 @@ public class InterfaceAddCommand extends AbstractShellCommand {
     @Argument(index = 0, name = "port",
             description = "Device port that the interface is associated with",
             required = true, multiValued = false)
+    @Completion(ConnectPointCompleter.class)
     private String connectPoint = null;
 
     @Argument(index = 1, name = "name", description = "Interface name",
             required = true, multiValued = false)
+    @Completion(PlaceholderCompleter.class)
     private String name = null;
 
     @Option(name = "-m", aliases = "--mac",
@@ -63,7 +69,7 @@ public class InterfaceAddCommand extends AbstractShellCommand {
     private String vlan = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         InterfaceAdminService interfaceService = get(InterfaceAdminService.class);
 
         List<InterfaceIpAddress> ipAddresses = Lists.newArrayList();

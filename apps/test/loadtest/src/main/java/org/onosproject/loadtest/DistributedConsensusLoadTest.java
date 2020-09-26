@@ -15,9 +15,23 @@
  */
 package org.onosproject.loadtest;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.onlab.util.Tools.get;
-import static org.slf4j.LoggerFactory.getLogger;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.RateLimiter;
+import org.apache.commons.lang.math.RandomUtils;
+import org.onlab.util.Tools;
+import org.onosproject.cfg.ComponentConfigService;
+import org.onosproject.core.ApplicationId;
+import org.onosproject.core.CoreService;
+import org.onosproject.store.service.AsyncAtomicCounter;
+import org.onosproject.store.service.StorageService;
+import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.slf4j.Logger;
 
 import java.util.Dictionary;
 import java.util.List;
@@ -30,57 +44,45 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.math.RandomUtils;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
-import org.onlab.util.Tools;
-import org.onosproject.cfg.ComponentConfigService;
-import org.onosproject.core.ApplicationId;
-import org.onosproject.core.CoreService;
-import org.onosproject.store.service.AsyncAtomicCounter;
-import org.onosproject.store.service.StorageService;
-import org.osgi.service.component.ComponentContext;
-import org.slf4j.Logger;
-
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.RateLimiter;
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.onlab.util.Tools.get;
+import static org.onosproject.loadtest.OsgiPropertyConstants.RATE;
+import static org.onosproject.loadtest.OsgiPropertyConstants.RATE_DEFAULT;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Simple application for load testing distributed consensus.
  * <p>
  * This application simply increments as {@link AsyncAtomicCounter} at a configurable rate.
  */
-@Component(immediate = true)
-@Service(value = DistributedConsensusLoadTest.class)
+@Component(
+    immediate = true,
+    service = DistributedConsensusLoadTest.class,
+    property = {
+        RATE + ":Integer=" + RATE_DEFAULT
+    }
+)
 public class DistributedConsensusLoadTest {
 
     private final Logger log = getLogger(getClass());
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService configService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected StorageService storageService;
 
     private ApplicationId appId;
 
     private AtomicBoolean stopped = new AtomicBoolean(false);
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
 
-    private static final int DEFAULT_RATE = 100;
     private static final int TOTAL_COUNTERS = 50;
 
-    @Property(name = "rate", intValue = DEFAULT_RATE,
-            label = "Total number of increments per second to the atomic counter")
-    protected int rate = 0;
+    /** Total number of increments per second to the atomic counter. */
+    protected int rate = RATE_DEFAULT;
 
     private final AtomicLong previousReportTime = new AtomicLong(0);
     private final AtomicLong previousCount = new AtomicLong(0);
@@ -149,11 +151,11 @@ public class DistributedConsensusLoadTest {
 
     @Modified
     public void modified(ComponentContext context) {
-        int newRate = DEFAULT_RATE;
+        int newRate = RATE_DEFAULT;
         if (context != null) {
             Dictionary properties = context.getProperties();
             try {
-                String s = get(properties, "rate");
+                String s = get(properties, RATE);
                 newRate = isNullOrEmpty(s)
                         ? rate : Integer.parseInt(s.trim());
             } catch (Exception e) {

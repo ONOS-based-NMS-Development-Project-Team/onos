@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { TableBaseImpl, SortDir } from '../../../fw/widget/table.base';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
-import { LogService } from '../../../log.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { FnService } from '../../../fw/util/fn.service';
+import {
+    FnService,
+    LogService,
+    WebSocketService,
+    SortDir, TableBaseImpl
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 import { ActivatedRoute } from '@angular/router';
 
 /**
@@ -27,18 +28,17 @@ import { ActivatedRoute } from '@angular/router';
 @Component({
     selector: 'onos-partition',
     templateUrl: './partition.component.html',
-    styleUrls: ['./partition.component.css', '../../../fw/widget/table.css', '../../../fw/widget/table.theme.css']
+    styleUrls: ['./partition.component.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.theme.css']
 })
 export class PartitionComponent extends TableBaseImpl implements OnInit, OnDestroy {
 
     constructor(
         protected fs: FnService,
         protected log: LogService,
-        protected ls: LoadingService,
         protected as: ActivatedRoute,
         protected wss: WebSocketService,
     ) {
-        super(fs, ls, log, wss, 'partition');
+        super(fs, log, wss, 'partition');
         this.sortParams = {
             firstCol: 'name',
             firstDir: SortDir.desc,

@@ -16,11 +16,10 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FlowComponent } from './flow/flow.component';
-import { SvgModule } from '../../fw/svg/svg.module';
-import { WidgetModule } from '../../fw/widget/widget.module';
-import { FlowRoutingModule } from './flow-routing.module';
+import { Gui2FwLibModule } from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 import { FormsModule } from '@angular/forms';
 import { FlowDetailsComponent } from './flowdetails/flowdetails/flowdetails.component';
+import {RouterModule} from '@angular/router';
 
 /**
  * ONOS GUI -- Flow View Module
@@ -28,10 +27,9 @@ import { FlowDetailsComponent } from './flowdetails/flowdetails/flowdetails.comp
 @NgModule({
     imports: [
         CommonModule,
-        SvgModule,
-        FlowRoutingModule,
-        FormsModule,
-        WidgetModule
+        Gui2FwLibModule,
+        RouterModule.forChild([{path: '', component: FlowComponent}]),
+        FormsModule
     ],
     declarations: [
         FlowComponent,

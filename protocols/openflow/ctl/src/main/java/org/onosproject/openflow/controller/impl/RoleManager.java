@@ -58,7 +58,7 @@ class RoleManager implements RoleHandler {
     private final int pendingXidTimeoutSeconds = 60;
 
     // The cache for pending expected RoleReplies keyed on expected XID
-    private Cache<Integer, RoleState> pendingReplies =
+    private Cache<Long, RoleState> pendingReplies =
             CacheBuilder.newBuilder()
                 .expireAfterWrite(pendingXidTimeoutSeconds, TimeUnit.SECONDS)
                 .build();
@@ -79,7 +79,7 @@ class RoleManager implements RoleHandler {
      *
      * @param role role to request
      */
-    private int sendNxRoleRequest(RoleState role) throws IOException {
+    private long sendNxRoleRequest(RoleState role) throws IOException {
         // Convert the role enum to the appropriate role to send
         OFNiciraControllerRole roleToSend = OFNiciraControllerRole.ROLE_OTHER;
         switch (role) {
@@ -94,7 +94,7 @@ class RoleManager implements RoleHandler {
             roleToSend = OFNiciraControllerRole.ROLE_OTHER;
             log.debug("Sending Nx Role.SLAVE to switch {}.", sw);
         }
-        int xid = sw.getNextTransactionId();
+        long xid = sw.getNextTransactionId();
         OFExperimenter roleRequest = OFFactories.getFactory(OFVersion.OF_10)
                 .buildNiciraControllerRoleRequest()
                 .setXid(xid)
@@ -104,7 +104,7 @@ class RoleManager implements RoleHandler {
         return xid;
     }
 
-    private int sendOF13RoleRequest(RoleState role) throws IOException {
+    private long sendOF13RoleRequest(RoleState role) throws IOException {
         // Convert the role enum to the appropriate role to send
         OFControllerRole roleToSend = OFControllerRole.ROLE_NOCHANGE;
         switch (role) {
@@ -122,7 +122,7 @@ class RoleManager implements RoleHandler {
                     + " Should only be used for queries.", sw);
         }
 
-        int xid = sw.getNextTransactionId();
+        long xid = sw.getNextTransactionId();
         OFRoleRequest rrm = sw.factory()
                 .buildRoleRequest()
                 .setRole(roleToSend)
@@ -182,7 +182,7 @@ class RoleManager implements RoleHandler {
     @Override
     public synchronized RoleRecvStatus deliverRoleReply(RoleReplyInfo rri)
             throws SwitchStateException {
-        int xid = (int) rri.getXid();
+        long xid = rri.getXid();
         RoleState receivedRole = rri.getRole();
         RoleState expectedRole = pendingReplies.getIfPresent(xid);
 

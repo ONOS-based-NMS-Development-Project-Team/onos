@@ -19,9 +19,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onosproject.utils.Comparators;
 import org.onosproject.net.Device;
 import org.onosproject.net.Port;
@@ -35,6 +37,7 @@ import static org.onosproject.net.DeviceId.deviceId;
 /**
  * Lists all ports or all ports of a device.
  */
+@Service
 @Command(scope = "onos", name = "ports",
          description = "Lists all ports or all ports of a device")
 public class DevicePortsListCommand extends DevicesListCommand {
@@ -43,6 +46,7 @@ public class DevicePortsListCommand extends DevicesListCommand {
 
     @Option(name = "-e", aliases = "--enabled", description = "Show only enabled ports",
             required = false, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     private boolean enabled = false;
 
     @Option(name = "-d", aliases = "--disabled", description = "Show only disabled ports",
@@ -51,10 +55,11 @@ public class DevicePortsListCommand extends DevicesListCommand {
 
     @Argument(index = 0, name = "uri", description = "Device ID",
               required = false, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     protected String uri = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         DeviceService service = get(DeviceService.class);
         if (uri == null) {
             if (outputJson()) {
@@ -109,6 +114,7 @@ public class DevicePortsListCommand extends DevicesListCommand {
         for (Port port : service.getPorts(device.id())) {
             if (isIncluded(port)) {
                 ports.add(mapper.createObjectNode()
+                                  .put("element", device.id().toString())
                                   .put("port", port.number().toString())
                                   .put("isEnabled", port.isEnabled())
                                   .put("type", port.type().toString().toLowerCase())

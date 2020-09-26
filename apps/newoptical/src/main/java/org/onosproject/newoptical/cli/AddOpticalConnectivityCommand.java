@@ -15,8 +15,10 @@
  */
 package org.onosproject.newoptical.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.util.Bandwidth;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.cli.net.ConnectPointCompleter;
@@ -28,6 +30,7 @@ import org.onosproject.net.ConnectPoint;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.PortNumber;
 
+@Service
 @Command(scope = "onos", name = "add-optical-connectivity",
         description = "Configure optical domain connectivity")
 public class AddOpticalConnectivityCommand extends AbstractShellCommand {
@@ -39,10 +42,12 @@ public class AddOpticalConnectivityCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "ingress", description = "Ingress connect point",
             required = true, multiValued = false)
+    @Completion(ConnectPointCompleter.class)
     String ingressStr = null;
 
     @Argument(index = 1, name = "egress", description = "Egress connect point",
             required = true, multiValued = false)
+    @Completion(ConnectPointCompleter.class)
     String egressStr = null;
 
     @Argument(index = 2, name = "bandwidth", description = "Bandwidth",
@@ -56,7 +61,7 @@ public class AddOpticalConnectivityCommand extends AbstractShellCommand {
 
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         OpticalPathService opticalPathService = get(OpticalPathService.class);
 
         ConnectPoint ingress = readConnectPoint(ingressStr);

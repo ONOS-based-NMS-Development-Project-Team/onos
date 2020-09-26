@@ -20,12 +20,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.RandomUtils;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onlab.packet.ChassisId;
 import org.onlab.util.KryoNamespace;
 import org.onosproject.cluster.ClusterService;
@@ -68,6 +62,11 @@ import org.onosproject.store.service.MultiValuedTimestamp;
 import org.onosproject.store.service.Serializer;
 import org.onosproject.store.service.StorageService;
 import org.onosproject.store.service.WallClockTimestamp;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -99,9 +98,18 @@ import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static org.onlab.util.Tools.groupedThreads;
 import static org.onlab.util.Tools.minPriority;
 import static org.onosproject.cluster.ControllerNodeToNodeId.toNodeId;
-import static org.onosproject.net.device.DeviceEvent.Type.*;
-import static org.onosproject.store.device.impl.GossipDeviceStoreMessageSubjects.*;
+import static org.onosproject.net.device.DeviceEvent.Type.DEVICE_AVAILABILITY_CHANGED;
+import static org.onosproject.net.device.DeviceEvent.Type.PORT_ADDED;
+import static org.onosproject.net.device.DeviceEvent.Type.PORT_REMOVED;
+import static org.onosproject.net.device.DeviceEvent.Type.PORT_STATS_UPDATED;
+import static org.onosproject.net.device.DeviceEvent.Type.PORT_UPDATED;
+import static org.onosproject.store.device.impl.GossipDeviceStoreMessageSubjects.DEVICE_ADVERTISE;
 import static org.onosproject.store.device.impl.GossipDeviceStoreMessageSubjects.DEVICE_REMOVED;
+import static org.onosproject.store.device.impl.GossipDeviceStoreMessageSubjects.DEVICE_REMOVE_REQ;
+import static org.onosproject.store.device.impl.GossipDeviceStoreMessageSubjects.DEVICE_STATUS_CHANGE;
+import static org.onosproject.store.device.impl.GossipDeviceStoreMessageSubjects.DEVICE_UPDATE;
+import static org.onosproject.store.device.impl.GossipDeviceStoreMessageSubjects.PORT_STATUS_UPDATE;
+import static org.onosproject.store.device.impl.GossipDeviceStoreMessageSubjects.PORT_UPDATE;
 import static org.onosproject.store.service.EventuallyConsistentMapEvent.Type.PUT;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -109,8 +117,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Manages inventory of infrastructure devices using gossip protocol to distribute
  * information.
  */
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = DeviceStore.class)
 public class GossipDeviceStore
         extends AbstractStore<DeviceEvent, DeviceStoreDelegate>
         implements DeviceStore {
@@ -142,22 +149,22 @@ public class GossipDeviceStore
     // available(=UP) devices
     private final Set<DeviceId> availableDevices = Sets.newConcurrentHashSet();
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DeviceClockService deviceClockService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected StorageService storageService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ClusterCommunicationService clusterCommunicator;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ClusterService clusterService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected MastershipService mastershipService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected MastershipTermService termService;
 
     private static final Timestamp DEFAULT_TIMESTAMP = new MastershipBasedTimestamp(0, 0);
@@ -323,11 +330,12 @@ public class GossipDeviceStore
             mergedDesc = device.get(providerId).getDeviceDesc();
         }
 
-        // FIXME: This may result in duplicate events as each instance reports on the new device
-        // regardless of whether it is a master or not.
-        log.debug("Notifying peers of a device update topology event for providerId: {} and deviceId: {}",
-                providerId, deviceId);
-        notifyPeers(new InternalDeviceEvent(providerId, deviceId, mergedDesc));
+        // If this node is the master for the device, update peers.
+        if (isMaster) {
+            log.debug("Notifying peers of a device update topology event for providerId: {} and deviceId: {}",
+                    providerId, deviceId);
+            notifyPeers(new InternalDeviceEvent(providerId, deviceId, mergedDesc));
+        }
         notifyDelegateIfNotNull(deviceEvent);
 
         return deviceEvent;
@@ -409,7 +417,10 @@ public class GossipDeviceStore
                 !Objects.equals(oldDevice.hwVersion(), newDevice.hwVersion()) ||
                         !Objects.equals(oldDevice.swVersion(), newDevice.swVersion()) ||
                         !Objects.equals(oldDevice.providerId(), newDevice.providerId()) ||
-                        !Objects.equals(oldDevice.chassisId(), newDevice.chassisId());
+                        !Objects.equals(oldDevice.chassisId(), newDevice.chassisId()) ||
+                        !Objects.equals(oldDevice.serialNumber(), newDevice.serialNumber()) ||
+                        !Objects.equals(oldDevice.manufacturer(), newDevice.manufacturer());
+
         boolean annotationsChanged =
                 !AnnotationsUtil.isEqual(oldDevice.annotations(), newDevice.annotations());
 
@@ -674,7 +685,7 @@ public class GossipDeviceStore
                 }
 
                 if (isRemoved && oldPort != null) {
-                    events.add(removePort(deviceId, oldPort.number()));
+                    events.add(removePort(deviceId, oldPort.number(), providerId, descsMap));
                 } else if (!isRemoved) {
                     events.add(oldPort == null ?
                                        createPort(device, newPort, ports) :
@@ -713,11 +724,16 @@ public class GossipDeviceStore
         return null;
     }
 
-    private DeviceEvent removePort(DeviceId deviceId, PortNumber portNumber) {
+    private DeviceEvent removePort(DeviceId deviceId, PortNumber portNumber,
+                                   ProviderId providerId, Map<ProviderId, DeviceDescriptions> descsMap) {
 
         log.info("Deleted port: " + deviceId.toString() + "/" + portNumber.toString());
         Port deletedPort = devicePorts.get(deviceId).remove(portNumber);
 
+        descsMap.computeIfPresent(providerId, (provider, deviceDescriptions) -> {
+            deviceDescriptions.removePortDesc(portNumber);
+            return deviceDescriptions;
+        });
         return new DeviceEvent(PORT_REMOVED, getDevice(deviceId), deletedPort);
     }
 
@@ -792,12 +808,16 @@ public class GossipDeviceStore
         final Timestamped<PortDescription> deltaDesc
                 = new Timestamped<>(portDescription, newTimestamp);
         final DeviceEvent event;
-        final Timestamped<PortDescription> mergedDesc;
+        Timestamped<PortDescription> mergedDesc;
         final Map<ProviderId, DeviceDescriptions> device = getOrCreateDeviceDescriptionsMap(deviceId);
         synchronized (device) {
             event = updatePortStatusInternal(providerId, deviceId, deltaDesc);
             mergedDesc = device.get(providerId)
                     .getPortDesc(portDescription.portNumber());
+            //on delete the port is removed, thus using latest known description
+            if (mergedDesc == null) {
+                mergedDesc = new Timestamped<>(portDescription, newTimestamp);
+            }
         }
         if (event != null) {
             log.debug("Notifying peers of a port status update topology event for providerId: {} and deviceId: {}",
@@ -833,7 +853,7 @@ public class GossipDeviceStore
             final Port oldPort = ports.get(number);
             final Port newPort;
             final Timestamped<PortDescription> existingPortDesc = descs.getPortDesc(number);
-            boolean toDelete = false;
+            boolean toDelete;
 
             if (existingPortDesc == null ||
                     deltaDesc.isNewer(existingPortDesc)) {
@@ -848,10 +868,11 @@ public class GossipDeviceStore
                 return null;
             }
 
-            if (oldPort == null) {
-                return createPort(device, newPort, ports);
+            if (!toDelete) {
+                return oldPort == null ? createPort(device, newPort, ports) :
+                        updatePort(device, oldPort, newPort, ports);
             } else {
-                return toDelete ? removePort(deviceId, number) : updatePort(device, oldPort, newPort, ports);
+                return removePort(deviceId, number, providerId, descsMap);
             }
         }
     }
@@ -894,7 +915,7 @@ public class GossipDeviceStore
 
         if (prvStatsMap != null) {
             for (PortStatistics newStats : newStatsCollection) {
-                PortNumber port = PortNumber.portNumber(newStats.port());
+                PortNumber port = newStats.portNumber();
                 PortStatistics prvStats = prvStatsMap.get(port);
                 DefaultPortStatistics.Builder builder = DefaultPortStatistics.builder();
                 PortStatistics deltaStats = builder.build();
@@ -906,7 +927,7 @@ public class GossipDeviceStore
             }
         } else {
             for (PortStatistics newStats : newStatsCollection) {
-                PortNumber port = PortNumber.portNumber(newStats.port());
+                PortNumber port = newStats.portNumber();
                 newStatsMap.put(port, newStats);
             }
         }
@@ -936,7 +957,7 @@ public class GossipDeviceStore
         }
         DefaultPortStatistics.Builder builder = DefaultPortStatistics.builder();
         DefaultPortStatistics deltaStats = builder.setDeviceId(deviceId)
-                .setPort(newStats.port())
+                .setPort(newStats.portNumber())
                 .setPacketsReceived(newStats.packetsReceived() - prvStats.packetsReceived())
                 .setPacketsSent(newStats.packetsSent() - prvStats.packetsSent())
                 .setBytesReceived(newStats.bytesReceived() - prvStats.bytesReceived())
@@ -1064,8 +1085,8 @@ public class GossipDeviceStore
             log.debug("Notifying peers of a device removed topology event for deviceId: {}",
                       deviceId);
             notifyPeers(new InternalDeviceRemovedEvent(deviceId, timestamp));
-            notifyDelegateIfNotNull(event);
         }
+        notifyDelegateIfNotNull(event);
 
         // Relinquish mastership if acquired to remove the device.
         if (relinquishAtEnd) {
@@ -1100,6 +1121,8 @@ public class GossipDeviceStore
             removalRequest.put(deviceId, timestamp);
 
             Device device = devices.remove(deviceId);
+            //removing internal description
+            deviceDescs.remove(deviceId);
             // should DEVICE_REMOVED carry removed ports?
             Map<PortNumber, Port> ports = devicePorts.get(deviceId);
             if (ports != null) {
@@ -1107,6 +1130,8 @@ public class GossipDeviceStore
             }
             markOfflineInternal(deviceId, timestamp);
             descs.clear();
+            // Forget about the device
+            offline.remove(deviceId);
             return device == null ? null :
                     new DeviceEvent(DeviceEvent.Type.DEVICE_REMOVED, device, null);
         }

@@ -23,9 +23,10 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.utils.Comparators;
 import org.onosproject.net.Device;
@@ -42,6 +43,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 /**
  * Lists port statistic of all ports in the system.
  */
+@Service
 @Command(scope = "onos", name = "tablestats",
         description = "Lists statistics of all tables in the device")
 public class TableStatisticsCommand extends AbstractShellCommand {
@@ -55,13 +57,13 @@ public class TableStatisticsCommand extends AbstractShellCommand {
     String uri = null;
 
     private static final String FORMAT =
-            "   table=%s, active=%s, lookedup=%s, matched=%s";
+            "   table=%s, active=%s, lookedup=%s, matched=%s, maxsize=%s";
+    private static final String NA = "N/A";
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         FlowRuleService flowService = get(FlowRuleService.class);
         DeviceService deviceService = get(DeviceService.class);
-
         SortedMap<Device, List<TableStatisticsEntry>> deviceTableStats =
                 getSortedTableStats(deviceService, flowService);
 
@@ -115,8 +117,9 @@ public class TableStatisticsCommand extends AbstractShellCommand {
         print("deviceId=%s, tableCount=%d", d.id(), empty ? 0 : tableStats.size());
         if (!empty) {
             for (TableStatisticsEntry t : tableStats) {
-                print(FORMAT, t.tableId(), t.activeFlowEntries(),
-                      t.packetsLookedup(), t.packetsMatched());
+                print(FORMAT, t.table(), t.activeFlowEntries(),
+                        t.hasPacketsLookedup() ? t.packetsLookedup() : NA, t.packetsMatched(),
+                        t.hasMaxSize() ? t.maxSize() : NA);
             }
         }
     }
@@ -129,7 +132,7 @@ public class TableStatisticsCommand extends AbstractShellCommand {
      * @return sorted table statistics list
      */
     protected SortedMap<Device, List<TableStatisticsEntry>> getSortedTableStats(DeviceService deviceService,
-                                                          FlowRuleService flowService) {
+                                                                                FlowRuleService flowService) {
         SortedMap<Device, List<TableStatisticsEntry>> deviceTableStats = new TreeMap<>(Comparators.ELEMENT_COMPARATOR);
         List<TableStatisticsEntry> tableStatsList;
         Iterable<Device> devices = uri == null ? deviceService.getDevices() :

@@ -15,13 +15,15 @@
  */
 package org.onosproject.fnl.cli;
 
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.fnl.intf.NetworkDiagnosticService;
 
 /**
  * Search for all types of network anomalies.
  */
+@Service
 @Command(scope = "onos",
         name = "ts-all-anomalies",
         description = "search all types of network anomalies once",
@@ -30,7 +32,7 @@ import org.onosproject.fnl.intf.NetworkDiagnosticService;
 public class TsAllAnomalies extends AbstractShellCommand {
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         NetworkDiagnosticService service = getService(NetworkDiagnosticService.class);
 
         service.findAnomalies().forEach(a -> print(a.toString()));

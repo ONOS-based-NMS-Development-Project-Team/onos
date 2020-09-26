@@ -27,8 +27,8 @@ import org.onosproject.net.pi.model.PiActionParamId;
 import org.onosproject.net.pi.model.PiActionParamModel;
 import org.onosproject.net.pi.model.PiActionProfileId;
 import org.onosproject.net.pi.model.PiActionProfileModel;
-import org.onosproject.net.pi.model.PiControlMetadataId;
-import org.onosproject.net.pi.model.PiControlMetadataModel;
+import org.onosproject.net.pi.model.PiPacketMetadataId;
+import org.onosproject.net.pi.model.PiPacketMetadataModel;
 import org.onosproject.net.pi.model.PiCounterId;
 import org.onosproject.net.pi.model.PiCounterModel;
 import org.onosproject.net.pi.model.PiCounterType;
@@ -75,12 +75,17 @@ public class P4PipelineModelTest {
     private static final long ACTION_MAX_SIZE_1 = 100;
     private static final long ACTION_MAX_SIZE_2 = 200;
 
+    private static final int ACTION_MAX_GROUP_SIZE_1 = 10;
+    private static final int ACTION_MAX_GROUP_SIZE_2 = 20;
+
     private static final PiActionProfileModel P4_ACTION_PROFILE_MODEL_1 =
             new P4ActionProfileModel(PI_ACTION_PROFILE_ID_1, ACTION_TABLES_1,
-                                     ACTION_HAS_SELECTOR_1, ACTION_MAX_SIZE_1);
+                                     ACTION_HAS_SELECTOR_1, ACTION_MAX_SIZE_1,
+                                     ACTION_MAX_GROUP_SIZE_1);
     private static final PiActionProfileModel P4_ACTION_PROFILE_MODEL_2 =
             new P4ActionProfileModel(PI_ACTION_PROFILE_ID_2, ACTION_TABLES_2,
-                                     ACTION_HAS_SELECTOR_2, ACTION_MAX_SIZE_2);
+                                     ACTION_HAS_SELECTOR_2, ACTION_MAX_SIZE_2,
+                                     ACTION_MAX_GROUP_SIZE_2);
 
     /* Counters */
     private static final PiCounterId PI_COUNTER_ID_1 = PiCounterId.of("Counter1");
@@ -266,32 +271,32 @@ public class P4PipelineModelTest {
     private static final boolean SUPPORT_AGING_1 = true;
     private static final boolean SUPPORT_AGING_2 = false;
 
-    private static final boolean HAS_DEFAULT_MUTABLE_PARAMS_1 = true;
-    private static final boolean HAS_DEFAULT_MUTABLE_PARAMS_2 = false;
+    private static final boolean IS_CONST_TABLE_1 = true;
+    private static final boolean IS_CONST_TABLE_2 = false;
 
     private static final PiTableModel P4_TABLE_MODEL_1 =
             new P4TableModel(PI_TABLE_ID_1, PI_TABLE_TYPE_1, P4_ACTION_PROFILE_MODEL_1, MAX_SIZE_1, COUNTERS_1,
                              METERS_1, SUPPORT_AGING_1, MATCH_FIELDS_1, ACTIONS_1, P4_ACTION_MODEL_DEFAULT_1,
-                             HAS_DEFAULT_MUTABLE_PARAMS_1);
+                             IS_CONST_TABLE_1);
     private static final PiTableModel P4_TABLE_MODEL_2 =
             new P4TableModel(PI_TABLE_ID_2, PI_TABLE_TYPE_2, P4_ACTION_PROFILE_MODEL_2, MAX_SIZE_2, COUNTERS_2,
                              METERS_2, SUPPORT_AGING_2, MATCH_FIELDS_2, ACTIONS_2, P4_ACTION_MODEL_DEFAULT_2,
-                             HAS_DEFAULT_MUTABLE_PARAMS_2);
+                             IS_CONST_TABLE_2);
 
     /* Packet operations */
     private static final PiPacketOperationType PI_PACKET_OPERATION_TYPE_1 = PiPacketOperationType.PACKET_IN;
     private static final PiPacketOperationType PI_PACKET_OPERATION_TYPE_2 = PiPacketOperationType.PACKET_OUT;
 
-    private static final PiControlMetadataId PI_CONTROL_METADATA_ID_1 = PiControlMetadataId.of("INGRESS PORT");
-    private static final PiControlMetadataId PI_CONTROL_METADATA_ID_2 = PiControlMetadataId.of("EGRESS PORT");
+    private static final PiPacketMetadataId PI_CONTROL_METADATA_ID_1 = PiPacketMetadataId.of("INGRESS PORT");
+    private static final PiPacketMetadataId PI_CONTROL_METADATA_ID_2 = PiPacketMetadataId.of("EGRESS PORT");
 
     private static final int META_BIT_WIDTH_1 = 32;
     private static final int META_BIT_WIDTH_2 = 64;
 
-    private static final PiControlMetadataModel P4_CONTROL_METADATA_MODEL_1 =
-            new P4ControlMetadataModel(PI_CONTROL_METADATA_ID_1, META_BIT_WIDTH_1);
-    private static final PiControlMetadataModel P4_CONTROL_METADATA_MODEL_2 =
-            new P4ControlMetadataModel(PI_CONTROL_METADATA_ID_2, META_BIT_WIDTH_2);
+    private static final PiPacketMetadataModel P4_CONTROL_METADATA_MODEL_1 =
+            new P4PacketMetadataModel(PI_CONTROL_METADATA_ID_1, META_BIT_WIDTH_1);
+    private static final PiPacketMetadataModel P4_CONTROL_METADATA_MODEL_2 =
+            new P4PacketMetadataModel(PI_CONTROL_METADATA_ID_2, META_BIT_WIDTH_2);
 
     /* Pipeline Models */
     private static final ImmutableMap<PiTableId, PiTableModel> TABLES_1 =
@@ -312,12 +317,12 @@ public class P4PipelineModelTest {
                     .put(PI_ACTION_PROFILE_ID_2, P4_ACTION_PROFILE_MODEL_2)
                     .build();
 
-    private static final ImmutableList<PiControlMetadataModel> METADATAS_1 =
-            new ImmutableList.Builder<PiControlMetadataModel>()
+    private static final ImmutableList<PiPacketMetadataModel> METADATAS_1 =
+            new ImmutableList.Builder<PiPacketMetadataModel>()
                     .add(P4_CONTROL_METADATA_MODEL_1)
                     .build();
-    private static final ImmutableList<PiControlMetadataModel> METADATAS_2 =
-            new ImmutableList.Builder<PiControlMetadataModel>()
+    private static final ImmutableList<PiPacketMetadataModel> METADATAS_2 =
+            new ImmutableList.Builder<PiPacketMetadataModel>()
                     .add(P4_CONTROL_METADATA_MODEL_2)
                     .build();
 

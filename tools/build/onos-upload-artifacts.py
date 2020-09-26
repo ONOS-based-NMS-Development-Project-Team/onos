@@ -20,6 +20,7 @@ import tempfile
 import hashlib
 import requests, os
 import xml.etree.ElementTree, shutil
+import time
 
 SONATYPE_USER=os.environ.get("SONATYPE_USER")
 SONATYPE_PASSWORD=os.environ.get("SONATYPE_PASSWORD")
@@ -42,6 +43,8 @@ CLOSE_REPO_REQUEST_TEMPLATE = '''\
 </promoteRequest>
 '''
 
+CLOSE_RETRY_ATTEMPTS = 12 * 2
+
 def hashlib_compute(hash, input_file, output_file):
     with open(input_file, 'rb') as f:
         for block in iter(lambda: f.read(100000), b''):
@@ -60,22 +63,25 @@ def generate_metadata_files(input_file, dest):
 
     files = []
 
-    # generate the signature file
-    signature_filename = base_metadata_filename + ".asc"
-    call(["gpg", "--armor", "--detach-sig", "--output", signature_filename,  input_file])
-    files.append(signature_filename)
+    if destination_repo_url is not None:
+        # generate maven metadata files: signature, MD5, and SHA
 
-    # generate the md5 checksum file
-    md5_filename = base_metadata_filename + ".md5"
-    md5 = hashlib.md5()
-    hashlib_compute(md5, input_file, md5_filename)
-    files.append(md5_filename)
+        # generate the signature file
+        signature_filename = base_metadata_filename + ".asc"
+        call(["gpg", "--armor", "--detach-sig", "--output", signature_filename,  input_file])
+        files.append(signature_filename)
 
-    # generate the SHA checksum file
-    sha1_filename = base_metadata_filename + ".sha1"
-    sha1 = hashlib.sha1()
-    hashlib_compute(sha1, input_file, sha1_filename)
-    files.append(sha1_filename)
+        # generate the md5 checksum file
+        md5_filename = base_metadata_filename + ".md5"
+        md5 = hashlib.md5()
+        hashlib_compute(md5, input_file, md5_filename)
+        files.append(md5_filename)
+
+        # generate the SHA checksum file
+        sha1_filename = base_metadata_filename + ".sha1"
+        sha1 = hashlib.sha1()
+        hashlib_compute(sha1, input_file, sha1_filename)
+        files.append(sha1_filename)
 
     # generate the base artifact
     base_artifact_filename = base_metadata_filename
@@ -98,12 +104,37 @@ def create_staging_repo(description):
 
 
 def close_staging_repo(description, repo_id):
-    if repo_id is None:
+    if destination_repo_url is None:
         return
     close_request = CLOSE_REPO_REQUEST_TEMPLATE.replace("%(description)", description).replace("%(repo_id)", repo_id)
     url = "https://" + destination_repo_url + "/service/local/staging/profiles" + "/" + SONATYPE_PROFILE + "/finish"
     headers = {'Content-Type': 'application/xml'}
     r = requests.post(url, close_request, headers=headers, auth=(SONATYPE_USER, SONATYPE_PASSWORD))
+
+
+def wait_for_staging_repo(description, repo_id):
+    if destination_repo_url is None:
+        return
+    base_url = "https://" + destination_repo_url + "/service/local/staging/profiles" + "/" + SONATYPE_PROFILE
+    close_request = CLOSE_REPO_REQUEST_TEMPLATE.replace("%(description)", description).replace("%(repo_id)", repo_id)
+    url = base_url + "/finish"
+    headers = {'Content-Type': 'application/xml'}
+    repo_query_url = "https://oss.sonatype.org/service/local/staging/repository/" + repo_id
+
+    attempt = 1
+    print ("waiting for repo to close...")
+    while True:
+        r = requests.get(repo_query_url, close_request, headers=headers, auth=(SONATYPE_USER, SONATYPE_PASSWORD))
+        root = xml.etree.ElementTree.fromstring(r.text)
+        transitioning = root.find("transitioning").text
+        if transitioning != "true":
+            break
+        if attempt == CLOSE_RETRY_ATTEMPTS:
+            print ("Unable to close repo")
+            sys.exit(1)
+        attempt = attempt + 1
+        time.sleep(5)
+    print ("Repo closed successfully")
 
 
 def stage_file(file, repo_id, dest):
@@ -188,4 +219,5 @@ if __name__ == '__main__':
         dest = s[1]
         upload_file(src, dest)
     close_staging_repo(repo_id=repo_id, description=description)
+    wait_for_staging_repo(repo_id=repo_id, description=description)
     shutil.rmtree(tempdir)

@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 import { Component, OnInit, OnDestroy, Inject } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 
-import { DialogService } from '../../../fw/layer/dialog.service';
-import { FnService } from '../../../fw/util/fn.service';
-import { IconService } from '../../../fw/svg/icon.service';
-import { KeyService } from '../../../fw/util/key.service';
-import { LionService } from '../../../fw/util/lion.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { LogService } from '../../../log.service';
-import { TableBaseImpl, TableResponse, TableFilter, SortParams, SortDir } from '../../../fw/widget/table.base';
-import { UrlFnService } from '../../../fw/remote/urlfn.service';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
-import { TableFilterPipe } from '../../../fw/widget/tablefilter.pipe';
+import {
+    FnService,
+    IconService,
+    LionService,
+    LogService,
+    TableBaseImpl, TableResponse, SortDir,
+    UrlFnService,
+    WebSocketService
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 
 const INSTALLED = 'INSTALLED';
 const ACTIVE = 'ACTIVE';
@@ -39,7 +37,7 @@ const DRAGDROPMSG1 = 'Drag and drop one file at a time';
 const DRAGDROPMSGEXT = 'Only files ending in .oar can be dropped';
 
 /** Prefix to access the REST service for applications */
-export const APPURLPREFIX = '../../ui/rs/applications/'; // TODO: This is a hack to work off GUIv1 URL
+export const APPURLPREFIX = 'rs/applications/';
 /** Suffix to access the icon of the application - gives back an image */
 export const ICONURLSUFFIX = '/icon';
 
@@ -106,7 +104,7 @@ interface CtrlBtnState {
   templateUrl: './apps.component.html',
   styleUrls: [
     './apps.component.css', './apps.theme.css',
-    '../../../fw/widget/table.css', '../../../fw/widget/table.theme.css'
+    '../../../../../../../../gui2-fw-lib/lib/widget/table.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.theme.css'
     ]
 })
 export class AppsComponent extends TableBaseImpl implements OnInit, OnDestroy {
@@ -131,18 +129,15 @@ export class AppsComponent extends TableBaseImpl implements OnInit, OnDestroy {
 
     constructor(
         protected fs: FnService,
-        private ds: DialogService,
         private is: IconService,
-        private ks: KeyService,
         private lion: LionService,
-        protected ls: LoadingService,
         protected log: LogService,
         private ufs: UrlFnService,
         protected wss: WebSocketService,
         @Inject('Window') private window: Window,
         private httpClient: HttpClient
     ) {
-        super(fs, null, log, wss, 'app');
+        super(fs, log, wss, 'app');
         this.responseCallback = this.appResponseCb;
         this.parentSelCb =  this.rowSelection;
         // pre-populate sort so active apps are at the top of the list
@@ -345,5 +340,14 @@ export class AppsComponent extends TableBaseImpl implements OnInit, OnDestroy {
             installed: undefined,
             active: undefined
         };
+    }
+
+    getStateAsClass(value: string) {
+        if (value === 'ACTIVE') {
+            return 'active';
+        } else if (value === 'INSTALLED') {
+            return 'inactive';
+        }
+        return '';
     }
 }

@@ -18,14 +18,15 @@ package org.onosproject.codec.impl;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.onlab.osgi.DefaultServiceDirectory;
 import org.onlab.osgi.ServiceDirectory;
+import org.onlab.packet.EthType;
 import org.onlab.util.HexString;
 import org.onosproject.codec.CodecContext;
-import org.onosproject.net.flow.ExtensionTreatmentCodec;
 import org.onosproject.net.Device;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.OchSignal;
 import org.onosproject.net.OduSignalId;
 import org.onosproject.net.device.DeviceService;
+import org.onosproject.net.flow.ExtensionTreatmentCodec;
 import org.onosproject.net.flow.instructions.Instruction;
 import org.onosproject.net.flow.instructions.Instructions;
 import org.onosproject.net.flow.instructions.L0ModificationInstruction;
@@ -35,12 +36,11 @@ import org.onosproject.net.flow.instructions.L3ModificationInstruction;
 import org.onosproject.net.flow.instructions.L4ModificationInstruction;
 import org.onosproject.net.flow.instructions.PiInstruction;
 import org.onosproject.net.pi.runtime.PiAction;
-import org.onosproject.net.pi.runtime.PiActionGroupId;
-import org.onosproject.net.pi.runtime.PiActionGroupMemberId;
 import org.onosproject.net.pi.runtime.PiActionParam;
+import org.onosproject.net.pi.runtime.PiActionProfileGroupId;
+import org.onosproject.net.pi.runtime.PiActionProfileMemberId;
 import org.slf4j.Logger;
 
-import static org.onlab.util.Tools.toHexWithPrefix;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -145,7 +145,8 @@ public final class EncodeInstructionCodecHelper {
             case VLAN_PUSH:
                 final L2ModificationInstruction.ModVlanHeaderInstruction pushVlanInstruction =
                         (L2ModificationInstruction.ModVlanHeaderInstruction) l2Instruction;
-                result.put(InstructionCodec.ETHERNET_TYPE, pushVlanInstruction.ethernetType().toString());
+                result.put(InstructionCodec.ETHERNET_TYPE,
+                            toHexEthernetType(pushVlanInstruction.ethernetType().toString()));
                 break;
             case VLAN_POP:
                 break;
@@ -174,7 +175,7 @@ public final class EncodeInstructionCodecHelper {
                 final L2ModificationInstruction.ModMplsHeaderInstruction popHeaderInstruction =
                         (L2ModificationInstruction.ModMplsHeaderInstruction) l2Instruction;
                 result.put(InstructionCodec.ETHERNET_TYPE,
-                        toHexWithPrefix(popHeaderInstruction.ethernetType().toShort()));
+                           toHexEthernetType(popHeaderInstruction.ethernetType().toString()));
                 break;
             case DEC_MPLS_TTL:
                 break;
@@ -182,6 +183,16 @@ public final class EncodeInstructionCodecHelper {
                 log.info("Cannot convert L2 subtype of {}", l2Instruction.subtype());
                 break;
         }
+    }
+
+    /**
+     * Encode ethernet types in the conventional way of 4-digit hex string.
+     * @param ethTypeStr
+     * @return EtherType representation
+     */
+    private String toHexEthernetType(String ethTypeStr) {
+        EthType ethType = EthType.EtherType.valueOf(ethTypeStr.toUpperCase()).ethType();
+        return String.format("0x%04x", ethType.toShort());
     }
 
     /**
@@ -206,6 +217,12 @@ public final class EncodeInstructionCodecHelper {
                         modFlowLabelInstruction =
                         (L3ModificationInstruction.ModIPv6FlowLabelInstruction) l3Instruction;
                 result.put(InstructionCodec.FLOW_LABEL, modFlowLabelInstruction.flowLabel());
+                break;
+            case IP_DSCP:
+                final L3ModificationInstruction.ModDscpInstruction
+                        modDscpInstruction =
+                        (L3ModificationInstruction.ModDscpInstruction) l3Instruction;
+                result.put(InstructionCodec.IP_DSCP, modDscpInstruction.dscp());
                 break;
             case TTL_IN:
             case TTL_OUT:
@@ -264,13 +281,13 @@ public final class EncodeInstructionCodecHelper {
                 }
                 result.set(InstructionCodec.PI_ACTION_PARAMS, jsonActionParams);
                 break;
-            case ACTION_GROUP_ID:
-                final PiActionGroupId piActionGroupId = (PiActionGroupId) piInstruction.action();
-                result.put(InstructionCodec.PI_ACTION_GROUP_ID, piActionGroupId.id());
+            case ACTION_PROFILE_GROUP_ID:
+                final PiActionProfileGroupId groupId = (PiActionProfileGroupId) piInstruction.action();
+                result.put(InstructionCodec.PI_ACTION_PROFILE_GROUP_ID, groupId.id());
                 break;
-            case GROUP_MEMBER_ID:
-                final PiActionGroupMemberId piActionGroupMemberId = (PiActionGroupMemberId) piInstruction.action();
-                result.put(InstructionCodec.PI_ACTION_GROUP_MEMBER_ID, piActionGroupMemberId.id());
+            case ACTION_PROFILE_MEMBER_ID:
+                final PiActionProfileMemberId memberId = (PiActionProfileMemberId) piInstruction.action();
+                result.put(InstructionCodec.PI_ACTION_PROFILE_MEMBER_ID, memberId.id());
                 break;
             default:
                 throw new IllegalArgumentException("Cannot convert protocol-independent subtype of" +
@@ -298,6 +315,8 @@ public final class EncodeInstructionCodecHelper {
         }
 
         if (device.is(ExtensionTreatmentCodec.class)) {
+            // for extension instructions, encoding device id is needed for the corresponding decoder
+            result.put("deviceId", deviceId.toString());
             ExtensionTreatmentCodec treatmentCodec = device.as(ExtensionTreatmentCodec.class);
             ObjectNode node = treatmentCodec.encode(extensionInstruction.extensionInstruction(), context);
             result.set(InstructionCodec.EXTENSION, node);
@@ -329,7 +348,9 @@ public final class EncodeInstructionCodecHelper {
             case GROUP:
                 final Instructions.GroupInstruction groupInstruction =
                         (Instructions.GroupInstruction) instruction;
-                result.put(InstructionCodec.GROUP_ID, groupInstruction.groupId().toString());
+                // a group id should be an unsigned integer
+                result.put(InstructionCodec.GROUP_ID,
+                           Integer.toUnsignedLong(groupInstruction.groupId().id()));
                 break;
 
             case METER:

@@ -15,9 +15,12 @@
  */
 package org.onosproject.cli.net;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.net.ConnectPoint;
+import org.onosproject.net.FilteredConnectPoint;
 import org.onosproject.net.flow.TrafficSelector;
 import org.onosproject.net.flow.TrafficTreatment;
 import org.onosproject.net.intent.Constraint;
@@ -31,16 +34,18 @@ import java.util.Set;
 /**
  * Installs connectivity intent between a single ingress device and multiple egress devices.
  */
+@Service
 @Command(scope = "onos", name = "add-single-to-multi-intent",
         description = "Installs connectivity intent between a single ingress device and multiple egress devices")
 public class AddSinglePointToMultiPointIntentCommand extends ConnectivityIntentCommand {
     @Argument(index = 0, name = "ingressDevice egressDevices",
             description = "ingressDevice/Port egressDevice/Port...egressDevice/Port",
             required = true, multiValued = true)
+    @Completion(ConnectPointCompleter.class)
     String[] deviceStrings = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         IntentService service = get(IntentService.class);
 
         if (deviceStrings.length < 2) {
@@ -50,11 +55,11 @@ public class AddSinglePointToMultiPointIntentCommand extends ConnectivityIntentC
         String ingressDeviceString = deviceStrings[0];
         ConnectPoint ingressPoint = ConnectPoint.deviceConnectPoint(ingressDeviceString);
 
-        Set<ConnectPoint> egressPoints = new HashSet<>();
+        Set<FilteredConnectPoint> egressPoints = new HashSet<>();
         for (int index = 1; index < deviceStrings.length; index++) {
             String egressDeviceString = deviceStrings[index];
             ConnectPoint egress = ConnectPoint.deviceConnectPoint(egressDeviceString);
-            egressPoints.add(egress);
+            egressPoints.add(new FilteredConnectPoint(egress));
         }
 
         TrafficSelector selector = buildTrafficSelector();
@@ -67,8 +72,8 @@ public class AddSinglePointToMultiPointIntentCommand extends ConnectivityIntentC
                         .key(key())
                         .selector(selector)
                         .treatment(treatment)
-                        .ingressPoint(ingressPoint)
-                        .egressPoints(egressPoints)
+                        .filteredIngressPoint(new FilteredConnectPoint(ingressPoint))
+                        .filteredEgressPoints(egressPoints)
                         .constraints(constraints)
                         .priority(priority())
                         .resourceGroup(resourceGroup())

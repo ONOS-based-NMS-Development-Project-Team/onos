@@ -29,10 +29,12 @@ public final class BasicDeviceConfig extends BasicElementConfig<DeviceId> {
     private static final String TYPE = "type";
     private static final String DRIVER = "driver";
     private static final String MANAGEMENT_ADDRESS = "managementAddress";
+    private static final String PIPECONF = "pipeconf";
     private static final String MANUFACTURER = "manufacturer";
     private static final String HW_VERSION = "hwVersion";
     private static final String SW_VERSION = "swVersion";
     private static final String SERIAL = "serial";
+    private static final String PURGE_ON_DISCONNECT = "purgeOnDisconnection";
     private static final String DEVICE_KEY_ID = "deviceKeyId";
 
     private static final int DRIVER_MAX_LENGTH = 256;
@@ -41,6 +43,7 @@ public final class BasicDeviceConfig extends BasicElementConfig<DeviceId> {
     private static final int SW_VERSION_MAX_LENGTH = 256;
     private static final int SERIAL_MAX_LENGTH = 256;
     private static final int MANAGEMENT_ADDRESS_MAX_LENGTH = 1024;
+    private static final int PIPECONF_MAX_LENGTH = 256;
 
     @Override
     public boolean isValid() {
@@ -52,13 +55,14 @@ public final class BasicDeviceConfig extends BasicElementConfig<DeviceId> {
                 && hasOnlyFields(ALLOWED, NAME, LOC_TYPE, LATITUDE, LONGITUDE,
                 GRID_Y, GRID_X, UI_TYPE, RACK_ADDRESS, OWNER, TYPE, DRIVER, ROLES,
                 MANUFACTURER, HW_VERSION, SW_VERSION, SERIAL,
-                MANAGEMENT_ADDRESS, DEVICE_KEY_ID)
+                MANAGEMENT_ADDRESS, PIPECONF, DEVICE_KEY_ID, PURGE_ON_DISCONNECT)
                 && isValidLength(DRIVER, DRIVER_MAX_LENGTH)
                 && isValidLength(MANUFACTURER, MANUFACTURER_MAX_LENGTH)
                 && isValidLength(HW_VERSION, MANUFACTURER_MAX_LENGTH)
                 && isValidLength(SW_VERSION, MANUFACTURER_MAX_LENGTH)
                 && isValidLength(SERIAL, MANUFACTURER_MAX_LENGTH)
-                && isValidLength(MANAGEMENT_ADDRESS, MANAGEMENT_ADDRESS_MAX_LENGTH);
+                && isValidLength(MANAGEMENT_ADDRESS, MANAGEMENT_ADDRESS_MAX_LENGTH)
+                && isValidLength(PIPECONF, PIPECONF_MAX_LENGTH);
     }
 
     /**
@@ -186,12 +190,22 @@ public final class BasicDeviceConfig extends BasicElementConfig<DeviceId> {
     }
 
     /**
-     * Returns the device management ip (ip:port).
+     * Returns the device management address (e.g, "ip:port" or full URI
+     * string).
      *
-     * @return device management address (ip:port) or null if not set
+     * @return device management address or null if not set
      */
     public String managementAddress() {
         return get(MANAGEMENT_ADDRESS, null);
+    }
+
+    /**
+     * Returns the device pipeconf.
+     *
+     * @return device pipeconf or null if not set
+     */
+    public String pipeconf() {
+        return get(PIPECONF, null);
     }
 
     /**
@@ -202,8 +216,20 @@ public final class BasicDeviceConfig extends BasicElementConfig<DeviceId> {
      */
     public BasicDeviceConfig managementAddress(String managementAddress) {
         checkArgument(managementAddress.length() <= MANAGEMENT_ADDRESS_MAX_LENGTH,
-                "serialNumber exceeds maximum length " + MANAGEMENT_ADDRESS_MAX_LENGTH);
+                "managementAddress exceeds maximum length " + MANAGEMENT_ADDRESS_MAX_LENGTH);
         return (BasicDeviceConfig) setOrClear(MANAGEMENT_ADDRESS, managementAddress);
+    }
+
+    /**
+     * Sets the device pipeconf.
+     *
+     * @param pipeconf new device pipeconf
+     * @return self
+     */
+    public BasicDeviceConfig pipeconf(String pipeconf) {
+        checkArgument(pipeconf.length() <= PIPECONF_MAX_LENGTH,
+                      "pipeconf exceeds maximum length " + MANAGEMENT_ADDRESS_MAX_LENGTH);
+        return (BasicDeviceConfig) setOrClear(PIPECONF, pipeconf);
     }
 
     /**
@@ -225,6 +251,34 @@ public final class BasicDeviceConfig extends BasicElementConfig<DeviceId> {
     public BasicDeviceConfig deviceKeyId(DeviceKeyId deviceKeyId) {
         return (BasicDeviceConfig) setOrClear(DEVICE_KEY_ID,
                 deviceKeyId != null ? deviceKeyId.id() : null);
+    }
+
+    /**
+     * Returns the device purgeOnDisconnection flag for this device.
+     *
+     * @return device purgeOnDisconnection, false if not set.
+     */
+    public boolean purgeOnDisconnection() {
+        return get(PURGE_ON_DISCONNECT, false);
+    }
+
+    /**
+     * Sets the purgeOnDisconnection flag for the device.
+     *
+     * @param purgeOnDisconnection purges flows, groups, meters on disconnection.
+     * @return self
+     */
+    public BasicDeviceConfig purgeOnDisconnection(boolean purgeOnDisconnection) {
+        return (BasicDeviceConfig) setOrClear(PURGE_ON_DISCONNECT, purgeOnDisconnection);
+    }
+
+    /**
+     * Returns if the device purgeOnDisconnection flag for this device has been explicitly configured.
+     *
+     * @return device purgeOnDisconnection explicitly configured, false if not.
+     */
+    public boolean isPurgeOnDisconnectionConfigured() {
+        return hasField(PURGE_ON_DISCONNECT);
     }
 
     // TODO: device port meta-data to be configured via BasicPortsConfig

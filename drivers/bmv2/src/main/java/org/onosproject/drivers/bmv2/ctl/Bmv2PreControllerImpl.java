@@ -22,14 +22,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TMultiplexedProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -42,6 +34,12 @@ import org.onosproject.drivers.bmv2.api.Bmv2DeviceAgent;
 import org.onosproject.drivers.bmv2.api.Bmv2PreController;
 import org.onosproject.net.DeviceId;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.Dictionary;
@@ -52,19 +50,21 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
+import static org.onosproject.drivers.bmv2.ctl.OsgiPropertyConstants.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * BMv2 PRE controller implementation.
  */
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = Bmv2PreController.class,
+        property = {
+                 NUM_CONNECTION_RETRIES + ":Integer=" + NUM_CONNECTION_RETRIES_DEFAULT,
+                TIME_BETWEEN_RETRIES + ":Integer=" + TIME_BETWEEN_RETRIES_DEFAULT,
+                DEVICE_LOCK_WAITING_TIME_IN_SEC + ":Integer=" + DEVICE_LOCK_WAITING_TIME_IN_SEC_DEFAULT,
+        })
 public class Bmv2PreControllerImpl implements Bmv2PreController {
 
     private static final int DEVICE_LOCK_CACHE_EXPIRE_TIME_IN_MIN = 10;
-    private static final int DEVICE_LOCK_WAITING_TIME_IN_SEC = 60;
-    private static final int DEFAULT_NUM_CONNECTION_RETRIES = 2;
-    private static final int DEFAULT_TIME_BETWEEN_RETRIES = 10;
     private static final String THRIFT_SERVICE_NAME = "simple_pre_lag";
     private final Logger log = getLogger(getClass());
     private final Map<DeviceId, Pair<TTransport, Bmv2DeviceThriftClient>> clients = Maps.newHashMap();
@@ -77,17 +77,17 @@ public class Bmv2PreControllerImpl implements Bmv2PreController {
                     return new ReentrantReadWriteLock();
                 }
             });
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService cfgService;
-    @Property(name = "numConnectionRetries", intValue = DEFAULT_NUM_CONNECTION_RETRIES,
-            label = "Number of connection retries after a network error")
-    private int numConnectionRetries = DEFAULT_NUM_CONNECTION_RETRIES;
-    @Property(name = "timeBetweenRetries", intValue = DEFAULT_TIME_BETWEEN_RETRIES,
-            label = "Time between retries in milliseconds")
-    private int timeBetweenRetries = DEFAULT_TIME_BETWEEN_RETRIES;
-    @Property(name = "deviceLockWaitingTime", intValue = DEVICE_LOCK_WAITING_TIME_IN_SEC,
-            label = "Waiting time for a read/write lock in seconds")
-    private int deviceLockWaitingTime = DEVICE_LOCK_WAITING_TIME_IN_SEC;
+
+    /** Number of connection retries after a network error. */
+    private int numConnectionRetries = NUM_CONNECTION_RETRIES_DEFAULT;
+
+    /** Time between retries in milliseconds. */
+    private int timeBetweenRetries = TIME_BETWEEN_RETRIES_DEFAULT;
+
+    /** Waiting time for a read/write lock in seconds. */
+    private int deviceLockWaitingTime = DEVICE_LOCK_WAITING_TIME_IN_SEC_DEFAULT;
 
     @Activate
     public void activate() {

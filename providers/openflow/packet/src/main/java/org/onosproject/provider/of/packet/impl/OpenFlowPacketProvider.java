@@ -15,11 +15,11 @@
  */
 package org.onosproject.provider.of.packet.impl;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.onosproject.net.ConnectPoint;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.PortNumber;
@@ -42,7 +42,10 @@ import org.projectfloodlight.openflow.protocol.OFPacketOut;
 import org.projectfloodlight.openflow.protocol.OFPortDesc;
 import org.projectfloodlight.openflow.protocol.OFVersion;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
+import org.projectfloodlight.openflow.protocol.match.Match;
+import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.protocol.ver10.OFFactoryVer10;
+import org.projectfloodlight.openflow.protocol.ver15.OFFactoryVer15;
 import org.projectfloodlight.openflow.types.OFBufferId;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.slf4j.Logger;
@@ -62,10 +65,10 @@ public class OpenFlowPacketProvider extends AbstractProvider implements PacketPr
 
     private final Logger log = getLogger(getClass());
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected PacketProviderRegistry providerRegistry;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected OpenFlowController controller;
 
     private PacketProviderService providerService;
@@ -111,13 +114,21 @@ public class OpenFlowPacketProvider extends AbstractProvider implements PacketPr
             return;
         }
 
+        OFPort inPort;
+        if (packet.inPort() != null) {
+            inPort = portDesc(packet.inPort()).getPortNo();
+        } else {
+            inPort = OFPort.CONTROLLER;
+        }
+
         //Ethernet eth = new Ethernet();
         //eth.deserialize(packet.data().array(), 0, packet.data().array().length);
         OFPortDesc p = null;
         for (Instruction inst : packet.treatment().allInstructions()) {
             if (inst.type().equals(Instruction.Type.OUTPUT)) {
                 p = portDesc(((OutputInstruction) inst).port());
-                OFPacketOut po = packetOut(sw, packet.data().array(), p.getPortNo());
+
+                OFPacketOut po = packetOut(sw, packet.data().array(), p.getPortNo(), inPort);
                 sw.sendMsg(po);
             }
         }
@@ -131,7 +142,7 @@ public class OpenFlowPacketProvider extends AbstractProvider implements PacketPr
         return builder.build();
     }
 
-    private OFPacketOut packetOut(OpenFlowSwitch sw, byte[] eth, OFPort out) {
+    private OFPacketOut packetOut(OpenFlowSwitch sw, byte[] eth, OFPort out, OFPort inPort) {
         OFPacketOut.Builder builder = sw.factory().buildPacketOut();
         OFAction act = sw.factory().actions()
                 .buildOutput()
@@ -140,8 +151,14 @@ public class OpenFlowPacketProvider extends AbstractProvider implements PacketPr
         builder.setBufferId(OFBufferId.NO_BUFFER)
                 .setActions(Collections.singletonList(act))
                 .setData(eth);
-        if (sw.factory().getVersion().getWireVersion() <= OFVersion.OF_14.getWireVersion()) {
-            builder.setInPort(OFPort.CONTROLLER);
+        int wireVersion = sw.factory().getVersion().getWireVersion();
+        if (wireVersion <= OFVersion.OF_14.getWireVersion()) {
+            builder.setInPort(inPort);
+        } else if (wireVersion <= OFVersion.OF_15.getWireVersion()) {
+            Match m = OFFactoryVer15.INSTANCE.matchWildcardAll().createBuilder()
+                    .setExact(MatchField.IN_PORT, inPort)
+                    .build();
+            builder.setMatch(m);
         }
 
         return builder.build();

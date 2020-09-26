@@ -82,6 +82,7 @@ import org.projectfloodlight.openflow.protocol.action.OFActionSetVlanVid;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstructionApplyActions;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstructionGotoTable;
+import org.projectfloodlight.openflow.protocol.instruction.OFInstructionMeter;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstructionStatTrigger;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstructionWriteActions;
 import org.projectfloodlight.openflow.protocol.instruction.OFInstructionWriteMetadata;
@@ -94,6 +95,7 @@ import org.projectfloodlight.openflow.protocol.ver13.OFFactoryVer13;
 import org.projectfloodlight.openflow.types.CircuitSignalID;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.IPv6Address;
+import org.projectfloodlight.openflow.types.IpDscp;
 import org.projectfloodlight.openflow.types.Masked;
 import org.projectfloodlight.openflow.types.OFBooleanValue;
 import org.projectfloodlight.openflow.types.OFVlanVidMatch;
@@ -444,6 +446,7 @@ public class FlowEntryBuilder {
                 case EXPERIMENTER:
                     break;
                 case METER:
+                    builder.meter(MeterId.meterId(((OFInstructionMeter) in).getMeterId()));
                     break;
                 default:
                     log.warn("Unknown instructions type {}", in.getType());
@@ -809,8 +812,22 @@ public class FlowEntryBuilder {
                 }
             }
             break;
+        case IP_DSCP:
+            @SuppressWarnings("unchecked")
+            OFOxm<IpDscp> ipDscp = (OFOxm<IpDscp>) oxm;
+            builder.setIpDscp(ipDscp.getValue().getDscpValue());
+            break;
         case ARP_THA:
+            @SuppressWarnings("unchecked")
+            OFOxm<org.projectfloodlight.openflow.types.MacAddress> arptha =
+                    (OFOxm<org.projectfloodlight.openflow.types.MacAddress>) oxm;
+            builder.setArpTha(MacAddress.valueOf(arptha.getValue().getLong()));
+            break;
         case ARP_TPA:
+            @SuppressWarnings("unchecked")
+            OFOxm<IPv4Address> arptpa = (OFOxm<IPv4Address>) oxm;
+            builder.setArpTpa(Ip4Address.valueOf(arptpa.getValue().getInt()));
+            break;
         case BSN_EGR_PORT_GROUP_ID:
         case BSN_GLOBAL_VRF_ALLOWED:
         case BSN_IN_PORTS_128:
@@ -842,7 +859,6 @@ public class FlowEntryBuilder {
         case IPV6_ND_TARGET:
         case IPV6_ND_TLL:
         case IPV6_SRC:
-        case IP_DSCP:
         case IP_ECN:
         case IP_PROTO:
         case METADATA:

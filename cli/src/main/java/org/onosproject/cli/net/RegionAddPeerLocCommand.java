@@ -15,8 +15,10 @@
  */
 package org.onosproject.cli.net;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.config.NetworkConfigService;
 import org.onosproject.net.config.basics.BasicRegionConfig;
@@ -38,6 +40,7 @@ import org.onosproject.net.region.RegionId;
  * at grid-Y 100 and grid-X 200.
  *
  */
+@Service
 @Command(scope = "onos", name = "region-add-peer-loc",
         description = "Adds a peer location annotation to a region.")
 public class RegionAddPeerLocCommand extends AbstractShellCommand {
@@ -47,6 +50,7 @@ public class RegionAddPeerLocCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "id", description = "Region ID",
             required = true, multiValued = false)
+    @Completion(RegionIdCompleter.class)
     String id = null;
 
     @Argument(index = 1, name = "peer", description = "Peer region ID",
@@ -68,7 +72,7 @@ public class RegionAddPeerLocCommand extends AbstractShellCommand {
     String locType = GEO;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         RegionId regionId = RegionId.regionId(id);
 
         NetworkConfigService cfgService = get(NetworkConfigService.class);

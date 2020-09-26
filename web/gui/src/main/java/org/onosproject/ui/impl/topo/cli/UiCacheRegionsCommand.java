@@ -16,18 +16,20 @@
 
 package org.onosproject.ui.impl.topo.cli;
 
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.ui.impl.topo.model.UiSharedTopologyModel;
 
 /**
  * CLI command to list the UiRegions stored in the ModelCache.
  */
+@Service
 @Command(scope = "onos", name = "ui-cache-regions",
         description = "Lists UiRegions in the Model Cache")
 public class UiCacheRegionsCommand extends AbstractUiCacheElementCommand {
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         UiSharedTopologyModel model = get(UiSharedTopologyModel.class);
         print("%s", model.getNullRegion());
         sorted(model.getRegions()).forEach(r -> print("%s", r));

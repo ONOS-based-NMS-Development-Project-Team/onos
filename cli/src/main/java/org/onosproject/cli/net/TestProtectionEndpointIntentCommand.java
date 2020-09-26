@@ -19,9 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onlab.packet.VlanId;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.ConnectPoint;
@@ -40,6 +42,7 @@ import org.onosproject.net.intent.ProtectionEndpointIntent;
 /**
  * Test tool to add ProtectionEndpointIntent.
  */
+@Service
 @Command(scope = "onos", name = "test-add-protection-endpoint",
          description = "Test tool to add ProtectionEndpointIntent")
 public class TestProtectionEndpointIntentCommand extends AbstractShellCommand {
@@ -54,11 +57,13 @@ public class TestProtectionEndpointIntentCommand extends AbstractShellCommand {
     @Argument(index = 0, name = "deviceId",
             description = "Device ID to configure",
             required = true)
+    @Completion(DeviceIdCompleter.class)
     private String deviceIdStr = null;
 
     @Argument(index = 1, name = "peerDeviceId",
             description = "Device ID of remote peer",
             required = true)
+    @Completion(DeviceIdCompleter.class)
     private String peerStr = null;
 
     @Argument(index = 2, name = "portNumber1",
@@ -83,7 +88,7 @@ public class TestProtectionEndpointIntentCommand extends AbstractShellCommand {
     private DeviceService deviceService;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         fingerprint = Optional.ofNullable(fingerprint)
                               .orElse(DEFAULT_FINGERPRINT);
 

@@ -15,27 +15,25 @@
  */
 package org.onosproject.fnl.impl;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Deactivate;
 import org.onlab.util.Tools;
 import org.onosproject.cfg.ComponentConfigService;
+import org.onosproject.core.ApplicationId;
+import org.onosproject.core.CoreService;
 import org.onosproject.fnl.intf.NetworkAnomaly;
 import org.onosproject.fnl.intf.NetworkDiagnostic;
 import org.onosproject.fnl.intf.NetworkDiagnostic.Type;
 import org.onosproject.fnl.intf.NetworkDiagnosticService;
-import org.onosproject.core.ApplicationId;
-import org.onosproject.core.CoreService;
 import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.flow.FlowRuleService;
 import org.onosproject.net.host.HostService;
 import org.onosproject.net.link.LinkService;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,14 +44,21 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.onosproject.fnl.impl.OsgiPropertyConstants.AUTO_REGISTER_DEFAULT_DIAGNOSTICS;
+import static org.onosproject.fnl.impl.OsgiPropertyConstants.AUTO_REGISTER_DEFAULT_DIAGNOSTICS_DEFAULT;
 
 /**
  * Default implementation of the Network Troubleshooting Core Service.
  *
  * It is simply modularized at present.
  */
-@Component(immediate = true)
-@Service
+@Component(
+    immediate = true,
+    service = NetworkDiagnosticService.class,
+    property = {
+        AUTO_REGISTER_DEFAULT_DIAGNOSTICS + ":Boolean=" + AUTO_REGISTER_DEFAULT_DIAGNOSTICS_DEFAULT
+    }
+)
 public class NetworkDiagnosticManager implements NetworkDiagnosticService {
 
     /**
@@ -62,36 +67,32 @@ public class NetworkDiagnosticManager implements NetworkDiagnosticService {
     public static final String NTS_APP_NAME =
             "org.onosproject.FNL.Network-Troubleshoot";
 
-    private static final String PROPERTY_AUTO_REGISTER_DIAG =
-            "autoRegisterDefaultDiagnostics";
-
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService cfgService;
 
 
     // ------ service below is for auto register ------
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DeviceService ds;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected HostService hs;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected FlowRuleService frs;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected LinkService ls;
 
 
-    @Property(name = PROPERTY_AUTO_REGISTER_DIAG, boolValue = true,
-            label = "Automatically register all of default diagnostic modules.")
-    private boolean autoRegister = true;
+    /** Automatically register all of default diagnostic modules. */
+    private boolean autoRegisterDefaultDiagnostics = AUTO_REGISTER_DEFAULT_DIAGNOSTICS_DEFAULT;
 
 
     private ApplicationId appId;
@@ -135,19 +136,19 @@ public class NetworkDiagnosticManager implements NetworkDiagnosticService {
         Dictionary<?, ?> properties =  context.getProperties();
 
         Boolean autoRegisterEnabled =
-                Tools.isPropertyEnabled(properties, PROPERTY_AUTO_REGISTER_DIAG);
+                Tools.isPropertyEnabled(properties, AUTO_REGISTER_DEFAULT_DIAGNOSTICS);
         if (autoRegisterEnabled == null) {
             log.warn("Auto Register is not configured, " +
-                    "using current value of {}", autoRegister);
+                    "using current value of {}", autoRegisterDefaultDiagnostics);
         } else {
-            autoRegister = autoRegisterEnabled;
+            autoRegisterDefaultDiagnostics = autoRegisterEnabled;
             log.info("Configured. Auto Register is {}",
-                    autoRegister ? "enabled" : "disabled");
+                    autoRegisterDefaultDiagnostics ? "enabled" : "disabled");
         }
     }
 
     private void autoRegisterDiagnostics() {
-        if (!autoRegister) {
+        if (!autoRegisterDefaultDiagnostics) {
             return;
         }
 

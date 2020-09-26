@@ -15,23 +15,7 @@
  */
 package org.onosproject.store.cluster.impl;
 
-import java.util.Dictionary;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
 import com.google.common.collect.Maps;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onosproject.cfg.ComponentConfigService;
 import org.onosproject.cluster.ClusterService;
 import org.onosproject.cluster.Leadership;
@@ -43,27 +27,46 @@ import org.onosproject.core.Version;
 import org.onosproject.core.VersionService;
 import org.onosproject.event.Change;
 import org.onosproject.store.AbstractStore;
-import org.onosproject.store.service.DistributedPrimitive.Status;
 import org.onosproject.store.service.CoordinationService;
+import org.onosproject.store.service.DistributedPrimitive.Status;
 import org.onosproject.store.service.LeaderElector;
 import org.onosproject.upgrade.UpgradeEvent;
 import org.onosproject.upgrade.UpgradeEventListener;
 import org.onosproject.upgrade.UpgradeService;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 
+import java.util.Dictionary;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.apache.felix.scr.annotations.ReferenceCardinality.MANDATORY_UNARY;
 import static org.onlab.util.Tools.get;
 import static org.onlab.util.Tools.groupedThreads;
+import static org.osgi.service.component.annotations.ReferenceCardinality.MANDATORY;
 import static org.slf4j.LoggerFactory.getLogger;
+import static org.onosproject.store.OsgiPropertyConstants.*;
 
 /**
  * Implementation of {@code LeadershipStore} that makes use of a {@link LeaderElector}
  * primitive.
  */
-@Service
-@Component(immediate = true)
+@Component(
+        immediate = true,
+        service = LeadershipStore.class,
+        property = {
+                ELECTION_TIMEOUT_MILLIS + ":Long=" + ELECTION_TIMEOUT_MILLIS_DEFAULT
+        }
+)
 public class DistributedLeadershipStore
     extends AbstractStore<LeadershipEvent, LeadershipStoreDelegate>
     implements LeadershipStore {
@@ -72,25 +75,23 @@ public class DistributedLeadershipStore
 
     private final Logger log = getLogger(getClass());
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected ClusterService clusterService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected CoordinationService storageService;
 
-    @Reference(cardinality = MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected ComponentConfigService configService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected VersionService versionService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected UpgradeService upgradeService;
 
-    private static final long DEFAULT_ELECTION_TIMEOUT_MILLIS = 250;
-    @Property(name = "electionTimeoutMillis", longValue = DEFAULT_ELECTION_TIMEOUT_MILLIS,
-            label = "the leader election timeout in milliseconds")
-    private long electionTimeoutMillis = DEFAULT_ELECTION_TIMEOUT_MILLIS;
+    /** Leader election timeout in milliseconds. */
+    private long electionTimeoutMillis = ELECTION_TIMEOUT_MILLIS_DEFAULT;
 
     private ExecutorService statusChangeHandler;
     private NodeId localNodeId;
@@ -190,11 +191,11 @@ public class DistributedLeadershipStore
         Dictionary<?, ?> properties = context.getProperties();
         long newElectionTimeoutMillis;
         try {
-            String s = get(properties, "electionTimeoutMillis");
+            String s = get(properties, ELECTION_TIMEOUT_MILLIS);
             newElectionTimeoutMillis = isNullOrEmpty(s) ? electionTimeoutMillis : Long.parseLong(s.trim());
         } catch (NumberFormatException | ClassCastException e) {
             log.warn("Malformed configuration detected; using defaults", e);
-            newElectionTimeoutMillis = DEFAULT_ELECTION_TIMEOUT_MILLIS;
+            newElectionTimeoutMillis = ELECTION_TIMEOUT_MILLIS_DEFAULT;
         }
 
         if (newElectionTimeoutMillis != electionTimeoutMillis) {

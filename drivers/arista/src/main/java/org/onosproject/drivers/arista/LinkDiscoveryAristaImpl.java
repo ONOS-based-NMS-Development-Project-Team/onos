@@ -170,6 +170,12 @@ public class LinkDiscoveryAristaImpl extends AbstractHandlerBehaviour implements
                     continue;
                 }
 
+                if (!localPort.get().isEnabled() || !remotePort.get().isEnabled()) {
+                    log.debug("Ports are disabled. Cannot create a link between {}/{} and {}/{}",
+                            localDeviceId, localPort.get(), remoteDevice.get().id(), remotePort.get());
+                    continue;
+                }
+
                 linkDescriptions
                         .addAll(buildLinkPair(localDeviceId, localPort.get(),
                                 remoteDevice.get().id(), remotePort.get()));
@@ -261,7 +267,7 @@ public class LinkDiscoveryAristaImpl extends AbstractHandlerBehaviour implements
         ConnectPoint local = new ConnectPoint(localDevId, localPort.number());
         ConnectPoint remote = new ConnectPoint(remoteDevId, remotePort.number());
         DefaultAnnotations annotations = DefaultAnnotations.builder()
-                .set("layer", "ETHERNET")
+                .set(AnnotationKeys.LAYER, "ETHERNET")
                 .build();
 
         linkDescriptions.add(new DefaultLinkDescription(

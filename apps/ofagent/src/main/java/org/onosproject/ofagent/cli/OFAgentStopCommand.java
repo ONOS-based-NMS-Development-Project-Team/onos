@@ -15,8 +15,9 @@
  */
 package org.onosproject.ofagent.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.incubator.net.virtual.NetworkId;
 import org.onosproject.ofagent.api.OFAgentAdminService;
@@ -24,6 +25,7 @@ import org.onosproject.ofagent.api.OFAgentAdminService;
 /**
  * Stops the OFAgent.
  */
+@Service
 @Command(scope = "onos", name = "ofagent-stop", description = "Stops the ofagent")
 public class OFAgentStopCommand extends AbstractShellCommand {
 
@@ -32,7 +34,7 @@ public class OFAgentStopCommand extends AbstractShellCommand {
     private long networkId = NetworkId.NONE.id();
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         OFAgentAdminService adminService = get(OFAgentAdminService.class);
         adminService.stopAgent(NetworkId.networkId(networkId));
         print("Successfully stopped OFAgent for network %s", networkId);

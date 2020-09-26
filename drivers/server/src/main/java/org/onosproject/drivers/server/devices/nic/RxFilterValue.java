@@ -13,14 +13,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.onosproject.drivers.server.devices.nic;
+
+import java.util.Objects;
 
 /**
  * The base class that holds the value of a NIC's Rx filter.
  */
 public abstract class RxFilterValue {
 
-    public RxFilterValue() {
+    /**
+     * CPU ID of the server this tag will lead to.
+     */
+    protected int cpuId;
+
+    /**
+     * Constructs an Rx filter value.
+     *
+     * @param cpuId CPU ID of the server this tag will lead to
+     */
+    public RxFilterValue(int cpuId) {
+        this.cpuId = cpuId;
+    }
+
+    /**
+     * Returns the CPU ID that corresponds to this Rx filter value.
+     *
+     * @return CPU ID of the server this tag will lead to
+     */
+    public int cpuId() {
+        return this.cpuId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.cpuId);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if ((obj == null) || (!(obj instanceof RxFilterValue))) {
+            return false;
+        }
+
+        return cpuId == ((RxFilterValue) obj).cpuId;
     }
 
 }

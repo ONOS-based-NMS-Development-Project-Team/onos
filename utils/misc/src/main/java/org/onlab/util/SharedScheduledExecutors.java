@@ -36,20 +36,30 @@ public final class SharedScheduledExecutors {
 
     public static final int DEFAULT_POOL_SIZE = 30;
 
-    private static SharedScheduledExecutorService singleThreadExecutor =
-            new SharedScheduledExecutorService(
-                    newSingleThreadScheduledExecutor(
-                            groupedThreads("onos/shared/scheduled",
-                                           "onos-single-executor")));
-
-    private static SharedScheduledExecutorService poolThreadExecutor =
-            new SharedScheduledExecutorService(
-                    newScheduledThreadPool(DEFAULT_POOL_SIZE,
-                            groupedThreads("onos/shared/scheduled",
-                                           "onos-pool-executor-%d")));
+    private static final Object EXECUTORS_LOCK = new Object();
+    private static SharedScheduledExecutorService singleThreadExecutor = null;
+    private static SharedScheduledExecutorService poolThreadExecutor = null;
 
     // Ban public construction
     private SharedScheduledExecutors() {
+    }
+
+    private static void setup() {
+        synchronized (EXECUTORS_LOCK) {
+            if (singleThreadExecutor == null) {
+                singleThreadExecutor =
+                    new SharedScheduledExecutorService(
+                        newSingleThreadScheduledExecutor(
+                            groupedThreads("onos/shared/scheduled",
+                                "onos-single-executor")));
+
+                poolThreadExecutor =
+                    new SharedScheduledExecutorService(
+                        newScheduledThreadPool(DEFAULT_POOL_SIZE,
+                            groupedThreads("onos/shared/scheduled",
+                                "onos-pool-executor-%d")));
+            }
+        }
     }
 
     /**
@@ -58,6 +68,7 @@ public final class SharedScheduledExecutors {
      * @return shared scheduled single thread executor
      */
     public static SharedScheduledExecutorService getSingleThreadExecutor() {
+        setup();
         return singleThreadExecutor;
     }
 
@@ -71,6 +82,7 @@ public final class SharedScheduledExecutors {
      *         and whose get() method will return null upon completion
      */
     public static ScheduledFuture<?> newTimeout(Runnable task, long delay, TimeUnit unit) {
+        setup();
         return SharedScheduledExecutors.getPoolThreadExecutor()
                 .schedule(task, delay, unit);
     }
@@ -81,6 +93,7 @@ public final class SharedScheduledExecutors {
      * @return shared scheduled executor pool
      */
     public static SharedScheduledExecutorService getPoolThreadExecutor() {
+        setup();
         return poolThreadExecutor;
     }
 
@@ -90,6 +103,7 @@ public final class SharedScheduledExecutors {
      * @param poolSize new pool size
      */
     public static void setPoolSize(int poolSize) {
+        setup();
         checkArgument(poolSize > 0, "Shared pool size size must be greater than 0");
         poolThreadExecutor.setBackingExecutor(
                 newScheduledThreadPool(poolSize, groupedThreads("onos/shared/scheduled",
@@ -101,7 +115,11 @@ public final class SharedScheduledExecutors {
      * This is not intended to be called by application directly.
      */
     public static void shutdown() {
-        singleThreadExecutor.backingExecutor().shutdown();
-        poolThreadExecutor.backingExecutor().shutdown();
+        synchronized (EXECUTORS_LOCK) {
+            singleThreadExecutor.backingExecutor().shutdown();
+            singleThreadExecutor = null;
+            poolThreadExecutor.backingExecutor().shutdown();
+            poolThreadExecutor = null;
+        }
     }
 }

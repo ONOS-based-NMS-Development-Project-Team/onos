@@ -17,22 +17,12 @@ package org.onosproject.store.intent.impl;
 
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.lang.math.RandomUtils;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onlab.util.Backtrace;
 import org.onlab.util.KryoNamespace;
 import org.onosproject.cfg.ComponentConfigService;
 import org.onosproject.cluster.ClusterService;
 import org.onosproject.cluster.ControllerNode;
 import org.onosproject.cluster.NodeId;
-import org.onosproject.incubator.net.virtual.NetworkId;
-import org.onosproject.incubator.net.virtual.VirtualNetworkIntent;
 import org.onosproject.net.intent.Intent;
 import org.onosproject.net.intent.IntentData;
 import org.onosproject.net.intent.IntentEvent;
@@ -52,6 +42,12 @@ import org.onosproject.store.service.MultiValuedTimestamp;
 import org.onosproject.store.service.StorageService;
 import org.onosproject.store.service.WallClockTimestamp;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.Collection;
@@ -67,6 +63,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.onlab.util.Tools.get;
 import static org.onosproject.net.intent.IntentState.PURGE_REQ;
+import static org.onosproject.store.OsgiPropertyConstants.GIS_PERSISTENCE_ENABLED;
+import static org.onosproject.store.OsgiPropertyConstants.GIS_PERSISTENCE_ENABLED_DEFAULT;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -75,8 +73,13 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 //FIXME we should listen for leadership changes. if the local instance has just
 // ...  become a leader, scan the pending map and process those
-@Component(immediate = true)
-@Service
+@Component(
+        immediate = true,
+        service = IntentStore.class,
+        property = {
+                GIS_PERSISTENCE_ENABLED + ":Boolean=" + GIS_PERSISTENCE_ENABLED_DEFAULT
+        }
+)
 public class GossipIntentStore
         extends AbstractStore<IntentEvent, IntentStoreDelegate>
         implements IntentStore {
@@ -91,16 +94,16 @@ public class GossipIntentStore
     // Map of intent key => pending intent operation
     private EventuallyConsistentMap<Key, IntentData> pendingMap;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService configService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ClusterService clusterService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected StorageService storageService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected WorkPartitionService partitionService;
 
     private final AtomicLong sequenceNumber = new AtomicLong(0);
@@ -115,12 +118,12 @@ public class GossipIntentStore
     private boolean initiallyPersistent = false;
 
     //TODO this is currently an experimental feature used for performance
-    // evalutaion, enabling persistence with persist the intents but they will
+    // evaluation, enabling persistence with persist the intents but they will
     // not be reinstalled and network state will not be consistent with the
     // intents on cluster restart
-    @Property(name = "persistenceEnabled", boolValue = PERSIST,
-            label = "EXPERIMENTAL: Enable intent persistence")
-    private boolean persistenceEnabled;
+
+    /** EXPERIMENTAL: Enable intent persistence. */
+    private boolean persistenceEnabled = GIS_PERSISTENCE_ENABLED_DEFAULT;
 
 
     /**
@@ -154,8 +157,6 @@ public class GossipIntentStore
         KryoNamespace.Builder intentSerializer = KryoNamespace.newBuilder()
                 .register(KryoNamespaces.API)
                 .register(IntentData.class)
-                .register(VirtualNetworkIntent.class)
-                .register(NetworkId.class)
                 .register(MultiValuedTimestamp.class);
 
         EventuallyConsistentMapBuilder currentECMapBuilder =
@@ -214,7 +215,7 @@ public class GossipIntentStore
         Dictionary<?, ?> properties = context != null ? context.getProperties()
                 : new Properties();
         try {
-            String s = get(properties, "persistenceEnabled");
+            String s = get(properties, GIS_PERSISTENCE_ENABLED);
             persistenceEnabled =  isNullOrEmpty(s) ? PERSIST :
                     Boolean.parseBoolean(s.trim());
         } catch (Exception e) {

@@ -19,8 +19,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.openstacknetworking.api.OpenstackNetworkService;
 import org.openstack4j.model.network.IP;
@@ -38,6 +39,7 @@ import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.p
 /**
  * Lists OpenStack ports.
  */
+@Service
 @Command(scope = "onos", name = "openstack-ports",
         description = "Lists all OpenStack ports")
 public class OpenstackPortListCommand extends AbstractShellCommand {
@@ -48,8 +50,8 @@ public class OpenstackPortListCommand extends AbstractShellCommand {
     private String networkId = null;
 
     @Override
-    protected void execute() {
-        OpenstackNetworkService service = AbstractShellCommand.get(OpenstackNetworkService.class);
+    protected void doExecute() {
+        OpenstackNetworkService service = get(OpenstackNetworkService.class);
 
         List<Port> ports = Lists.newArrayList(service.ports());
         ports.sort(Comparator.comparing(Port::getNetworkId));
@@ -68,8 +70,9 @@ public class OpenstackPortListCommand extends AbstractShellCommand {
                         .map(IP::getIpAddress)
                         .collect(Collectors.toList());
                 Network osNet = service.network(port.getNetworkId());
+                String netName = osNet == null ? "N/A" : osNet.getName();
                 print(FORMAT, port.getId(),
-                        osNet.getName(),
+                        netName,
                         port.getMacAddress(),
                         fixedIps.isEmpty() ? "" : fixedIps);
             }

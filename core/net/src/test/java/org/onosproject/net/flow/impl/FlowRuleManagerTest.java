@@ -25,7 +25,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.onlab.junit.TestTools;
+import org.onlab.packet.Ip4Address;
+import org.onlab.packet.IpAddress;
 import org.onosproject.cfg.ComponentConfigAdapter;
+import org.onosproject.cluster.ClusterService;
+import org.onosproject.cluster.ControllerNode;
+import org.onosproject.cluster.NodeId;
 import org.onosproject.common.event.impl.TestEventDispatcher;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreServiceAdapter;
@@ -39,6 +44,7 @@ import org.onosproject.net.Device;
 import org.onosproject.net.Device.Type;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.MastershipRole;
+import org.onosproject.net.config.NetworkConfigServiceAdapter;
 import org.onosproject.net.device.DeviceServiceAdapter;
 import org.onosproject.net.driver.AbstractHandlerBehaviour;
 import org.onosproject.net.driver.DefaultDriver;
@@ -51,7 +57,6 @@ import org.onosproject.net.flow.DefaultFlowRule;
 import org.onosproject.net.flow.FlowEntry;
 import org.onosproject.net.flow.FlowEntry.FlowEntryState;
 import org.onosproject.net.flow.FlowRule;
-import org.onosproject.net.flow.oldbatch.FlowRuleBatchOperation;
 import org.onosproject.net.flow.FlowRuleEvent;
 import org.onosproject.net.flow.FlowRuleListener;
 import org.onosproject.net.flow.FlowRuleProgrammable;
@@ -66,6 +71,8 @@ import org.onosproject.net.flow.criteria.Criterion;
 import org.onosproject.net.flow.instructions.Instruction;
 import org.onosproject.net.flow.instructions.Instructions;
 import org.onosproject.net.flow.instructions.Instructions.MetadataInstruction;
+import org.onosproject.net.flow.oldbatch.FlowRuleBatchOperation;
+import org.onosproject.net.pi.PiPipeconfServiceAdapter;
 import org.onosproject.net.provider.AbstractProvider;
 import org.onosproject.net.provider.ProviderId;
 import org.onosproject.store.trivial.SimpleFlowRuleStore;
@@ -84,9 +91,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.*;
+import static org.easymock.EasyMock.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.onosproject.net.NetTestTools.injectEventDispatcher;
-import static org.onosproject.net.flow.FlowRuleEvent.Type.*;
+import static org.onosproject.net.flow.FlowRuleEvent.Type.RULE_ADDED;
+import static org.onosproject.net.flow.FlowRuleEvent.Type.RULE_ADD_REQUESTED;
+import static org.onosproject.net.flow.FlowRuleEvent.Type.RULE_REMOVED;
+import static org.onosproject.net.flow.FlowRuleEvent.Type.RULE_REMOVE_REQUESTED;
+import static org.onosproject.net.flow.FlowRuleEvent.Type.RULE_UPDATED;
 
 /**
  * Test codifying the flow rule service & flow rule provider service contracts.
@@ -119,6 +134,7 @@ public class FlowRuleManagerTest {
     private ApplicationId appId;
 
     private TestDriverManager driverService;
+    private static final String NODE_ID = "1";
 
     @Before
     public void setUp() {
@@ -131,6 +147,15 @@ public class FlowRuleManagerTest {
         mgr.operationsService = MoreExecutors.newDirectExecutorService();
         mgr.deviceInstallers = MoreExecutors.newDirectExecutorService();
         mgr.cfgService = new ComponentConfigAdapter();
+
+        ClusterService mockClusterService = createMock(ClusterService.class);
+        NodeId nodeId = new NodeId(NODE_ID);
+        MockControllerNode mockControllerNode = new MockControllerNode(nodeId);
+        expect(mockClusterService.getLocalNode())
+                .andReturn(mockControllerNode).anyTimes();
+        replay(mockClusterService);
+        mgr.clusterService = mockClusterService;
+
         service = mgr;
         registry = mgr;
 
@@ -411,16 +436,6 @@ public class FlowRuleManagerTest {
     }
 
     @Test
-    public void getByAppId() {
-        FlowRule f1 = flowRule(1, 1);
-        FlowRule f2 = flowRule(2, 2);
-        mgr.applyFlowRules(f1, f2);
-
-        assertTrue("should have two rules",
-                   Lists.newLinkedList(mgr.getFlowRulesById(appId)).size() == 2);
-    }
-
-    @Test
     public void removeByAppId() {
         FlowRule f1 = flowRule(1, 1);
         FlowRule f2 = flowRule(2, 2);
@@ -524,10 +539,6 @@ public class FlowRuleManagerTest {
 
         @Override
         public void removeFlowRule(FlowRule... flowRules) {
-        }
-
-        @Override
-        public void removeRulesById(ApplicationId id, FlowRule... flowRules) {
         }
 
         @Override
@@ -706,12 +717,19 @@ public class FlowRuleManagerTest {
         public MastershipRole getLocalRole(DeviceId deviceId) {
             return MastershipRole.MASTER;
         }
+
+        @Override
+        public NodeId getMasterFor(DeviceId deviceId) {
+            return new NodeId(NODE_ID);
+        }
     }
 
     private class TestDriverManager extends DriverManager {
         TestDriverManager(DriverRegistry registry) {
             this.registry = registry;
             this.deviceService = mgr.deviceService;
+            this.pipeconfService = new PiPipeconfServiceAdapter();
+            this.networkConfigService = new NetworkConfigServiceAdapter();
             activate();
         }
     }
@@ -737,6 +755,39 @@ public class FlowRuleManagerTest {
         public Collection<FlowRule> removeFlowRules(Collection<FlowRule> rules) {
             flowRules.addAll(rules);
             return rules;
+        }
+    }
+
+    private static class MockControllerNode implements ControllerNode {
+        final NodeId id;
+
+        public MockControllerNode(NodeId id) {
+            this.id = id;
+        }
+
+        @Override
+        public NodeId id() {
+            return this.id;
+        }
+
+        @Override
+        public Ip4Address ip() {
+            return Ip4Address.valueOf("127.0.0.1");
+        }
+
+        @Override
+        public IpAddress ip(boolean resolve) {
+            return null;
+        }
+
+        @Override
+        public String host() {
+            return null;
+        }
+
+        @Override
+        public int tcpPort() {
+            return 0;
         }
     }
 }

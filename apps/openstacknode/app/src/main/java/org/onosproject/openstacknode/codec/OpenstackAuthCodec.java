@@ -18,13 +18,11 @@ package org.onosproject.openstacknode.codec;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.onosproject.codec.CodecContext;
 import org.onosproject.codec.JsonCodec;
-import org.onosproject.openstacknode.api.OpenstackAuth;
 import org.onosproject.openstacknode.api.DefaultOpenstackAuth;
-import org.slf4j.Logger;
+import org.onosproject.openstacknode.api.OpenstackAuth;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.onlab.util.Tools.nullIsIllegal;
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Openstack keystone authentication codec used for serializing and
@@ -32,10 +30,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class OpenstackAuthCodec extends JsonCodec<OpenstackAuth> {
 
-    private final Logger log = getLogger(getClass());
-
     private static final String VERSION = "version";
-    private static final String PORT = "port";
     private static final String PROTOCOL = "protocol";
     private static final String USERNAME = "username";
     private static final String PASSWORD = "password";
@@ -50,7 +45,6 @@ public class OpenstackAuthCodec extends JsonCodec<OpenstackAuth> {
 
         ObjectNode result = context.mapper().createObjectNode()
                 .put(VERSION, auth.version())
-                .put(PORT, auth.port())
                 .put(PROTOCOL, auth.protocol().name())
                 .put(USERNAME, auth.username())
                 .put(PASSWORD, auth.password())
@@ -71,8 +65,6 @@ public class OpenstackAuthCodec extends JsonCodec<OpenstackAuth> {
 
         String version = nullIsIllegal(json.get(VERSION).asText(),
                 VERSION + MISSING_MESSAGE);
-        Integer port = nullIsIllegal(json.get(PORT).asInt(),
-                PORT + MISSING_MESSAGE);
         String protocol = nullIsIllegal(json.get(PROTOCOL).asText(),
                 PROTOCOL + MISSING_MESSAGE);
         String username = nullIsIllegal(json.get(USERNAME).asText(),
@@ -84,7 +76,6 @@ public class OpenstackAuthCodec extends JsonCodec<OpenstackAuth> {
 
         DefaultOpenstackAuth.Builder authBuilder = DefaultOpenstackAuth.builder()
                 .version(version)
-                .port(port)
                 .protocol(OpenstackAuth.Protocol.valueOf(protocol))
                 .username(username)
                 .password(password)

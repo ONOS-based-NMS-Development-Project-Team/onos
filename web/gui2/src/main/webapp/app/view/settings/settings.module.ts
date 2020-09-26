@@ -16,18 +16,16 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { SettingsRoutingModule } from './settings-routing.module';
 import { SettingsComponent } from './settings/settings.component';
-import { SvgModule } from '../../fw/svg/svg.module';
-import { WidgetModule } from '../../fw/widget/widget.module';
+import { Gui2FwLibModule } from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 import { SettingsDetailsComponent } from './settingsdetails/settingsdetails.component';
+import {RouterModule} from '@angular/router';
 
 @NgModule({
     imports: [
         CommonModule,
-        SettingsRoutingModule,
-        SvgModule,
-        WidgetModule
+        RouterModule.forChild([{path: '', component: SettingsComponent}]),
+        Gui2FwLibModule
     ],
     declarations: [SettingsComponent, SettingsDetailsComponent]
 })

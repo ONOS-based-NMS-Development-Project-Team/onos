@@ -15,10 +15,9 @@
  */
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DeviceRoutingModule } from './device-routing.module';
+import { RouterModule } from '@angular/router';
 import { DeviceComponent } from './device/device.component';
-import { SvgModule } from '../../fw/svg/svg.module';
-import { WidgetModule } from '../../fw/widget/widget.module';
+import { Gui2FwLibModule } from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 import { FormsModule } from '@angular/forms';
 import { DeviceDetailsComponent } from './devicedetails/devicedetails.component';
 
@@ -28,9 +27,8 @@ import { DeviceDetailsComponent } from './devicedetails/devicedetails.component'
 @NgModule({
     imports: [
         CommonModule,
-        DeviceRoutingModule,
-        SvgModule,
-        WidgetModule,
+        RouterModule.forChild([{path: '', component: DeviceComponent}]),
+        Gui2FwLibModule,
         FormsModule
     ],
     declarations: [

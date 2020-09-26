@@ -18,6 +18,7 @@ package org.onosproject.cfg.impl;
 import com.google.common.collect.ImmutableSet;
 import org.onosproject.cfg.ConfigProperty;
 import org.onosproject.cfg.ConfigProperty.Type;
+import org.slf4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import java.io.PrintWriter;
 import java.util.Set;
 
 import static org.onosproject.cfg.ConfigProperty.defineProperty;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Utility for writing and reading configuration property definition file.
@@ -38,6 +40,8 @@ public final class ConfigPropertyDefinitions {
     private static final String FMT = "%s|%s|%s|%s\n";
     private static final String SEP = "\\|";
     private static final String COMMENT = "#";
+
+    private static final Logger log = getLogger(ConfigPropertyDefinitions.class);
 
     private ConfigPropertyDefinitions() {
     }

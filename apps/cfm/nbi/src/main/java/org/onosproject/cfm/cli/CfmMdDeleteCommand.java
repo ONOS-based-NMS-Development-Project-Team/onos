@@ -15,8 +15,11 @@
  */
 package org.onosproject.cfm.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.onosproject.cfm.cli.completer.CfmMdNameCompleter;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.incubator.net.l2monitoring.cfm.identifier.MdId;
 import org.onosproject.incubator.net.l2monitoring.cfm.service.CfmConfigException;
@@ -25,6 +28,7 @@ import org.onosproject.incubator.net.l2monitoring.cfm.service.CfmMdService;
 /**
  * Deletes a Maintenance Domain from the existing list.
  */
+@Service
 @Command(scope = "onos", name = "cfm-md-delete",
         description = "Delete a CFM Maintenance Domain and its children.")
 public class CfmMdDeleteCommand extends AbstractShellCommand {
@@ -32,10 +36,11 @@ public class CfmMdDeleteCommand extends AbstractShellCommand {
     @Argument(name = "name",
             description = "Maintenance Domain name and type (in brackets)",
             required = true)
+    @Completion(CfmMdNameCompleter.class)
     private String name = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         CfmMdService service = get(CfmMdService.class);
 
         String[] nameParts = name.split("[()]");

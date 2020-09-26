@@ -15,9 +15,14 @@
  */
 package org.onosproject.cfm.cli;
 
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.onosproject.cfm.cli.completer.CfmMdLevelCompleter;
+import org.onosproject.cfm.cli.completer.CfmMdNameTypeCompleter;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.PlaceholderCompleter;
 import org.onosproject.incubator.net.l2monitoring.cfm.DefaultMaintenanceDomain;
 import org.onosproject.incubator.net.l2monitoring.cfm.MaintenanceDomain;
 import org.onosproject.incubator.net.l2monitoring.cfm.identifier.MdId;
@@ -27,6 +32,7 @@ import org.onosproject.incubator.net.l2monitoring.cfm.service.CfmMdService;
 /**
  * Adds a Maintenance Domain to the existing list.
  */
+@Service
 @Command(scope = "onos", name = "cfm-md-add",
         description = "Add a CFM Maintenance Domain.")
 public class CfmMdAddCommand extends AbstractShellCommand {
@@ -34,25 +40,29 @@ public class CfmMdAddCommand extends AbstractShellCommand {
     @Argument(name = "name-type",
             description = "Maintenance Domain name type",
             required = true)
+    @Completion(CfmMdNameTypeCompleter.class)
     private String nameType = null;
 
     @Argument(index = 1, name = "name",
             description = "Maintenance Domain name. Restrictions apply depending " +
                     "on name-type. Leave empty if name type is none",
             required = true)
+    @Completion(PlaceholderCompleter.class)
     private String name = null;
 
     @Argument(index = 2, name = "level",
             description = "Maintenance Domain level LEVEL0-LEVEL7",
             required = true)
+    @Completion(CfmMdLevelCompleter.class)
     private String level = null;
 
     @Argument(index = 3, name = "numeric-id",
             description = "An optional numeric id for Maintenance Domain [1-65535]")
+    @Completion(PlaceholderCompleter.class)
     private Short numericId = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         CfmMdService service = get(CfmMdService.class);
         MdId mdId = CfmMdListMdCommand.parseMdName(name + "(" + nameType + ")");
 

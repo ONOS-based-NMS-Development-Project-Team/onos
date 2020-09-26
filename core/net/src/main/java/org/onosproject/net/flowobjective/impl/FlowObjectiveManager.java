@@ -16,17 +16,11 @@
 package org.onosproject.net.flowobjective.impl;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
+import org.apache.commons.lang3.tuple.Pair;
 import org.onlab.osgi.DefaultServiceDirectory;
 import org.onlab.osgi.ServiceDirectory;
 import org.onlab.util.ItemNotFoundException;
@@ -59,6 +53,12 @@ import org.onosproject.net.flowobjective.ObjectiveEvent;
 import org.onosproject.net.flowobjective.ObjectiveEvent.Type;
 import org.onosproject.net.group.GroupService;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,62 +67,89 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.concurrent.Executors.newFixedThreadPool;
+import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static org.onlab.util.Tools.groupedThreads;
 import static org.onosproject.net.AnnotationKeys.DRIVER;
+import static org.onosproject.net.OsgiPropertyConstants.FOM_NUM_THREADS;
+import static org.onosproject.net.OsgiPropertyConstants.FOM_NUM_THREADS_DEFAULT;
+import static org.onosproject.net.OsgiPropertyConstants.FOM_ACCUMULATOR_MAX_OBJECTIVES;
+import static org.onosproject.net.OsgiPropertyConstants.FOM_ACCUMULATOR_MAX_OBJECTIVES_DEFAULT;
+import static org.onosproject.net.OsgiPropertyConstants.FOM_ACCUMULATOR_MAX_IDLE_MILLIS;
+import static org.onosproject.net.OsgiPropertyConstants.FOM_ACCUMULATOR_MAX_IDLE_MILLIS_DEFAULT;
+import static org.onosproject.net.OsgiPropertyConstants.FOM_ACCUMULATOR_MAX_BATCH_MILLIS;
+import static org.onosproject.net.OsgiPropertyConstants.FOM_ACCUMULATOR_MAX_BATCH_MILLIS_DEFAULT;
 import static org.onosproject.security.AppGuard.checkPermission;
 import static org.onosproject.security.AppPermission.Type.FLOWRULE_WRITE;
 
 /**
  * Provides implementation of the flow objective programming service.
  */
-@Component(enabled = false)
-@Service
+@Component(
+    enabled = false,
+    service = FlowObjectiveService.class,
+    property = {
+            FOM_NUM_THREADS + ":Integer=" + FOM_NUM_THREADS_DEFAULT,
+            FOM_ACCUMULATOR_MAX_OBJECTIVES + ":Integer=" + FOM_ACCUMULATOR_MAX_OBJECTIVES_DEFAULT,
+            FOM_ACCUMULATOR_MAX_IDLE_MILLIS + ":Integer=" + FOM_ACCUMULATOR_MAX_IDLE_MILLIS_DEFAULT,
+            FOM_ACCUMULATOR_MAX_BATCH_MILLIS + ":Integer=" + FOM_ACCUMULATOR_MAX_BATCH_MILLIS_DEFAULT,
+    }
+)
 public class FlowObjectiveManager implements FlowObjectiveService {
 
     private static final int INSTALL_RETRY_ATTEMPTS = 5;
     private static final long INSTALL_RETRY_INTERVAL = 1000; // ms
 
-    private static final String WORKER_PATTERN = "objective-installer-%d";
-    private static final String GROUP_THREAD_NAME = "onos/objective-installer";
-    private static final String NUM_THREAD = "numThreads";
+    private static final String INSTALLER_PATTERN = "installer-%d";
+    private static final String VERIFIER_PATTERN = "verifier-%d";
+    private static final String GROUP_THREAD_NAME = "onos/objective";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private static final int DEFAULT_NUM_THREADS = 4;
-    @Property(name = NUM_THREAD,
-             intValue = DEFAULT_NUM_THREADS,
-             label = "Number of worker threads")
-    private int numThreads = DEFAULT_NUM_THREADS;
+    /** Number of worker threads. */
+    private int numThreads = FOM_NUM_THREADS_DEFAULT;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    // Parameters for the accumulator, each pipeline can implement
+    // its own accumulation logic. The following parameters are used
+    // to control the accumulator.
+
+    // Maximum number of objectives to accumulate before processing is triggered
+    private int accumulatorMaxObjectives = FOM_ACCUMULATOR_MAX_OBJECTIVES_DEFAULT;
+    // Maximum number of millis between objectives before processing is triggered
+    private int accumulatorMaxIdleMillis = FOM_ACCUMULATOR_MAX_IDLE_MILLIS_DEFAULT;
+    // Maximum number of millis allowed since the first objective before processing is triggered
+    private int accumulatorMaxBatchMillis = FOM_ACCUMULATOR_MAX_BATCH_MILLIS_DEFAULT;
+
+
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DriverService driverService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DeviceService deviceService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ClusterService clusterService;
 
     // Note: The following dependencies are added on behalf of the pipeline
     // driver behaviours to assure these services are available for their
     // initialization.
     @SuppressWarnings("unused")
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected FlowRuleService flowRuleService;
 
     @SuppressWarnings("unused")
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected GroupService groupService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected FlowObjectiveStore flowObjectiveStore;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService cfgService;
 
     final FlowObjectiveStoreDelegate delegate = new InternalStoreDelegate();
@@ -148,13 +175,21 @@ public class FlowObjectiveManager implements FlowObjectiveService {
     // for debugging purposes
     private Map<Integer, DeviceId> nextToDevice = Maps.newConcurrentMap();
 
-    ExecutorService executorService;
+    ExecutorService installerExecutor;
+    ExecutorService verifierExecutor;
+    protected ExecutorService devEventExecutor;
 
     @Activate
-    protected void activate() {
-        cfgService.registerProperties(getClass());
-        executorService = newFixedThreadPool(numThreads,
-                                             groupedThreads(GROUP_THREAD_NAME, WORKER_PATTERN, log));
+    protected void activate(ComponentContext context) {
+        cfgService.registerProperties(FlowObjectiveManager.class);
+        installerExecutor = newFixedThreadPool(numThreads,
+                                           groupedThreads(GROUP_THREAD_NAME, INSTALLER_PATTERN, log));
+        verifierExecutor = newFixedThreadPool(numThreads,
+                                           groupedThreads(GROUP_THREAD_NAME, VERIFIER_PATTERN, log));
+
+        modified(context);
+        devEventExecutor = newSingleThreadScheduledExecutor(
+                                       groupedThreads("onos/flowobj-dev-events", "events-%d", log));
         flowObjectiveStore.setDelegate(delegate);
         deviceService.addListener(deviceListener);
         driverService.addListener(driverListener);
@@ -167,7 +202,10 @@ public class FlowObjectiveManager implements FlowObjectiveService {
         flowObjectiveStore.unsetDelegate(delegate);
         deviceService.removeListener(deviceListener);
         driverService.removeListener(driverListener);
-        executorService.shutdown();
+        installerExecutor.shutdown();
+        verifierExecutor.shutdown();
+        devEventExecutor.shutdownNow();
+        devEventExecutor = null;
         pipeliners.clear();
         driverHandlers.clear();
         nextToDevice.clear();
@@ -176,20 +214,66 @@ public class FlowObjectiveManager implements FlowObjectiveService {
 
     @Modified
     protected void modified(ComponentContext context) {
-        String propertyValue =
-                Tools.get(context.getProperties(), NUM_THREAD);
+        if (context != null) {
+            readComponentConfiguration(context);
+        }
+    }
+
+    /**
+     * Extracts properties from the component configuration context.
+     *
+     * @param context the component context
+     */
+    private void readComponentConfiguration(ComponentContext context) {
+        String propertyValue = Tools.get(context.getProperties(), FOM_NUM_THREADS);
         int newNumThreads = isNullOrEmpty(propertyValue) ? numThreads : Integer.parseInt(propertyValue);
 
         if (newNumThreads != numThreads && newNumThreads > 0) {
             numThreads = newNumThreads;
-            ExecutorService oldWorkerExecutor = executorService;
-            executorService = newFixedThreadPool(numThreads,
-                                                 groupedThreads(GROUP_THREAD_NAME, WORKER_PATTERN, log));
+            ExecutorService oldWorkerExecutor = installerExecutor;
+            installerExecutor = newFixedThreadPool(numThreads,
+                                         groupedThreads(GROUP_THREAD_NAME, INSTALLER_PATTERN, log));
+            if (oldWorkerExecutor != null) {
+                oldWorkerExecutor.shutdown();
+            }
+            oldWorkerExecutor = verifierExecutor;
+            verifierExecutor = newFixedThreadPool(numThreads,
+                                         groupedThreads(GROUP_THREAD_NAME, VERIFIER_PATTERN, log));
             if (oldWorkerExecutor != null) {
                 oldWorkerExecutor.shutdown();
             }
             log.info("Reconfigured number of worker threads to {}", numThreads);
         }
+
+        // Reconfiguration of the accumulator parameters is allowed
+        // Note: it will affect only pipelines going through init method
+        propertyValue = Tools.get(context.getProperties(), FOM_ACCUMULATOR_MAX_OBJECTIVES);
+        int newMaxObjs = isNullOrEmpty(propertyValue) ?
+                accumulatorMaxObjectives : Integer.parseInt(propertyValue);
+        if (newMaxObjs != accumulatorMaxObjectives && newMaxObjs > 0) {
+            accumulatorMaxObjectives = newMaxObjs;
+            log.info("Reconfigured maximum number of objectives to accumulate to {}",
+                     accumulatorMaxObjectives);
+        }
+
+        propertyValue = Tools.get(context.getProperties(), FOM_ACCUMULATOR_MAX_IDLE_MILLIS);
+        int newMaxIdleMS = isNullOrEmpty(propertyValue) ?
+                accumulatorMaxIdleMillis : Integer.parseInt(propertyValue);
+        if (newMaxIdleMS != accumulatorMaxIdleMillis && newMaxIdleMS > 0) {
+            accumulatorMaxIdleMillis = newMaxIdleMS;
+            log.info("Reconfigured maximum number of millis between objectives to {}",
+                     accumulatorMaxIdleMillis);
+        }
+
+        propertyValue = Tools.get(context.getProperties(), FOM_ACCUMULATOR_MAX_BATCH_MILLIS);
+        int newMaxBatchMS = isNullOrEmpty(propertyValue) ?
+                accumulatorMaxBatchMillis : Integer.parseInt(propertyValue);
+        if (newMaxBatchMS != accumulatorMaxBatchMillis && newMaxBatchMS > 0) {
+            accumulatorMaxBatchMillis = newMaxBatchMS;
+            log.info("Reconfigured maximum number of millis allowed since the first objective to {}",
+                     accumulatorMaxBatchMillis);
+        }
+
     }
 
     /**
@@ -197,20 +281,24 @@ public class FlowObjectiveManager implements FlowObjectiveService {
      * make a few attempts to find the appropriate driver, then eventually give
      * up and report an error if no suitable driver could be found.
      */
-    class ObjectiveInstaller implements Runnable {
+    class ObjectiveProcessor implements Runnable {
         final DeviceId deviceId;
         final Objective objective;
+        final ExecutorService executor;
 
         private final int numAttempts;
 
-        ObjectiveInstaller(DeviceId deviceId, Objective objective) {
-            this(deviceId, objective, 1);
+        ObjectiveProcessor(DeviceId deviceId, Objective objective,
+                           ExecutorService executorService) {
+            this(deviceId, objective, 1, executorService);
         }
 
-        ObjectiveInstaller(DeviceId deviceId, Objective objective, int attemps) {
+        ObjectiveProcessor(DeviceId deviceId, Objective objective, int attempts,
+                           ExecutorService executorService) {
             this.deviceId = checkNotNull(deviceId);
             this.objective = checkNotNull(objective);
-            this.numAttempts = attemps;
+            this.executor = checkNotNull(executorService);
+            this.numAttempts = attempts;
         }
 
         @Override
@@ -230,7 +318,8 @@ public class FlowObjectiveManager implements FlowObjectiveService {
                     //Attempts to check if pipeliner is null for retry attempts
                 } else if (numAttempts < INSTALL_RETRY_ATTEMPTS) {
                     Thread.sleep(INSTALL_RETRY_INTERVAL);
-                    executorService.execute(new ObjectiveInstaller(deviceId, objective, numAttempts + 1));
+                    executor.execute(new ObjectiveProcessor(deviceId, objective,
+                                                            numAttempts + 1, executor));
                 } else {
                     // Otherwise we've tried a few times and failed, report an
                     // error back to the user.
@@ -239,7 +328,7 @@ public class FlowObjectiveManager implements FlowObjectiveService {
                 }
                 //Exception thrown
             } catch (Exception e) {
-                log.warn("Exception while installing flow objective", e);
+                log.warn("Exception while processing flow objective", e);
             }
         }
     }
@@ -247,7 +336,7 @@ public class FlowObjectiveManager implements FlowObjectiveService {
     @Override
     public void filter(DeviceId deviceId, FilteringObjective filteringObjective) {
         checkPermission(FLOWRULE_WRITE);
-        executorService.execute(new ObjectiveInstaller(deviceId, filteringObjective));
+        installerExecutor.execute(new ObjectiveProcessor(deviceId, filteringObjective, installerExecutor));
     }
 
     @Override
@@ -257,18 +346,21 @@ public class FlowObjectiveManager implements FlowObjectiveService {
                 flowObjectiveStore.getNextGroup(forwardingObjective.nextId()) != null ||
                 !queueFwdObjective(deviceId, forwardingObjective)) {
             // fast path
-            executorService.execute(new ObjectiveInstaller(deviceId, forwardingObjective));
+            installerExecutor.execute(new ObjectiveProcessor(deviceId, forwardingObjective, installerExecutor));
         }
     }
 
     @Override
     public void next(DeviceId deviceId, NextObjective nextObjective) {
         checkPermission(FLOWRULE_WRITE);
-        if (nextObjective.op() == Operation.ADD ||
+        if (nextObjective.op() == Operation.VERIFY) {
+            // Verify does not need to wait
+            verifierExecutor.execute(new ObjectiveProcessor(deviceId, nextObjective, verifierExecutor));
+        } else if (nextObjective.op() == Operation.ADD ||
                 flowObjectiveStore.getNextGroup(nextObjective.id()) != null ||
                 !queueNextObjective(deviceId, nextObjective)) {
             // either group exists or we are trying to create it - let it through
-            executorService.execute(new ObjectiveInstaller(deviceId, nextObjective));
+            installerExecutor.execute(new ObjectiveProcessor(deviceId, nextObjective, installerExecutor));
         }
     }
 
@@ -433,22 +525,25 @@ public class FlowObjectiveManager implements FlowObjectiveService {
     private class InnerDeviceListener implements DeviceListener {
         @Override
         public void event(DeviceEvent event) {
+          if (devEventExecutor != null) {
             switch (event.type()) {
                 case DEVICE_ADDED:
                 case DEVICE_AVAILABILITY_CHANGED:
                     log.debug("Device either added or availability changed {}",
                               event.subject().id());
-                    if (deviceService.isAvailable(event.subject().id())) {
+                    devEventExecutor.execute(() -> {
+                      if (deviceService.isAvailable(event.subject().id())) {
                         log.debug("Device is now available {}", event.subject().id());
                         getAndInitDevicePipeliner(event.subject().id());
-                    } else {
+                      } else {
                         log.debug("Device is no longer available {}", event.subject().id());
-                    }
+                      }
+                    });
                     break;
                 case DEVICE_UPDATED:
                     // Invalidate pipeliner and handler caches if the driver name
                     // device annotation changed.
-                    invalidatePipelinerIfNecessary(event.subject());
+                    devEventExecutor.execute(() -> invalidatePipelinerIfNecessary(event.subject()));
                     break;
                 case DEVICE_REMOVED:
                     // evict Pipeliner and Handler cache, when
@@ -457,8 +552,10 @@ public class FlowObjectiveManager implements FlowObjectiveService {
                     // System expect the user to clear all existing flows,
                     // before removing device, especially if they intend to
                     // replace driver/pipeliner assigned to the device.
-                    driverHandlers.remove(event.subject().id());
-                    pipeliners.remove(event.subject().id());
+                    devEventExecutor.execute(() -> {
+                        driverHandlers.remove(event.subject().id());
+                        pipeliners.remove(event.subject().id());
+                    });
                     break;
                 case DEVICE_SUSPENDED:
                     break;
@@ -471,6 +568,7 @@ public class FlowObjectiveManager implements FlowObjectiveService {
                 default:
                     break;
             }
+          }
         }
     }
 
@@ -517,6 +615,7 @@ public class FlowObjectiveManager implements FlowObjectiveService {
 
     // Processing context for initializing pipeline driver behaviours.
     private class InnerPipelineContext implements PipelinerContext {
+
         @Override
         public ServiceDirectory directory() {
             return serviceDirectory;
@@ -526,6 +625,22 @@ public class FlowObjectiveManager implements FlowObjectiveService {
         public FlowObjectiveStore store() {
             return flowObjectiveStore;
         }
+
+        @Override
+        public int accumulatorMaxObjectives() {
+            return accumulatorMaxObjectives;
+        }
+
+        @Override
+        public int accumulatorMaxIdleMillis() {
+            return accumulatorMaxIdleMillis;
+        }
+
+        @Override
+        public int accumulatorMaxBatchMillis() {
+            return accumulatorMaxBatchMillis;
+        }
+
     }
 
     private class InternalStoreDelegate implements FlowObjectiveStoreDelegate {
@@ -643,6 +758,38 @@ public class FlowObjectiveManager implements FlowObjectiveService {
         }
         return mappings;
     }
+
+    @Override
+    public Map<Pair<Integer, DeviceId>, List<String>> getNextMappingsChain() {
+        Map<Pair<Integer, DeviceId>, List<String>> nextObjGroupMap = new HashMap<>();
+        Map<Integer, NextGroup> allnexts = flowObjectiveStore.getAllGroups();
+
+        // XXX if the NextGroup after de-serialization actually stored info of the deviceId
+        // then info on any nextObj could be retrieved from one controller instance.
+        // Right now the drivers on one instance can only fetch for next-ids that came
+        // to them.
+        // Also, we still need to send the right next-id to the right driver as potentially
+        // there can be different drivers for different devices. But on that account,
+        // no instance should be decoding for another instance's nextIds.
+
+        for (Map.Entry<Integer, NextGroup> e : allnexts.entrySet()) {
+            // get the device this next Objective was sent to
+            DeviceId deviceId = nextToDevice.get(e.getKey());
+                if (deviceId != null) {
+                // this instance of the controller sent the nextObj to a driver
+                Pipeliner pipeliner = getDevicePipeliner(deviceId);
+                List<String> nextMappings = pipeliner.getNextMappings(e.getValue());
+                if (nextMappings != null) {
+                    //mappings.addAll(nextMappings);
+                    nextObjGroupMap.put(Pair.of(e.getKey(), deviceId), nextMappings);
+                }
+            } else {
+               nextObjGroupMap.put(Pair.of(e.getKey(), deviceId), ImmutableList.of("nextId not in this onos instance"));
+            }
+        }
+        return nextObjGroupMap;
+    }
+
 
     @Override
     public List<String> getPendingFlowObjectives() {

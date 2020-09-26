@@ -16,11 +16,7 @@
 package org.onosproject.net.intent.impl.compiler;
 
 import com.google.common.collect.ImmutableSet;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
+import org.apache.commons.lang3.tuple.Pair;
 import org.onlab.graph.ScalarWeight;
 import org.onosproject.net.ConnectPoint;
 import org.onosproject.net.DefaultPath;
@@ -31,7 +27,6 @@ import org.onosproject.net.Link;
 import org.onosproject.net.Path;
 import org.onosproject.net.Port;
 import org.onosproject.net.PortNumber;
-import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.flow.DefaultFlowRule;
 import org.onosproject.net.flow.DefaultTrafficSelector;
 import org.onosproject.net.flow.DefaultTrafficTreatment;
@@ -61,6 +56,11 @@ import org.onosproject.net.intent.constraint.ProtectionConstraint;
 import org.onosproject.net.intent.impl.PathNotFoundException;
 import org.onosproject.net.link.LinkService;
 import org.onosproject.net.provider.ProviderId;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
@@ -75,6 +75,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
@@ -103,14 +104,11 @@ public class PointToPointIntentCompiler
     protected boolean erasePrimary = false;
     protected boolean eraseBackup = false;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected GroupService groupService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected LinkService linkService;
-
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected DeviceService deviceService;
 
     @Activate
     public void activate() {
@@ -127,6 +125,18 @@ public class PointToPointIntentCompiler
         log.trace("compiling {} {}", intent, installable);
         ConnectPoint ingressPoint = intent.filteredIngressPoint().connectPoint();
         ConnectPoint egressPoint = intent.filteredEgressPoint().connectPoint();
+
+        //TODO: handle protected path case with suggested path!!
+        //Idea: use suggested path as primary and another path from path service as protection
+        if (intent.suggestedPath() != null && intent.suggestedPath().size() > 0) {
+            Path path = new DefaultPath(PID, intent.suggestedPath(), new ScalarWeight(1));
+            //Check intent constraints against suggested path and suggested path availability
+            if (checkPath(path, intent.constraints()) && pathAvailable(intent)) {
+                allocateIntentBandwidth(intent, path);
+                return asList(createLinkCollectionIntent(ImmutableSet.copyOf(intent.suggestedPath()),
+                                                         DEFAULT_COST, intent));
+            }
+        }
 
         if (ingressPoint.deviceId().equals(egressPoint.deviceId())) {
             return createZeroHopLinkCollectionIntent(intent);
@@ -147,6 +157,21 @@ public class PointToPointIntentCompiler
         }
     }
 
+    private void allocateIntentBandwidth(PointToPointIntent intent, Path path) {
+        ConnectPoint ingressCP = intent.filteredIngressPoint().connectPoint();
+        ConnectPoint egressCP = intent.filteredEgressPoint().connectPoint();
+
+        List<ConnectPoint> pathCPs =
+                path.links().stream()
+                        .flatMap(l -> Stream.of(l.src(), l.dst()))
+                        .collect(Collectors.toList());
+
+        pathCPs.add(ingressCP);
+        pathCPs.add(egressCP);
+
+        allocateBandwidth(intent, pathCPs);
+    }
+
     private List<Intent> createZeroHopIntent(ConnectPoint ingressPoint,
                                              ConnectPoint egressPoint,
                                              PointToPointIntent intent) {
@@ -165,18 +190,7 @@ public class PointToPointIntentCompiler
                                        intent.filteredEgressPoint().connectPoint().deviceId());
 
         // Allocate bandwidth if a bandwidth constraint is set
-        ConnectPoint ingressCP = intent.filteredIngressPoint().connectPoint();
-        ConnectPoint egressCP = intent.filteredEgressPoint().connectPoint();
-
-        List<ConnectPoint> pathCPs =
-                path.links().stream()
-                            .flatMap(l -> Stream.of(l.src(), l.dst()))
-                            .collect(Collectors.toList());
-
-        pathCPs.add(ingressCP);
-        pathCPs.add(egressCP);
-
-        allocateBandwidth(intent, pathCPs);
+        allocateIntentBandwidth(intent, path);
 
         return asList(createLinkCollectionIntent(ImmutableSet.copyOf(path.links()),
                                                  path.cost(),
@@ -295,19 +309,7 @@ public class PointToPointIntentCompiler
             return reusableIntents;
         } else {
             // Allocate bandwidth if a bandwidth constraint is set
-            ConnectPoint ingressCP = intent.filteredIngressPoint().connectPoint();
-            ConnectPoint egressCP = intent.filteredEgressPoint().connectPoint();
-
-            List<ConnectPoint> pathCPs =
-                    onlyPath.links().stream()
-                            .flatMap(l -> Stream.of(l.src(), l.dst()))
-                            .collect(Collectors.toList());
-
-            pathCPs.add(ingressCP);
-            pathCPs.add(egressCP);
-
-            // Allocate bandwidth if a bandwidth constraint is set
-            allocateBandwidth(intent, pathCPs);
+            allocateIntentBandwidth(intent, onlyPath);
 
             links.add(createEdgeLink(ingressPoint, true));
             links.addAll(onlyPath.links());
@@ -697,5 +699,48 @@ public class PointToPointIntentCompiler
         GroupBuckets addBuckets = new GroupBuckets(Collections.singletonList(bucket));
 
         groupService.addBucketsToGroup(src.deviceId(), groupKey, addBuckets, groupKey, intent.appId());
+    }
+
+    /**
+     * Checks suggested path availability.
+     * It checks:
+     * - single links availability;
+     * - that first and last device of the path are coherent with ingress and egress devices;
+     * - links contiguity.
+     *
+     * @param intent    Intent with suggested path to check
+     * @return true if the suggested path is available
+     */
+    private boolean pathAvailable(PointToPointIntent intent) {
+        // Check links availability
+        List<Link> suggestedPath = intent.suggestedPath();
+        for (Link link : suggestedPath) {
+            if (!(link instanceof EdgeLink) && !linkService.getLinks(link.src()).contains(link)) {
+                return false;
+            }
+        }
+
+        //Check that first and last device of the path are intent ingress and egress devices
+        if (!suggestedPath.get(0).src()
+                .deviceId().equals(intent.filteredIngressPoint().connectPoint().deviceId())) {
+            return false;
+        }
+        if (!suggestedPath.get(suggestedPath.size() - 1).dst()
+                .deviceId().equals(intent.filteredEgressPoint().connectPoint().deviceId())) {
+            return false;
+        }
+
+        // Check contiguity
+        List<Pair<Link, Link>> linkPairs = IntStream.
+            range(0, suggestedPath.size() - 1)
+            .mapToObj(i -> Pair.of(suggestedPath.get(i), suggestedPath.get(i + 1)))
+            .collect(Collectors.toList());
+
+        for (Pair<Link, Link> linkPair : linkPairs) {
+            if (!linkPair.getKey().dst().deviceId().equals(linkPair.getValue().src().deviceId())) {
+                return false;
+            }
+        }
+        return true;
     }
 }

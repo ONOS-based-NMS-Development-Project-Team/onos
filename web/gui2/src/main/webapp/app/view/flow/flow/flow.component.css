@@ -19,6 +19,7 @@
 
 #ov-flow h2 {
     display: inline-block;
+    margin-left: 10px;
 }
 
 #ov-flow div.ctrl-btns {
@@ -30,6 +31,15 @@
 #ov-flow td.right {
     text-align: right;
 }
+
+#ov-flow td.col8pct {
+    width: 8%;
+}
+#ov-flow td.col10pct {
+    width: 10%;
+}
+
+
 #ov-flow td.selector,
 #ov-flow td.treatment {
     text-align: left;

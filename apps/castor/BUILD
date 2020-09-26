@@ -1,8 +1,8 @@
 COMPILE_DEPS = CORE_DEPS + JACKSON + KRYO + REST + [
     "//core/store/serializers:onos-core-serializers",
-    "//incubator/api:onos-incubator-api",
     "//apps/routing-api:onos-apps-routing-api",
     "//apps/intentsync:onos-apps-intentsync",
+    "@jaxb_api//jar",
 ]
 
 BUNDLES = [
@@ -12,7 +12,6 @@ BUNDLES = [
 ]
 
 TEST_DEPS = TEST_ADAPTERS + [
-    "//incubator/api:onos-incubator-api-tests",
     "//apps/routing-api:onos-apps-routing-api-tests",
 ]
 
@@ -30,7 +29,10 @@ onos_app(
     category = "Utility",
     description = "Castor application",
     included_bundles = BUNDLES,
-    required_apps = ["org.onosproject.intentsynchronizer"],
+    required_apps = [
+        "org.onosproject.intentsynchronizer",
+        "org.onosproject.route-service",
+    ],
     title = "Castor",
     url = "http://onosproject.org",
 )

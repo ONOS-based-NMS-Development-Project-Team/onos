@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Injectable } from '@angular/core';
-import { LogService } from './log.service';
+import {Inject, Injectable} from '@angular/core';
+import { LogService } from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 
 /**
  * A structure of View elements for the OnosService
@@ -35,10 +35,14 @@ export class OnosService {
     public browser: string;
     public mobile: boolean;
     public viewMap: View[];
+    public username: string;
 
     constructor (
-        private log: LogService
+        private log: LogService,
+        @Inject('Window') private window: any
     ) {
+        // The onosUser is added to the index.html by MainIndexResource
+        this.username = this.window['onosUser'];
         this.log.debug('OnosService constructed');
     }
 }

@@ -15,9 +15,12 @@
  */
 package org.onosproject.drivers.fujitsu.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.net.DeviceIdCompleter;
 import org.onosproject.net.DeviceId;
 import org.onosproject.drivers.fujitsu.behaviour.VoltOnuOperConfig;
 import org.onosproject.net.driver.DriverHandler;
@@ -26,12 +29,14 @@ import org.onosproject.net.driver.DriverService;
 /**
  * Reboots an ONU in vOLT.
  */
+@Service
 @Command(scope = "onos", name = "volt-rebootonu",
         description = "Reboots an ONU in vOLT")
 public class VoltRebootOnuCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "uri", description = "Device ID",
             required = true, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     String uri = null;
 
     @Argument(index = 1, name = "target", description = "PON link ID-ONU ID",
@@ -41,7 +46,7 @@ public class VoltRebootOnuCommand extends AbstractShellCommand {
     private DeviceId deviceId;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         DriverService service = get(DriverService.class);
         deviceId = DeviceId.deviceId(uri);
         DriverHandler h = service.createHandler(deviceId);

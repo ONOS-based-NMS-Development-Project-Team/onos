@@ -17,12 +17,15 @@ package org.onosproject.faultmanagement.alarms.cli;
 
 import static java.util.Comparator.comparingInt;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.Option;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
-import org.onosproject.incubator.net.faultmanagement.alarm.Alarm;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmService;
+import org.onosproject.cli.net.DeviceIdCompleter;
+import org.onosproject.alarm.Alarm;
+import org.onosproject.alarm.AlarmService;
 import org.onosproject.net.DeviceId;
 
 import java.util.Map;
@@ -31,6 +34,7 @@ import java.util.stream.Collectors;
 /**
  * Lists alarm counts across all devices.
  */
+@Service
 @Command(scope = "onos", name = "alarms-counts",
         description = "Lists the count of alarms for each severity")
 public class GetAllAlarmsCounts extends AbstractShellCommand {
@@ -41,13 +45,14 @@ public class GetAllAlarmsCounts extends AbstractShellCommand {
 
     @Argument(index = 0, name = "deviceId", description = "Device identity",
             required = false, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     String deviceId = null;
 
     private AlarmService alarmService = AbstractShellCommand.get(AlarmService.class);
     private Map<Alarm.SeverityLevel, Long> alarmCounts;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         if (deviceId != null) {
             if (activeOnly) {
                 alarmCounts = alarmService.getActiveAlarms(DeviceId.deviceId(deviceId))

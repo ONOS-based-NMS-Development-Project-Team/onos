@@ -19,7 +19,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.yang.model.YangModel;
 import org.onosproject.yang.model.YangModule;
@@ -28,6 +29,7 @@ import org.onosproject.yang.runtime.YangModelRegistry;
 /**
  * Lists registered YANG models.
  */
+@Service
 @Command(scope = "onos", name = "models",
         description = "Lists registered YANG models")
 public class YangModelsListCommand extends AbstractShellCommand {
@@ -38,7 +40,7 @@ public class YangModelsListCommand extends AbstractShellCommand {
     private static final String MODULE_REVISION = "moduleRevision";
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         YangModelRegistry service = get(YangModelRegistry.class);
 
         if (outputJson()) {

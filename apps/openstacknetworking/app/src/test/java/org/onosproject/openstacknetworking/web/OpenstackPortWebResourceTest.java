@@ -20,7 +20,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.onlab.osgi.ServiceDirectory;
 import org.onlab.osgi.TestServiceDirectory;
+import org.onosproject.openstacknetworking.api.OpenstackHaService;
 import org.onosproject.openstacknetworking.api.OpenstackNetworkAdminService;
+import org.onosproject.openstacknode.api.OpenstackNodeService;
 import org.onosproject.rest.resources.ResourceTest;
 
 import javax.ws.rs.client.Entity;
@@ -32,6 +34,7 @@ import java.io.InputStream;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.anyString;
 import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
@@ -45,6 +48,10 @@ public class OpenstackPortWebResourceTest extends ResourceTest {
 
     final OpenstackNetworkAdminService mockOpenstackNetworkAdminService =
             createMock(OpenstackNetworkAdminService.class);
+    final OpenstackNodeService mockOpenstackNodeService =
+            createMock(OpenstackNodeService.class);
+    final OpenstackHaService mockOpenstackHaService = createMock(OpenstackHaService.class);
+
     private static final String PATH = "ports";
 
     /**
@@ -59,10 +66,10 @@ public class OpenstackPortWebResourceTest extends ResourceTest {
      */
     @Before
     public void setUpTest() {
-        ServiceDirectory testDirectory =
-                new TestServiceDirectory()
-                        .add(OpenstackNetworkAdminService.class,
-                                mockOpenstackNetworkAdminService);
+        ServiceDirectory testDirectory = new TestServiceDirectory()
+                .add(OpenstackNetworkAdminService.class, mockOpenstackNetworkAdminService)
+                .add(OpenstackNodeService.class, mockOpenstackNodeService)
+                .add(OpenstackHaService.class, mockOpenstackHaService);
         setServiceDirectory(testDirectory);
 
     }
@@ -74,6 +81,8 @@ public class OpenstackPortWebResourceTest extends ResourceTest {
     public void testCreatePortWithCreationOperation() {
         mockOpenstackNetworkAdminService.createPort(anyObject());
         replay(mockOpenstackNetworkAdminService);
+        expect(mockOpenstackHaService.isActive()).andReturn(true).anyTimes();
+        replay(mockOpenstackHaService);
 
         final WebTarget wt = target();
         InputStream jsonStream = OpenstackNetworkWebResourceTest.class
@@ -93,6 +102,9 @@ public class OpenstackPortWebResourceTest extends ResourceTest {
      */
     @Test
     public void testCreatePortWithIncorrectInput() {
+        expect(mockOpenstackHaService.isActive()).andReturn(true).anyTimes();
+        replay(mockOpenstackHaService);
+
         final WebTarget wt = target();
         InputStream jsonStream = OpenstackPortWebResourceTest.class
                 .getResourceAsStream("dummy.json");
@@ -109,6 +121,8 @@ public class OpenstackPortWebResourceTest extends ResourceTest {
      */
     @Test
     public void testCreatePortWithDuplicatedId() {
+        expect(mockOpenstackHaService.isActive()).andReturn(true).anyTimes();
+        replay(mockOpenstackHaService);
         mockOpenstackNetworkAdminService.createPort(anyObject());
         expectLastCall().andThrow(new IllegalArgumentException());
         replay(mockOpenstackNetworkAdminService);
@@ -131,6 +145,8 @@ public class OpenstackPortWebResourceTest extends ResourceTest {
      */
     @Test
     public void testUpdatePortWithUpdatingOperation() {
+        expect(mockOpenstackHaService.isActive()).andReturn(true).anyTimes();
+        replay(mockOpenstackHaService);
         mockOpenstackNetworkAdminService.updatePort(anyObject());
         replay(mockOpenstackNetworkAdminService);
 
@@ -153,6 +169,9 @@ public class OpenstackPortWebResourceTest extends ResourceTest {
      */
     @Test
     public void testUpdatePortWithIncorrectInput() {
+        expect(mockOpenstackHaService.isActive()).andReturn(true).anyTimes();
+        replay(mockOpenstackHaService);
+
         final WebTarget wt = target();
         InputStream jsonStream = OpenstackNetworkWebResourceTest.class
                 .getResourceAsStream("dummy.json");
@@ -170,6 +189,9 @@ public class OpenstackPortWebResourceTest extends ResourceTest {
      */
     @Test
     public void testUpdatePortWithNonexistId() {
+        expect(mockOpenstackHaService.isActive()).andReturn(true).anyTimes();
+        replay(mockOpenstackHaService);
+
         mockOpenstackNetworkAdminService.updatePort(anyObject());
         expectLastCall().andThrow(new IllegalArgumentException());
         replay(mockOpenstackNetworkAdminService);
@@ -193,6 +215,9 @@ public class OpenstackPortWebResourceTest extends ResourceTest {
      */
     @Test
     public void testDeletePortWithDeletionOperation() {
+        expect(mockOpenstackHaService.isActive()).andReturn(true).anyTimes();
+        replay(mockOpenstackHaService);
+
         mockOpenstackNetworkAdminService.removePort(anyString());
         replay(mockOpenstackNetworkAdminService);
 
@@ -213,6 +238,9 @@ public class OpenstackPortWebResourceTest extends ResourceTest {
      */
     @Test
     public void testDeletePortWithNonexistId() {
+        expect(mockOpenstackHaService.isActive()).andReturn(true).anyTimes();
+        replay(mockOpenstackHaService);
+
         mockOpenstackNetworkAdminService.removePort(anyString());
         expectLastCall().andThrow(new IllegalArgumentException());
         replay(mockOpenstackNetworkAdminService);

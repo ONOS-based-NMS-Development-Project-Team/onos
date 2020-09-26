@@ -14,11 +14,12 @@
 * limitations under the License.
 */
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { TableBaseImpl, TableResponse, SortDir } from '../../../fw/widget/table.base';
-import { FnService } from '../../../fw/util/fn.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { LogService } from '../../../log.service';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
+import {
+    FnService,
+    LogService,
+    WebSocketService,
+    SortDir, TableBaseImpl, TableResponse
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 
 /**
  * Model of the data returned through the Web Socket about settings.
@@ -46,7 +47,7 @@ export interface Settings {
 @Component({
     selector: 'onos-settings',
     templateUrl: './settings.component.html',
-    styleUrls: ['./settings.component.css', '../../../fw/widget/table.css', '../../../fw/widget/table.theme.css']
+    styleUrls: ['./settings.component.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.theme.css']
 })
 
 export class SettingsComponent extends TableBaseImpl implements OnInit, OnDestroy {
@@ -55,11 +56,10 @@ export class SettingsComponent extends TableBaseImpl implements OnInit, OnDestro
 
     constructor(
         protected fs: FnService,
-        protected ls: LoadingService,
         protected log: LogService,
         protected wss: WebSocketService
     ) {
-        super(fs, ls, log, wss, 'setting');
+        super(fs, log, wss, 'setting');
         this.responseCallback = this.settingsResponseCb;
         this.parentSelCb = this.rowSelection;
 

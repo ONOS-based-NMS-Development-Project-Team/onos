@@ -15,6 +15,8 @@
  */
 package org.onlab.util;
 
+import com.google.common.util.concurrent.MoreExecutors;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
@@ -67,6 +70,18 @@ public class PredictableExecutor
      * @param threadFactory {@link ThreadFactory} to use to create threads
      */
     public PredictableExecutor(int buckets, ThreadFactory threadFactory) {
+        this(buckets, threadFactory, false);
+    }
+
+    /**
+     * Creates {@link PredictableExecutor} instance.
+     * Meant for testing purposes.
+     *
+     * @param buckets number of buckets or 0 to match available processors
+     * @param threadFactory {@link ThreadFactory} to use to create threads
+     * @param directExec direct executors
+     */
+    public PredictableExecutor(int buckets, ThreadFactory threadFactory, boolean directExec) {
         checkArgument(buckets >= 0, "number of buckets must be non zero");
         checkNotNull(threadFactory);
         if (buckets == 0) {
@@ -75,7 +90,7 @@ public class PredictableExecutor
         this.backends = new ArrayList<>(buckets);
 
         for (int i = 0; i < buckets; ++i) {
-            this.backends.add(backendExecutorService(threadFactory));
+            this.backends.add(backendExecutorService(threadFactory, directExec));
         }
     }
 
@@ -93,10 +108,11 @@ public class PredictableExecutor
      * Creates a single thread {@link ExecutorService} to use in the backend.
      *
      * @param threadFactory {@link ThreadFactory} to use to create threads
-     * @return single thread {@link ExecutorService}
+     * @param direct direct executors
+     * @return single thread {@link ExecutorService} or direct executor
      */
-    protected ExecutorService backendExecutorService(ThreadFactory threadFactory) {
-        return Executors.newSingleThreadExecutor(threadFactory);
+    protected ExecutorService backendExecutorService(ThreadFactory threadFactory, boolean direct) {
+        return direct ? MoreExecutors.newDirectExecutorService() : Executors.newSingleThreadExecutor(threadFactory);
     }
 
 
@@ -121,6 +137,35 @@ public class PredictableExecutor
         execute(command, hintFunction.apply(command));
     }
 
+    /**
+     * Submits a value-returning task for execution and returns a
+     * Future representing the pending results of the task. The
+     * Future's {@code get} method will return the task's result upon
+     * successful completion.
+     *
+     * @param command the {@link Runnable} task
+     * @param hint value to pick thread to run on.
+     * @return completable future representing the pending results
+     */
+    public CompletableFuture<Void> submit(Runnable command, int hint) {
+        int index = Math.abs(hint) % backends.size();
+        return CompletableFuture.runAsync(command, backends.get(index));
+    }
+
+    /**
+     * Submits a value-returning task for execution and returns a
+     * Future representing the pending results of the task. The
+     * Future's {@code get} method will return the task's result upon
+     * successful completion.
+     *
+     * @param command the {@link Runnable} task
+     * @param hintFunction Function to compute hint value
+     * @return completable future representing the pending results
+     */
+    public CompletableFuture<Void> submit(Runnable command, Function<Runnable, Integer> hintFunction) {
+        int hint = hintFunction.apply(command);
+        return submit(command, hint);
+    }
 
     private static int hint(Runnable command) {
         if (command instanceof PickyTask) {

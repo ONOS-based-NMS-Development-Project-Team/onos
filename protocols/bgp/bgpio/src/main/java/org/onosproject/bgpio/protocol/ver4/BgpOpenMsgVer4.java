@@ -30,6 +30,7 @@ import org.onosproject.bgpio.types.BgpHeader;
 import org.onosproject.bgpio.types.BgpValueType;
 import org.onosproject.bgpio.types.FourOctetAsNumCapabilityTlv;
 import org.onosproject.bgpio.types.MultiProtocolExtnCapabilityTlv;
+import org.onosproject.bgpio.types.RouteRefreshCapabilityTlv;
 import org.onosproject.bgpio.util.Validation;
 import org.onosproject.bgpio.util.Constants;
 import org.onosproject.bgpio.types.RpdCapabilityTlv;
@@ -224,7 +225,10 @@ public class BgpOpenMsgVer4 implements BgpOpenMsg {
 
                     // Parse capabilities only if optional parameter type is 2
                     if ((optParaType == OPT_PARA_TYPE_CAPABILITY) && (capParaLen != 0)) {
-                        capabilityTlv = parseCapabilityTlv(capaCb);
+                        //Observed that some routers send a list of capabilities, while others send a list
+                        //of optional parameters. This takes care of both
+                        LinkedList<BgpValueType> currentCapabilityTlv = parseCapabilityTlv(capaCb);
+                        capabilityTlv.addAll(currentCapabilityTlv);
                     } else {
                         throw new BgpParseException(BgpErrorType.OPEN_MESSAGE_ERROR,
                                 BgpErrorType.UNSUPPORTED_OPTIONAL_PARAMETER, null);
@@ -295,6 +299,15 @@ public class BgpOpenMsgVer4 implements BgpOpenMsg {
                 tlv = new MultiProtocolExtnCapabilityTlv(afi, res, safi);
 
                 break;
+            case RouteRefreshCapabilityTlv.TYPE:
+                log.debug("RouteRefreshCapabilityTlv");
+
+                if (RouteRefreshCapabilityTlv.LENGTH != length) {
+                    throw new BgpParseException("Invalid length received for RouteRefreshCapabilityTlv.");
+                }
+
+                tlv = new RouteRefreshCapabilityTlv(true);
+                break;
             default:
                 log.debug("Warning: Unsupported TLV: " + type);
                 cb.skipBytes(length);
@@ -319,6 +332,7 @@ public class BgpOpenMsgVer4 implements BgpOpenMsg {
         private boolean isBgpIdSet = false;
         private int bgpId;
         private boolean isIpV4UnicastCapabilityTlvSet = true;
+        private boolean isIpV6UnicastCapabilityTlvSet = false;
         private boolean isLargeAsCapabilityTlvSet = false;
         private boolean isLsCapabilityTlvSet = false;
         private boolean isFlowSpecCapabilityTlvSet = false;
@@ -344,7 +358,14 @@ public class BgpOpenMsgVer4 implements BgpOpenMsg {
             if (this.isIpV4UnicastCapabilityTlvSet) {
                 BgpValueType tlv;
                 tlv = new MultiProtocolExtnCapabilityTlv((short) Constants.AFI_IPV4_UNICAST, RES,
-                                                         (byte) Constants.SAFI_IPV4_UNICAST);
+                                                         (byte) Constants.SAFI_UNICAST);
+                this.capabilityTlv.add(tlv);
+            }
+
+            if (this.isIpV6UnicastCapabilityTlvSet) {
+                BgpValueType tlv;
+                tlv = new MultiProtocolExtnCapabilityTlv((short) Constants.AFI_IPV6_UNICAST, RES,
+                                                         (byte) Constants.SAFI_UNICAST);
                 this.capabilityTlv.add(tlv);
             }
 
@@ -458,6 +479,18 @@ public class BgpOpenMsgVer4 implements BgpOpenMsg {
         @Override
         public Builder setEvpnCapabilityTlv(boolean isEvpnCapabilitySet) {
             this.isEvpnCapabilityTlvSet = isEvpnCapabilitySet;
+            return this;
+        }
+
+        @Override
+        public Builder setIpV4UnicastCapabilityTlvSet(boolean isIpV4UnicastCapabilityTlvSet) {
+            this.isIpV4UnicastCapabilityTlvSet = isIpV4UnicastCapabilityTlvSet;
+            return this;
+        }
+
+        @Override
+        public Builder setIpV6UnicastCapabilityTlvSet(boolean isIpV6UnicastCapabilityTlvSet) {
+            this.isIpV6UnicastCapabilityTlvSet = isIpV6UnicastCapabilityTlvSet;
             return this;
         }
     }

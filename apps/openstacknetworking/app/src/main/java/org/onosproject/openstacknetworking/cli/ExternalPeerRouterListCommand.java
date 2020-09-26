@@ -18,18 +18,21 @@ package org.onosproject.openstacknetworking.cli;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Lists;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.openstacknetworking.api.ExternalPeerRouter;
 import org.onosproject.openstacknetworking.api.OpenstackNetworkService;
 
 import java.util.List;
 
+import static org.onosproject.cli.AbstractShellCommand.get;
 import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.prettyJson;
 
 /**
  * Lists external peer router lists.
  */
+@Service
 @Command(scope = "onos", name = "openstack-peer-routers",
         description = "Lists external peer router lists")
 public class ExternalPeerRouterListCommand extends AbstractShellCommand {
@@ -37,9 +40,10 @@ public class ExternalPeerRouterListCommand extends AbstractShellCommand {
     private static final String FORMAT = "%-20s%-20s%-20s";
 
     @Override
-    protected void execute() {
-        OpenstackNetworkService service = AbstractShellCommand.get(OpenstackNetworkService.class);
-        List<ExternalPeerRouter> routers = Lists.newArrayList(service.externalPeerRouters());
+    protected void doExecute() {
+        OpenstackNetworkService service = get(OpenstackNetworkService.class);
+        List<ExternalPeerRouter> routers =
+                            Lists.newArrayList(service.externalPeerRouters());
 
         if (outputJson()) {
             print("%s", json(this, routers));

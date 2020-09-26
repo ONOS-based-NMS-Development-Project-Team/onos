@@ -19,21 +19,17 @@ package org.onosproject.openstacknode.codec;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.onosproject.codec.CodecContext;
 import org.onosproject.codec.JsonCodec;
+import org.onosproject.openstacknode.api.DefaultOpenstackSshAuth;
 import org.onosproject.openstacknode.api.OpenstackSshAuth;
-import org.onosproject.openstacknode.impl.DefaultOpenstackSshAuth;
-import org.slf4j.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.onlab.util.Tools.nullIsIllegal;
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Node ssh authentication info codec used for serializing and
  * de-serializing JSON string.
  */
 public class OpenstackSshAuthCodec extends JsonCodec<OpenstackSshAuth> {
-
-    private final Logger log = getLogger(getClass());
 
     private static final String ID = "id";
     private static final String PASSWORD = "password";
@@ -45,11 +41,9 @@ public class OpenstackSshAuthCodec extends JsonCodec<OpenstackSshAuth> {
     public ObjectNode encode(OpenstackSshAuth sshAuth, CodecContext context) {
         checkNotNull(sshAuth, ERROR_MSG_NOT_NULL);
 
-        ObjectNode result = context.mapper().createObjectNode()
+        return context.mapper().createObjectNode()
                 .put(ID, sshAuth.id())
                 .put(PASSWORD, sshAuth.password());
-
-        return result;
     }
 
     @Override

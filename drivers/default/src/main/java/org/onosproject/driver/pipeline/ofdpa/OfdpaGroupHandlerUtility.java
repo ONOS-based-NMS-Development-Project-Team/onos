@@ -51,7 +51,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static org.onosproject.driver.pipeline.ofdpa.Ofdpa2Pipeline.isNotMplsBos;
+import static org.onosproject.driver.pipeline.ofdpa.OfdpaPipelineUtility.isNotMplsBos;
 import static org.onosproject.driver.pipeline.ofdpa.OfdpaGroupHandlerUtility.OfdpaMplsGroupSubType.OFDPA_GROUP_TYPE_SHIFT;
 import static org.onosproject.driver.pipeline.ofdpa.OfdpaGroupHandlerUtility.OfdpaMplsGroupSubType.OFDPA_MPLS_SUBTYPE_SHIFT;
 import static org.onosproject.net.flowobjective.NextObjective.Type.HASHED;
@@ -77,14 +77,16 @@ public final class OfdpaGroupHandlerUtility {
     static final int MPLS_L3VPN_SUBTYPE = 0x92000000;
     static final int L3_ECMP_TYPE = 0x70000000;
     static final int L2_FLOOD_TYPE = 0x40000000;
+    static final int L2_MULTICAST_TYPE = 0x30000000;
+    static final int L2_LB_TYPE = 0xc0000000;
 
     static final int TYPE_MASK = 0x0fffffff;
     static final int SUBTYPE_MASK = 0x00ffffff;
     static final int TYPE_VLAN_MASK = 0x0000ffff;
     static final int TYPE_L3UG_DOUBLE_VLAN_MASK = 0x08000000;
 
-    static final int THREE_BIT_MASK = 0x0fff;
-    static final int FOUR_BIT_MASK = 0xffff;
+    static final int THREE_NIBBLE_MASK = 0x0fff;
+    static final int FOUR_NIBBLE_MASK = 0xffff;
     static final int PORT_LEN = 16;
 
     static final int PORT_LOWER_BITS_MASK = 0x3f;
@@ -353,6 +355,17 @@ public final class OfdpaGroupHandlerUtility {
     }
 
     /**
+     * Checks if given next objective is L2 hash next objective.
+     *
+     * @param nextObj next objective
+     * @return true if the next objective is L2 hash next objective
+     */
+    static boolean isL2Hash(NextObjective nextObj) {
+        return nextObj.next().stream()
+                .flatMap(t -> t.allInstructions().stream()).allMatch(i -> i.type() == Instruction.Type.OUTPUT);
+    }
+
+    /**
      * Generates a list of group buckets from given list of group information
      * and group bucket type.
      *
@@ -453,6 +466,12 @@ public final class OfdpaGroupHandlerUtility {
         return new DefaultGroupKey(Ofdpa2Pipeline.appKryo.serialize(hash));
     }
 
+    public static GroupKey l2MulticastGroupKey(VlanId vlanId, DeviceId deviceId) {
+        int hash = Objects.hash(deviceId, vlanId);
+        hash = L2_MULTICAST_TYPE | TYPE_MASK & hash;
+        return new DefaultGroupKey(Ofdpa2Pipeline.appKryo.serialize(hash));
+    }
+
     public static int l2GroupId(VlanId vlanId, long portNum) {
         return L2_INTERFACE_TYPE | (vlanId.toShort() << 16) | (int) portNum;
     }
@@ -465,7 +484,7 @@ public final class OfdpaGroupHandlerUtility {
      * Returns a hash as the L2 Interface Group Key.
      *
      * Keep the lower 6-bit for port since port number usually smaller than 64.
-     * Hash other information into remaining 28 bits.
+     * Hash other information into remaining 22 bits.
      *
      * @param deviceId Device ID
      * @param vlanId VLAN ID
@@ -483,7 +502,7 @@ public final class OfdpaGroupHandlerUtility {
      * Returns a hash as the L2 Unfiltered Interface Group Key.
      *
      * Keep the lower 6-bit for port since port number usually smaller than 64.
-     * Hash other information into remaining 28 bits.
+     * Hash other information into remaining 22 bits.
      *
      * @param deviceId Device ID
      * @param portNumber Port number
@@ -494,6 +513,23 @@ public final class OfdpaGroupHandlerUtility {
         long portHigherBits = portNumber & PORT_HIGHER_BITS_MASK;
         int hash = Objects.hash(deviceId, portHigherBits);
         return L2_UNFILTERED_TYPE | (TYPE_MASK & hash << 6) | portLowerBits;
+    }
+
+    /**
+     * Returns a hash as the L2 Hash Group Key.
+     *
+     * Keep the lower 6-bit for port since port number usually smaller than 64.
+     * Hash other information into remaining 28 bits.
+     *
+     * @param deviceId Device ID
+     * @param portNumber Port number
+     * @return L2 hash group key
+     */
+    public static int l2HashGroupKey(DeviceId deviceId, long portNumber) {
+        int portLowerBits = (int) portNumber & PORT_LOWER_BITS_MASK;
+        long portHigherBits = portNumber & PORT_HIGHER_BITS_MASK;
+        int hash = Objects.hash(deviceId, portHigherBits);
+        return L2_LB_TYPE | (TYPE_MASK & hash << 6) | portLowerBits;
     }
 
     /**
@@ -698,13 +734,9 @@ public final class OfdpaGroupHandlerUtility {
                 keys.forEach(key -> groupHandler.processPendingUpdateNextObjs(key));
 
                 Set<GroupKey> k = Sets.newHashSet();
-                groupHandler.pendingRemoveNextObjectives
-                    .asMap().values().stream().forEach(keylist -> {
-                        k.addAll(keylist.stream()
-                                 .filter(key -> groupHandler.groupService
-                                         .getGroup(groupHandler.deviceId, key) == null)
-                                 .collect(Collectors.toSet()));
-                    });
+                groupHandler.pendingRemoveNextObjectives.asMap().values().forEach(keylist -> keylist.stream()
+                        .filter(key -> groupHandler.groupService.getGroup(groupHandler.deviceId, key) == null)
+                        .forEach(k::add));
                 k.forEach(key -> groupHandler.processPendingRemoveNextObjs(key));
 
             } catch (Exception exception) {
@@ -760,6 +792,30 @@ public final class OfdpaGroupHandlerUtility {
     public static int doubleVlanL3UnicastGroupId(VlanId vlanId, long portNum) {
         // <4bits-2><1bit-1><12bits-vlanId><15bits-portId>
         return L3_UNICAST_TYPE | 1 << 27 | (vlanId.toShort() << 15) | (int) (portNum & 0x7FFF);
+    }
+
+    /**
+     * Helper method to decide whether L2 Interface group or L2 Unfiltered group needs to be created.
+     * L2 Unfiltered group will be created if meta has VlanIdCriterion with VlanId.ANY, and
+     * treatment has set Vlan ID action.
+     *
+     * @param treatment  treatment passed in by the application as part of the nextObjective
+     * @param meta       metadata passed in by the application as part of the nextObjective
+     * @return true if L2 Unfiltered group needs to be created, false otherwise.
+     */
+     static boolean isUnfiltered(TrafficTreatment treatment, TrafficSelector meta) {
+        if (meta == null || treatment == null) {
+            return false;
+        }
+        VlanIdCriterion vlanIdCriterion = (VlanIdCriterion) meta.getCriterion(Criterion.Type.VLAN_VID);
+        if (vlanIdCriterion == null || !vlanIdCriterion.vlanId().equals(VlanId.ANY)) {
+            return false;
+        }
+
+        return treatment.allInstructions().stream()
+                .filter(i -> (i.type() == Instruction.Type.L2MODIFICATION
+                        && ((L2ModificationInstruction) i).subtype() == L2ModificationInstruction.L2SubType.VLAN_ID))
+                .count() == 1;
     }
 
 }

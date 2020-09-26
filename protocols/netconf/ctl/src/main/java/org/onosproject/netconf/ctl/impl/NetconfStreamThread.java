@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.channels.ClosedByInterruptException;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -67,6 +68,7 @@ public class NetconfStreamThread extends Thread implements NetconfStreamHandler 
     private static final Pattern CHUNKED_SIZE_PATTERN = Pattern.compile("\\n#([1-9][0-9]*)\\n");
     private static final char HASH_CHAR = '#';
     private static final char LF_CHAR = '\n';
+    protected static final String ON_REQUEST = "on request";
 
     private OutputStreamWriter outputStream;
     private final InputStream err;
@@ -247,11 +249,11 @@ public class NetconfStreamThread extends Thread implements NetconfStreamHandler 
         try {
             boolean socketClosed = false;
             StringBuilder deviceReplyBuilder = new StringBuilder();
-            while (!socketClosed) {
+            while (!socketClosed && !this.isInterrupted()) {
                 int cInt = bufferReader.read();
                 if (cInt == -1) {
                     log.debug("Netconf device {}  sent error char in session," +
-                            " will need to be reopend", netconfDeviceInfo);
+                            " will need to be reopened", netconfDeviceInfo);
                     NetconfDeviceOutputEvent event = new NetconfDeviceOutputEvent(
                             NetconfDeviceOutputEvent.Type.SESSION_CLOSED,
                             null, null, Optional.of(-1), netconfDeviceInfo);
@@ -288,6 +290,8 @@ public class NetconfStreamThread extends Thread implements NetconfStreamHandler 
                     }
                 }
             }
+        } catch (ClosedByInterruptException i) {
+            log.debug("Connection to device {} was terminated on request", netconfDeviceInfo.toString());
         } catch (IOException e) {
             log.warn("Error in reading from the session for device {} ", netconfDeviceInfo, e);
             throw new IllegalStateException(new NetconfException("Error in reading from the session for device {}" +
@@ -296,14 +300,20 @@ public class NetconfStreamThread extends Thread implements NetconfStreamHandler 
         }
     }
 
+    public void close() {
+        close(ON_REQUEST);
+    }
+
     private void close(String deviceReply) {
         log.debug("Netconf device {} socketClosed = true DEVICE_UNREGISTERED {}",
                 netconfDeviceInfo, deviceReply);
-        NetconfDeviceOutputEvent event = new NetconfDeviceOutputEvent(
-                NetconfDeviceOutputEvent.Type.DEVICE_UNREGISTERED,
-                null, null, Optional.of(-1), netconfDeviceInfo);
-        netconfDeviceEventListeners.forEach(
-                listener -> listener.event(event));
+        if (!deviceReply.equals(ON_REQUEST)) {
+            NetconfDeviceOutputEvent event = new NetconfDeviceOutputEvent(
+                    NetconfDeviceOutputEvent.Type.DEVICE_UNREGISTERED,
+                    null, null, Optional.of(-1), netconfDeviceInfo);
+            netconfDeviceEventListeners.forEach(
+                    listener -> listener.event(event));
+        }
         this.interrupt();
     }
 

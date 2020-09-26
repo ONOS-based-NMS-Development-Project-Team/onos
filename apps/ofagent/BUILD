@@ -1,11 +1,11 @@
 COMPILE_DEPS = CORE_DEPS + NETTY + JACKSON + KRYO + CLI + REST + [
-    "@netty_transport//jar",
-    "@netty_codec//jar",
-    "@netty_handler//jar",
+    "@io_netty_netty_transport//jar",
+    "@io_netty_netty_codec//jar",
+    "@io_netty_netty_handler//jar",
     "@openflowj//jar",
     "//core/store/serializers:onos-core-serializers",
     "//core/common:onos-core-common",
-    "//incubator/api:onos-incubator-api",
+    "//apps/virtual/api:onos-apps-virtual-api",
     "//providers/openflow/flow:onos-providers-openflow-flow",
     "//protocols/openflow/api:onos-protocols-openflow-api",
 ]
@@ -29,6 +29,7 @@ osgi_jar_with_tests(
     api_package = "org.onosproject.ofagent.rest",
     api_title = "OFAgent API",
     api_version = "1.0",
+    karaf_command_packages = ["org.onosproject.ofagent.cli"],
     test_deps = TEST_DEPS,
     web_context = "/onos/ofagent",
     deps = COMPILE_DEPS,
@@ -38,6 +39,9 @@ onos_app(
     category = "Traffic Engineering",
     description = "OpenFlow agent application for virtualization subsystem.",
     included_bundles = BUNDLES,
+    required_apps = [
+        "org.onosproject.virtual",
+    ],
     title = "OpenFlow Agent",
     url = "http://onosproject.org",
 )

@@ -1,10 +1,7 @@
-load("//tools/build/bazel:generate_workspace.bzl", "ONOS_VERSION")
-
-COMPILE_DEPS = CORE_DEPS + JACKSON + CLI + [
-    "//incubator/api:onos-incubator-api",
-]
+COMPILE_DEPS = CORE_DEPS + JACKSON + CLI
 
 osgi_jar_with_tests(
+    karaf_command_packages = ["org.onosproject.net.optical.cli"],
     test_deps = TEST_ADAPTERS,
     deps = COMPILE_DEPS,
 )

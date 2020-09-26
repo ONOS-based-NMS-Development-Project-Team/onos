@@ -15,13 +15,15 @@
  */
 package org.onosproject.election.cli;
 
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.cluster.LeadershipService;
 
 /**
  * CLI command to run for leadership of the Election test application.
  */
+@Service
 @Command(scope = "onos", name = "election-test-run",
         description = "Run for leader of the Election test application")
 public class ElectionTestRunCommand extends AbstractShellCommand {
@@ -29,7 +31,7 @@ public class ElectionTestRunCommand extends AbstractShellCommand {
     private static final String ELECTION_APP = "org.onosproject.election";
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         LeadershipService service = get(LeadershipService.class);
 
         service.runForLeadership(ELECTION_APP);

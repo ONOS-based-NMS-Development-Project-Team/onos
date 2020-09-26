@@ -16,12 +16,17 @@
 
 package org.onosproject.drivers.p4runtime;
 
+import org.onlab.packet.EthType;
+import org.onosproject.net.flow.instructions.Instructions;
 import org.onosproject.net.packet.OutboundPacket;
 import org.onosproject.net.packet.PacketProgrammable;
 import org.onosproject.net.pi.model.PiPipelineInterpreter;
-import org.onosproject.net.pi.runtime.PiPacketOperation;
 
-import java.util.Collection;
+import java.nio.ByteBuffer;
+import java.util.stream.Collectors;
+
+import static org.onosproject.drivers.p4runtime.P4RuntimeDriverUtils.getInterpreter;
+import static org.onosproject.net.flow.instructions.Instruction.Type.OUTPUT;
 
 /**
  * Implementation of PacketProgrammable behaviour for P4Runtime.
@@ -33,27 +38,46 @@ public class P4RuntimePacketProgrammable
     @Override
     public void emit(OutboundPacket packet) {
 
-        if (!this.setupBehaviour()) {
+        if (!this.setupBehaviour("emit()")) {
             return;
         }
 
-        final PiPipelineInterpreter interpreter = getInterpreter();
+        final PiPipelineInterpreter interpreter = getInterpreter(handler());
         if (interpreter == null) {
             // Error logged by getInterpreter().
             return;
         }
 
+        if (log.isTraceEnabled()) {
+            logPacketOut(packet);
+        }
+
         try {
-            Collection<PiPacketOperation> operations = interpreter.mapOutboundPacket(packet);
-            operations.forEach(piPacketOperation -> {
-                log.debug("Doing PiPacketOperation {}", piPacketOperation);
-                getFutureWithDeadline(
-                        client.packetOut(piPacketOperation, pipeconf),
-                        "sending packet-out", false);
-            });
+            interpreter.mapOutboundPacket(packet).forEach(
+                    op -> client.packetOut(p4DeviceId, op, pipeconf));
         } catch (PiPipelineInterpreter.PiInterpreterException e) {
             log.error("Unable to translate outbound packet for {} with pipeconf {}: {}",
                       deviceId, pipeconf.id(), e.getMessage());
         }
+    }
+
+    private void logPacketOut(OutboundPacket packet) {
+        final EthType.EtherType etherType = getEtherType(packet.data());
+        final String outPorts = packet.treatment().immediate().stream()
+                .filter(i -> i.type().equals(OUTPUT))
+                .map(i -> Long.toString(((Instructions.OutputInstruction) i).port().toLong()))
+                .collect(Collectors.joining(","));
+        final String desc = outPorts.isBlank()
+                ? "treatment=" + packet.treatment().toString()
+                : "egress_ports=" + outPorts;
+        log.trace("Sending PACKET-OUT >>> device={} {} eth_type={}",
+                  packet.sendThrough(), desc,
+                  etherType.ethType().toString());
+    }
+
+    private EthType.EtherType getEtherType(ByteBuffer data) {
+        final short shortEthType = data.getShort(12);
+        data.rewind();
+        return EthType.EtherType.lookup(shortEthType);
     }
 }

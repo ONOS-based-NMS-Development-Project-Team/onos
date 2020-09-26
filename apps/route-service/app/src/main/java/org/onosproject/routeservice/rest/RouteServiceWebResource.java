@@ -23,7 +23,7 @@ import org.onosproject.routeservice.ResolvedRoute;
 import org.onosproject.routeservice.Route;
 import org.onosproject.routeservice.RouteAdminService;
 import org.onosproject.routeservice.RouteService;
-
+import org.onosproject.routeservice.RouteInfo;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -34,13 +34,14 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.onlab.util.Tools.nullIsIllegal;
 import static org.onlab.util.Tools.readTreeFromStream;
-
 /**
  * Manage the unicast routing information.
  */
@@ -72,16 +73,90 @@ public class RouteServiceWebResource extends AbstractWebResource {
         return ok(root).build();
     }
 
+     /**
+     * Get count of all unicast routes.
+     * Returns count of all known unicast routes.
+     *
+     * @return 200 OK with count of all known unicast routes
+     * @onos.rsModel RoutesGetCount
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/routes/count")
+    public Response getRoutesCount() {
+        RouteService service = get(RouteService.class);
+        ObjectNode root = mapper().createObjectNode();
+        service.getRouteTables().forEach(table -> {
+            Collection<RouteInfo> routes = service.getRoutes(table);
+            root.put(table.name() + "PrefixCount", routes.stream().count());
+        });
+        return ok(root).build();
+    }
+
+    /**
+     * Get count of all types routes .
+     * Returns count of all known route types.
+     *
+     * @return 200 OK with count of all route types
+     * @onos.rsModel RoutesGetTypeCount
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/routes/types/count")
+    public Response getRoutesCountByType() {
+        RouteService service = get(RouteService.class);
+        ObjectNode root = mapper().createObjectNode();
+        service.getRouteTables().forEach(table -> {
+           List<Route> staticRoutes = new ArrayList<>();
+           List<Route> fpmRoutes = new ArrayList<>();
+           List<Route> ripRoutes = new ArrayList<>();
+           List<Route> dhcpRoutes = new ArrayList<>();
+           List<Route> dhcpLQRoutes = new ArrayList<>();
+           List<Route> bgpRoutes = new ArrayList<>();
+           List<Route> routes = service.getRoutes(table).stream()
+                    .flatMap(ri -> ri.allRoutes().stream())
+                    .map(ResolvedRoute::route)
+                    .collect(Collectors.toList());
+            routes.forEach(route -> {
+                if (route.source() == Route.Source.STATIC) {
+                    staticRoutes.add(route);
+                }
+                if (route.source() == Route.Source.FPM) {
+                    fpmRoutes.add(route);
+                }
+                if (route.source() == Route.Source.RIP) {
+                    ripRoutes.add(route);
+                }
+                if (route.source() == Route.Source.DHCP) {
+                    dhcpRoutes.add(route);
+                }
+                if (route.source() == Route.Source.DHCPLQ) {
+                    dhcpLQRoutes.add(route);
+                }
+                if (route.source() == Route.Source.BGP) {
+                    bgpRoutes.add(route);
+                }
+             });
+                root.put(table.name() + "StaticRouteCount", staticRoutes.size());
+                root.put(table.name() + "FpmRouteCount", fpmRoutes.size());
+                root.put(table.name() + "RipRouteCount", ripRoutes.size());
+                root.put(table.name() + "DhcpRouteCount", dhcpRoutes.size());
+                root.put(table.name() + "DhcpLQRouteCount", dhcpLQRoutes.size());
+                root.put(table.name() + "BgpRouteCount", bgpRoutes.size());
+                root.put(table.name() + "TotalRouteCount", routes.stream().count());
+        });
+        return ok(root).build();
+    }
+
     /**
      * Create new unicast route.
-     * Creates a new route in the unicast RIB. Routes created through the REST
-     * API are always created as STATIC routes, so there is no need to specify
-     * the type.
+     * Creates a new route in the unicast RIB. Source field is kept optional.
+     * Without Source field routes are created as STATIC routes. Otherwise as per the mentioned Source
      *
      * @param route unicast route JSON
      * @return status of the request - CREATED if the JSON is correct,
      * BAD_REQUEST if the JSON is invalid, NO_CONTENT otherwise
-     * @onos.rsModel RoutePost
+     * @onos.rsModel RouteTypePost
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -103,14 +178,13 @@ public class RouteServiceWebResource extends AbstractWebResource {
 
     /**
      * Creates new unicast routes.
-     * Creates new routes in the unicast RIB. Routes created through the REST
-     * API are always created as STATIC routes, so there is no need to specify
-     * the type.
+     * Creates a new route in the unicast RIB. Source field is kept optional.
+     * Without Source field routes are created as STATIC routes. Otherwise as per the mentioned Source
      *
      * @param routesStream unicast routes JSON array
      * @return status of the request - CREATED if the JSON is correct,
      * BAD_REQUEST if the JSON is invalid, NO_CONTENT otherwise
-     * @onos.rsModel RoutesPost
+     * @onos.rsModel RoutesTypePost
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)

@@ -14,25 +14,27 @@
 * limitations under the License.
 */
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Params } from '@angular/router';
+import {ActivatedRoute, Params} from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FormsModule } from '@angular/forms';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { ConfirmComponent } from '../../../fw/layer/confirm/confirm.component';
-import { FlashComponent } from '../../../fw/layer/flash/flash.component';
+import {
+    FnService,
+    IconService,
+    IconComponent,
+    ConfirmComponent,
+    FlashComponent,
+    LogService,
+    TableFilterPipe,
+    WebSocketService, LoadingComponent
+} from 'gui2-fw-lib';
 
-import { LogService } from '../../../log.service';
-import { FnService } from '../../../fw/util/fn.service';
-import { IconComponent } from '../../../fw/svg/icon/icon.component';
-import { IconService } from '../../../fw/svg/icon.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { TableFilterPipe } from '../../../fw/widget/tablefilter.pipe';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
 import { of } from 'rxjs';
 import { } from 'jasmine';
 
 import { IntentComponent } from './intent.component';
+import {RouterTestingModule} from '@angular/router/testing';
 
 class MockActivatedRoute extends ActivatedRoute {
     constructor(params: Params) {
@@ -43,12 +45,6 @@ class MockActivatedRoute extends ActivatedRoute {
 
 class MockIconService {
     loadIconDef() { }
-}
-
-class MockLoadingService {
-    startAnim() { }
-    stop() { }
-    waiting() { }
 }
 
 class MockWebSocketService {
@@ -89,12 +85,18 @@ describe('IntentComponent', () => {
         };
         fs = new FnService(ar, logSpy, windowMock);
         TestBed.configureTestingModule({
-            imports: [BrowserAnimationsModule, FormsModule],
-            declarations: [IntentComponent, IconComponent, TableFilterPipe, ConfirmComponent, FlashComponent],
+            imports: [BrowserAnimationsModule, FormsModule, RouterTestingModule],
+            declarations: [
+                IntentComponent,
+                IconComponent,
+                TableFilterPipe,
+                ConfirmComponent,
+                FlashComponent,
+                LoadingComponent
+            ],
             providers: [
                 { provide: FnService, useValue: fs },
                 { provide: IconService, useClass: MockIconService },
-                { provide: LoadingService, useClass: MockLoadingService },
                 { provide: LogService, useValue: logSpy },
                 { provide: WebSocketService, useClass: MockWebSocketService },
                 { provide: 'Window', useValue: windowMock },

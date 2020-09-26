@@ -22,20 +22,25 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.Option;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.net.DeviceIdCompleter;
 import org.onosproject.net.DeviceId;
 import org.onosproject.netconf.NetconfController;
 import org.onosproject.netconf.NetconfDevice;
 import org.onosproject.netconf.NetconfException;
 import org.onosproject.netconf.NetconfSession;
+import org.onosproject.netconf.cli.impl.completers.DatastoreIdCompleter;
 
 /**
  * Command that gets the configuration of the specified type from the specified
  * device. If configuration cannot be retrieved it prints an error string.
  */
+@Service
 @Command(scope = "onos", name = "netconf-get-config",
         description = "Gets the configuration of the specified type from the" +
                 "specified device.")
@@ -43,11 +48,13 @@ public class NetconfGetConfigCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "deviceId", description = "Device ID",
             required = true, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     String uri = null;
 
     @Argument(index = 1, name = "datastore",
               description = "Configuration datastore name (running, etc.)",
               required = false, multiValued = false)
+    @Completion(DatastoreIdCompleter.class)
     String datastore = "running";
 
     @Option(name = "--timeout",
@@ -58,7 +65,7 @@ public class NetconfGetConfigCommand extends AbstractShellCommand {
     private DeviceId deviceId;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         deviceId = DeviceId.deviceId(uri);
 
         NetconfController controller = get(NetconfController.class);

@@ -15,10 +15,13 @@
  */
 package org.onosproject.cli.net;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.net.completer.AnnotationKeysCompleter;
 import org.onosproject.net.ConnectPoint;
 import org.onosproject.net.config.NetworkConfigService;
 import org.onosproject.net.config.basics.PortAnnotationConfig;
@@ -27,16 +30,19 @@ import org.onosproject.net.device.DeviceService;
 /**
  * Annotates network device port model.
  */
+@Service
 @Command(scope = "onos", name = "annotate-port",
         description = "Annotates port entities")
 public class AnnotatePortCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "port", description = "Device Port",
               required = true)
+    @Completion(ConnectPointCompleter.class)
     String port = null;
 
     @Argument(index = 1, name = "key", description = "Annotation key",
              required = false)
+    @Completion(AnnotationKeysCompleter.class)
     String key = null;
 
     @Argument(index = 2, name = "value",
@@ -49,7 +55,7 @@ public class AnnotatePortCommand extends AbstractShellCommand {
     private boolean removeCfg = false;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         DeviceService deviceService = get(DeviceService.class);
         NetworkConfigService netcfgService = get(NetworkConfigService.class);
 

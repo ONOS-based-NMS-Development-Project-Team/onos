@@ -17,7 +17,8 @@
 package org.onosproject.odtn.cli.impl;
 
 import java.util.regex.Pattern;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.util.XmlString;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.config.DynamicConfigService;
@@ -26,7 +27,7 @@ import static org.onosproject.odtn.utils.YangToolUtil.toCharSequence;
 import static org.onosproject.odtn.utils.YangToolUtil.toCompositeData;
 import static org.onosproject.odtn.utils.YangToolUtil.toResourceData;
 import static org.onosproject.odtn.utils.YangToolUtil.toXmlCompositeStream;
-import org.onosproject.yang.gen.v1.tapicommon.rev20180307.tapicommon.DefaultContext;
+import org.onosproject.yang.gen.v1.tapicommon.rev20181210.tapicommon.DefaultContext;
 import org.onosproject.yang.model.DataNode;
 import org.onosproject.yang.model.DefaultModelObjectData;
 import org.onosproject.yang.model.InnerModelObject;
@@ -38,8 +39,9 @@ import org.onosproject.yang.model.ResourceId;
 import org.slf4j.Logger;
 import static org.slf4j.LoggerFactory.getLogger;
 
-
-@Command(scope = "onos", name = "odtn-show-tapi-context")
+@Service
+@Command(scope = "onos", name = "odtn-show-tapi-context",
+         description = "show tapi context command")
 public class OdtnDcsModelCheckCommand extends AbstractShellCommand {
 
     private static final Logger log = getLogger(OdtnDcsModelCheckCommand.class);
@@ -48,11 +50,11 @@ public class OdtnDcsModelCheckCommand extends AbstractShellCommand {
 
     private void printlog(String format, Object... objs) {
         print(format.replaceAll(Pattern.quote("{}"), "%s"), objs);
-        log.info(format, objs);
+        log.debug(format, objs);
     }
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         dcs = get(DynamicConfigService.class);
         modelConverter = get(ModelConverter.class);
         dumpDcsStore(DefaultContext.class);

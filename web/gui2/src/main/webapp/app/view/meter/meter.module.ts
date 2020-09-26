@@ -13,25 +13,21 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { SvgModule } from '../../fw/svg/svg.module';
-import { WidgetModule } from '../../fw/widget/widget.module';
-
-
-import { MeterRoutingModule } from './meter-routing.module';
-import { MeterComponent } from './meter/meter.component';
-
-import { FormsModule } from '@angular/forms';
+import {NgModule} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {Gui2FwLibModule} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
+import {MeterComponent} from './meter/meter.component';
+import {FormsModule} from '@angular/forms';
+import {RouterModule} from '@angular/router';
 
 @NgModule({
-  imports: [
-    CommonModule,
-    SvgModule,
-    MeterRoutingModule,
-    FormsModule,
-    WidgetModule
-  ],
-  declarations: [MeterComponent]
+    imports: [
+        CommonModule,
+        Gui2FwLibModule,
+        RouterModule.forChild([{path: '', component: MeterComponent}]),
+        FormsModule
+    ],
+    declarations: [MeterComponent]
 })
-export class MeterModule { }
+export class MeterModule {
+}

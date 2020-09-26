@@ -16,9 +16,8 @@
 
 package org.onosproject.p4tutorial.pipeconf;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.onlab.packet.DeserializationException;
 import org.onlab.packet.Ethernet;
@@ -38,18 +37,19 @@ import org.onosproject.net.packet.InboundPacket;
 import org.onosproject.net.packet.OutboundPacket;
 import org.onosproject.net.pi.model.PiActionId;
 import org.onosproject.net.pi.model.PiActionParamId;
-import org.onosproject.net.pi.model.PiControlMetadataId;
 import org.onosproject.net.pi.model.PiMatchFieldId;
+import org.onosproject.net.pi.model.PiPacketMetadataId;
 import org.onosproject.net.pi.model.PiPipelineInterpreter;
 import org.onosproject.net.pi.model.PiTableId;
 import org.onosproject.net.pi.runtime.PiAction;
 import org.onosproject.net.pi.runtime.PiActionParam;
-import org.onosproject.net.pi.runtime.PiControlMetadata;
+import org.onosproject.net.pi.runtime.PiPacketMetadata;
 import org.onosproject.net.pi.runtime.PiPacketOperation;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static java.lang.String.format;
@@ -98,13 +98,13 @@ public final class PipelineInterpreterImpl
     private static final PiActionParamId ACT_PARAM_ID_PORT =
             PiActionParamId.of("port");
 
-    private static final BiMap<Integer, PiTableId> TABLE_MAP =
-            new ImmutableBiMap.Builder<Integer, PiTableId>()
+    private static final Map<Integer, PiTableId> TABLE_MAP =
+            new ImmutableMap.Builder<Integer, PiTableId>()
                     .put(0, TABLE_L2_FWD_ID)
                     .build();
 
-    private static final BiMap<Criterion.Type, PiMatchFieldId> CRITERION_MAP =
-            new ImmutableBiMap.Builder<Criterion.Type, PiMatchFieldId>()
+    private static final Map<Criterion.Type, PiMatchFieldId> CRITERION_MAP =
+            ImmutableMap.<Criterion.Type, PiMatchFieldId>builder()
                     .put(Criterion.Type.IN_PORT, INGRESS_PORT_ID)
                     .put(Criterion.Type.ETH_DST, ETH_DST_ID)
                     .put(Criterion.Type.ETH_SRC, ETH_SRC_ID)
@@ -117,18 +117,8 @@ public final class PipelineInterpreterImpl
     }
 
     @Override
-    public Optional<Criterion.Type> mapPiMatchFieldId(PiMatchFieldId headerFieldId) {
-        return Optional.ofNullable(CRITERION_MAP.inverse().get(headerFieldId));
-    }
-
-    @Override
     public Optional<PiTableId> mapFlowRuleTableId(int flowRuleTableId) {
         return Optional.ofNullable(TABLE_MAP.get(flowRuleTableId));
-    }
-
-    @Override
-    public Optional<Integer> mapPiTableId(PiTableId piTableId) {
-        return Optional.ofNullable(TABLE_MAP.inverse().get(piTableId));
     }
 
     @Override
@@ -211,7 +201,7 @@ public final class PipelineInterpreterImpl
     }
 
     @Override
-    public InboundPacket mapInboundPacket(PiPacketOperation packetIn)
+    public InboundPacket mapInboundPacket(PiPacketOperation packetIn, DeviceId deviceId)
             throws PiInterpreterException {
         // We assume that the packet is ethernet, which is fine since mytunnel.p4
         // can deparse only ethernet packets.
@@ -225,39 +215,38 @@ public final class PipelineInterpreterImpl
         }
 
         // Returns the ingress port packet metadata.
-        Optional<PiControlMetadata> packetMetadata = packetIn.metadatas().stream()
+        Optional<PiPacketMetadata> packetMetadata = packetIn.metadatas().stream()
                 .filter(metadata -> metadata.id().toString().equals(INGRESS_PORT))
                 .findFirst();
 
         if (packetMetadata.isPresent()) {
             short s = packetMetadata.get().value().asReadOnlyBuffer().getShort();
             ConnectPoint receivedFrom = new ConnectPoint(
-                    packetIn.deviceId(), PortNumber.portNumber(s));
+                    deviceId, PortNumber.portNumber(s));
             return new DefaultInboundPacket(
                     receivedFrom, ethPkt, packetIn.data().asReadOnlyBuffer());
         } else {
             throw new PiInterpreterException(format(
                     "Missing metadata '%s' in packet-in received from '%s': %s",
-                    INGRESS_PORT, packetIn.deviceId(), packetIn));
+                    INGRESS_PORT, deviceId, packetIn));
         }
     }
 
     private PiPacketOperation createPiPacketOp(ByteBuffer data, long portNumber)
             throws PiInterpreterException {
-        PiControlMetadata metadata = createControlMetadata(portNumber);
+        PiPacketMetadata metadata = createPacketMetadata(portNumber);
         return PiPacketOperation.builder()
-                .forDevice(this.data().deviceId())
                 .withType(PACKET_OUT)
                 .withData(copyFrom(data))
                 .withMetadatas(ImmutableList.of(metadata))
                 .build();
     }
 
-    private PiControlMetadata createControlMetadata(long portNumber)
+    private PiPacketMetadata createPacketMetadata(long portNumber)
             throws PiInterpreterException {
         try {
-            return PiControlMetadata.builder()
-                    .withId(PiControlMetadataId.of(EGRESS_PORT))
+            return PiPacketMetadata.builder()
+                    .withId(PiPacketMetadataId.of(EGRESS_PORT))
                     .withValue(copyFrom(portNumber).fit(PORT_FIELD_BITWIDTH))
                     .build();
         } catch (ImmutableByteSequence.ByteSequenceTrimException e) {

@@ -16,13 +16,6 @@
 
 package org.onosproject.mlb;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.onlab.util.Tools;
 import org.onosproject.cfg.ComponentConfigService;
 import org.onosproject.cluster.ClusterService;
@@ -34,10 +27,16 @@ import org.onosproject.mastership.MastershipAdminService;
 import org.onosproject.mastership.MastershipEvent;
 import org.onosproject.mastership.MastershipListener;
 import org.onosproject.mastership.MastershipService;
-import org.osgi.service.component.ComponentContext;
 import org.onosproject.net.region.RegionEvent;
 import org.onosproject.net.region.RegionListener;
 import org.onosproject.net.region.RegionService;
+import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.Dictionary;
@@ -49,6 +48,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.onlab.util.Tools.groupedThreads;
+import static org.onosproject.mlb.OsgiPropertyConstants.SCHEDULE_PERIOD;
+import static org.onosproject.mlb.OsgiPropertyConstants.SCHEDULE_PERIOD_DEFAULT;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -57,15 +58,18 @@ import static org.slf4j.LoggerFactory.getLogger;
  * thread executor that must only have one thread due to issues that can occur is multiple balancing events occur in
  * parallel.
  */
-@Component(immediate = true)
+@Component(
+    immediate = true,
+    property = {
+        SCHEDULE_PERIOD + ":Integer=" + SCHEDULE_PERIOD_DEFAULT
+    }
+)
 public class MastershipLoadBalancer {
 
     private final Logger log = getLogger(getClass());
 
-    private static final int DEFAULT_SCHEDULE_PERIOD = 30;
-    @Property(name = "schedulePeriod", intValue = DEFAULT_SCHEDULE_PERIOD,
-            label = "Period to schedule balancing the mastership to be shared as evenly as by all online instances.")
-    private int schedulePeriod = DEFAULT_SCHEDULE_PERIOD;
+    /** Period to schedule balancing the mastership to be shared as evenly as by all online instances. */
+    private int schedulePeriod = SCHEDULE_PERIOD_DEFAULT;
 
     private static final String REBALANCE_MASTERSHIP = "rebalance/mastership";
 
@@ -75,22 +79,22 @@ public class MastershipLoadBalancer {
 
     private AtomicReference<Future> nextTask = new AtomicReference<>();
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected MastershipService mastershipService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected MastershipAdminService mastershipAdminService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected LeadershipService leadershipService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected RegionService regionService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ClusterService clusterService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService cfgService;
 
     private InnerLeadershipListener leadershipListener = new InnerLeadershipListener();
@@ -201,11 +205,11 @@ public class MastershipLoadBalancer {
         Dictionary<?, ?> properties = context.getProperties();
 
         Integer newSchedulePeriod = Tools.getIntegerProperty(properties,
-                                                             "schedulePeriod");
+                                                             SCHEDULE_PERIOD);
         if (newSchedulePeriod == null) {
-            schedulePeriod = DEFAULT_SCHEDULE_PERIOD;
+            schedulePeriod = SCHEDULE_PERIOD_DEFAULT;
             log.info("Schedule period is not configured, default value is {}",
-                     DEFAULT_SCHEDULE_PERIOD);
+                     SCHEDULE_PERIOD_DEFAULT);
         } else {
             schedulePeriod = newSchedulePeriod;
             log.info("Configured. Schedule period is configured to {}", schedulePeriod);

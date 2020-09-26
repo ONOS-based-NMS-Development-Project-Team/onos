@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 import { Component, OnInit, OnDestroy, OnChanges, Input, Output, EventEmitter } from '@angular/core';
-import { DetailsPanelBaseImpl } from '../../../../fw/widget/detailspanel.base';
-import { FnService } from '../../../../fw/util/fn.service';
-import { LoadingService } from '../../../../fw/layer/loading.service';
-import { LogService } from '../../../../log.service';
-import { WebSocketService } from '../../../../fw/remote/websocket.service';
-import { LionService } from '../../../../fw/util/lion.service';
+import {
+    FnService,
+    LionService,
+    LogService,
+    DetailsPanelBaseImpl,
+    WebSocketService
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
 /**
@@ -39,7 +40,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
     templateUrl: './flowdetails.component.html',
     styleUrls: [
         './flowdetails.component.css',
-        '../../../../fw/widget/panel.css', '../../../../fw/widget/panel-theme.css'
+        '../../../../../../../../../gui2-fw-lib/lib/widget/panel.css', '../../../../../../../../../gui2-fw-lib/lib/widget/panel-theme.css'
     ],
     animations: [
         trigger('flowDetailsState', [
@@ -67,12 +68,11 @@ export class FlowDetailsComponent extends DetailsPanelBaseImpl implements OnInit
 
     constructor(
         protected fs: FnService,
-        protected ls: LoadingService,
         protected log: LogService,
         protected wss: WebSocketService,
         protected lion: LionService,
     ) {
-        super(fs, ls, log, wss, 'flow');
+        super(fs, log, wss, 'flow');
         if (this.lion.ubercache.length === 0) {
             this.lionFn = this.dummyLion;
             this.lion.loadCbs.set('flowdetails', () => this.doLion());

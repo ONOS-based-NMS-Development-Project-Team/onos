@@ -17,7 +17,7 @@
 package org.onosproject.provider.snmp.device.impl;
 
 import com.btisystems.pronx.ems.core.snmp.ISnmpSession;
-import org.onosproject.incubator.net.faultmanagement.alarm.DefaultAlarm;
+import org.onosproject.alarm.DefaultAlarm;
 import org.onosproject.net.DeviceId;
 import org.onosproject.snmp.SnmpController;
 import org.onosproject.snmp.SnmpDevice;
@@ -52,11 +52,6 @@ public class SnmpControllerAdapter implements SnmpController {
     @Override
     public void removeDevice(DeviceId deviceId) {
         devices.remove(deviceId);
-    }
-
-    @Override
-    public void addDevice(DeviceId deviceId, SnmpDevice snmpDevice) {
-        devices.put(deviceId, snmpDevice);
     }
 
     @Override

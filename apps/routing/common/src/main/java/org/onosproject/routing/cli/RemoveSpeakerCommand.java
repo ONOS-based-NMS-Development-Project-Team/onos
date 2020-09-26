@@ -16,8 +16,9 @@
 
 package org.onosproject.routing.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
@@ -28,6 +29,7 @@ import org.onosproject.routing.config.BgpConfig;
 /**
  * Command to remove a internal BGP speaker.
  */
+@Service
 @Command(scope = "onos", name = "bgp-speaker-remove",
         description = "Removes an internal BGP speaker")
 public class RemoveSpeakerCommand extends AbstractShellCommand {
@@ -45,7 +47,7 @@ public class RemoveSpeakerCommand extends AbstractShellCommand {
             "Speaker with name \'%s\' not found";
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         NetworkConfigService configService = get(NetworkConfigService.class);
         CoreService coreService = get(CoreService.class);
         ApplicationId appId = coreService.getAppId(RoutingService.ROUTER_APP_ID);

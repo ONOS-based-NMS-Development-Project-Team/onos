@@ -3,7 +3,7 @@
 # Builds and installs all tools needed for developing and testing P4 support in
 # ONOS.
 #
-# Tested on Ubuntu 14.04 and 16.04.
+# Tested on 16.04 and 18.04.
 #
 # Recommended minimum system requirements:
 # 4 GB of RAM
@@ -11,32 +11,39 @@
 # 8 GB free hard drive space (~4 GB to build everything)
 #
 # To execute up to a given step, pass the step name as the first argument. For
-# example, to install PI, but not BMv2, p4c, etc:
+# example, to install PI, but not bmv2, p4c, etc:
 #   ./install-p4-tools.sh PI
 # -----------------------------------------------------------------------------
 
 # Exit on errors.
 set -e
+set -x
+
+BMV2_COMMIT="10c2d3434a7212631f11d5d1e3bc802ba6365f6a"
+PI_COMMIT="0bcaeda2269a4f2f0539cf8eac49868e389a8c18"
+P4C_COMMIT="e2934ab32ace8a877bf2b34704950a4da69b6202"
+
+# p4c seems to break when using protobuf versions newer than 3.2.0
+PROTOBUF_VER=${PROTOBUF_VER:-3.2.0}
+GRPC_VER=${GRPC_VER:-1.3.2}
+
 
 BUILD_DIR=~/p4tools
-# in case BMV2_COMMIT value is updated, the same variable in
-# protocols/bmv2/thrift-api/BUCK file should also be updated
-BMV2_COMMIT="a3f0ebe4c0f10a656f8aa1ad68cb20402a62b0ee"
-PI_COMMIT="7e94b025bac6db63bc8534e5dd21a008984e38bc"
-P4C_COMMIT="2d089af757212a057c6690998861ef67439305f4"
-PROTOBUF_COMMIT="tags/v3.2.0"
-GRPC_COMMIT="tags/v1.3.2"
-LIBYANG_COMMIT="v0.14-r1"
-SYSREPO_COMMIT="v0.7.2"
-
 NUM_CORES=`grep -c ^processor /proc/cpuinfo`
-
 # If false, build tools without debug features to improve throughput of BMv2 and
-# reduce CPU/memory footprint.
+# reduce CPU/memory footprint. Default is true.
 DEBUG_FLAGS=${DEBUG_FLAGS:-true}
-
 # Execute up to the given step (first argument), or all if not defined.
 LAST_STEP=${1:-all}
+# PI and BMv2 must be configured differently if we want to use Stratum
+USE_STRATUM=${USE_STRATUM:-false}
+# Improve time for one-time builds
+FAST_BUILD=${FAST_BUILD:-false}
+# Remove build artifacts
+CLEAN_UP=${CLEAN_UP:-false}
+BMV2_INSTALL=/usr/local
+PI_INSTALL=/usr/local
+set +x
 
 function do_requirements {
     sudo apt update
@@ -50,8 +57,10 @@ function do_requirements {
         curl \
         flex \
         git \
+        graphviz \
         libavl-dev \
         libboost-dev \
+        libboost-graph-dev \
         libboost-program-options-dev \
         libboost-system-dev \
         libboost-filesystem-dev \
@@ -75,42 +84,19 @@ function do_requirements {
         libjudy-dev \
         libpcap-dev \
         libpcre3-dev \
-        libreadline6 \
-        libreadline6-dev \
         libssl-dev \
         libtool \
         make \
-        mktemp \
         pkg-config \
-        protobuf-c-compiler \
         python2.7 \
         python2.7-dev \
         tcpdump \
         wget \
         unzip
 
-    sudo -H pip install setuptools cffi ipaddr ipaddress pypcap
-}
-
-function do_requirements_1404 {
-    sudo apt install -y python-software-properties software-properties-common
-    sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-    sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
-    sudo apt update
-    sudo apt install -y \
-        dpkg-dev \
-        g++-4.9 \
-        gcc-4.9 \
-        cmake \
-        libbz2-dev
-
-    # Needed for p4c.
-    sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 50
-    sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.9 50
-
-    if [ -z "$(ldconfig -p | grep libboost_iostreams.so.1.58.0)"  ]; then
-        do_boost
-    fi
+    sudo -H pip2.7 install setuptools cffi ipaddr ipaddress pypcap \
+        git+https://github.com/p4lang/scapy-vxlan \
+        git+https://github.com/p4lang/ptf.git
 }
 
 function do_requirements_1604 {
@@ -119,128 +105,88 @@ function do_requirements_1604 {
         ca-certificates \
         g++ \
         libboost-iostreams1.58-dev \
-        libprotobuf-c-dev
+        libreadline6 \
+        libreadline6-dev \
+        mktemp
 }
 
-function do_boost {
-    cd ${BUILD_DIR}
-    wget https://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.bz2/download -O boost_1_58_0.tar.bz2
-    tar --bzip2 -xf boost_1_58_0.tar.bz2
-    cd boost_1_58_0
-
-    ./bootstrap.sh --with-libraries=iostreams
-    sudo ./b2 install
-    sudo ldconfig
-
-    cd ..
-    sudo rm -rf boost_1_58_0
-}
-
-function do_protobuf-c {
-    cd ${BUILD_DIR}
-    git clone https://github.com/protobuf-c/protobuf-c.git
-    cd protobuf-c
-
-    ./autogen.sh
-    ./configure --prefix=/usr
-    make -j${NUM_CORES}
-    sudo make install
-    sudo ldconfig
-
-    cd ..
-    sudo rm -rf protobuf-c
+function do_requirements_1804 {
+    sudo apt-get update
+    sudo apt-get install -y --no-install-recommends \
+        ca-certificates \
+        g++ \
+        libboost1.65-dev \
+        libboost-regex1.65-dev \
+        libboost-iostreams1.65-dev \
+        libreadline-dev \
+        libssl1.0-dev
 }
 
 function do_protobuf {
     cd ${BUILD_DIR}
-    if [ ! -d protobuf ]; then
-      git clone https://github.com/google/protobuf.git
+    if [[ ! -d protobuf-${PROTOBUF_VER} ]]; then
+      # Get python package which also includes cpp.
+      wget https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VER}/protobuf-python-${PROTOBUF_VER}.tar.gz
+      tar -xzf protobuf-python-${PROTOBUF_VER}.tar.gz
+      rm -r protobuf-python-${PROTOBUF_VER}.tar.gz
     fi
-    cd protobuf
-    git fetch
-    git checkout ${PROTOBUF_COMMIT}
+    cd protobuf-${PROTOBUF_VER}
 
     export CFLAGS="-Os"
     export CXXFLAGS="-Os"
     export LDFLAGS="-Wl,-s"
     ./autogen.sh
-    ./configure --prefix=/usr
+    confOpts="--prefix=/usr"
+    if [[ "${FAST_BUILD}" = true ]] ; then
+        confOpts="${confOpts} --disable-dependency-tracking"
+    fi
+    ./configure ${confOpts}
     make -j${NUM_CORES}
     sudo make install
     sudo ldconfig
     unset CFLAGS CXXFLAGS LDFLAGS
 
     cd python
-    sudo python setup.py install --cpp_implementation
+    # Hack to get the -std=c++11 flag when building 3.6.1
+    # https://github.com/protocolbuffers/protobuf/blob/v3.6.1/python/setup.py#L208
+    export KOKORO_BUILD_NUMBER="hack"
+    sudo -E python2.7 setup.py build --cpp_implementation
+    sudo -E pip2.7 install .
+    unset KOKORO_BUILD_NUMBER
 }
 
 function do_grpc {
     cd ${BUILD_DIR}
-    if [ ! -d grpc ]; then
-      git clone https://github.com/grpc/grpc.git
+    if [[ ! -d grpc-${GRPC_VER} ]]; then
+      git clone --depth 1 --single-branch --branch v${GRPC_VER} https://github.com/grpc/grpc.git grpc-${GRPC_VER}
     fi
-    cd grpc
-    git fetch
-    git checkout ${GRPC_COMMIT}
+
+    cd grpc-${GRPC_VER}
     git submodule update --init
 
     export LDFLAGS="-Wl,-s"
-    make -j${NUM_CORES}
+    RELEASE=`lsb_release -rs`
+    if version_ge ${RELEASE} 18.04; then
+       # Ubuntu 18.04 ships OpenSSL 1.1 by default, which has breaking changes in the API.
+       # Here, we will build grpc with OpenSSL 1.0.
+       # (Reference: https://github.com/grpc/grpc/issues/10589)
+       # Also, set CFLAGS to avoid compilcation error caused by gcc7.
+       # (Reference: https://github.com/grpc/grpc/issues/13854)
+       PKG_CONFIG_PATH=/usr/lib/openssl-1.0/pkgconfig make -j${NUM_CORES} CFLAGS='-Wno-error'
+    else
+       make -j${NUM_CORES}
+    fi
     sudo make install
     sudo ldconfig
     unset LDFLAGS
 
-    sudo pip install -r requirements.txt
-    sudo pip install .
-}
-
-function do_libyang {
-    cd ${BUILD_DIR}
-    if [ ! -d libyang ]; then
-      git clone https://github.com/CESNET/libyang.git
-    fi
-    cd libyang
-    git fetch
-    git checkout ${LIBYANG_COMMIT}
-
-    mkdir -p build
-    cd build
-    cmake ..
-    make -j${NUM_CORES}
-    sudo make install
-    sudo ldconfig
-}
-
-function do_sysrepo_deps {
-    RELEASE=`lsb_release -rs`
-    if version_ge $RELEASE 14.04 && [ -z "$(ldconfig -p | grep libprotobuf-c)"  ]; then
-        do_protobuf-c
-    fi
-}
-
-function do_sysrepo {
-    do_sysrepo_deps
-
-    cd ${BUILD_DIR}
-    if [ ! -d sysrepo ]; then
-      git clone https://github.com/sysrepo/sysrepo.git
-    fi
-    cd sysrepo
-    git fetch
-    git checkout ${SYSREPO_COMMIT}
-
-    mkdir -p build
-    cd build
-    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=Off \
-        -DCALL_TARGET_BINS_DIRECTLY=Off ..
-    make -j${NUM_CORES}
-    sudo make install
-    sudo ldconfig
+    sudo pip2.7 install -r requirements.txt
+    sudo pip2.7 install .
 }
 
 function checkout_bmv2 {
     cd ${BUILD_DIR}
-    if [ ! -d bmv2 ]; then
+    if [[ ! -d bmv2 ]]; then
         git clone https://github.com/p4lang/behavioral-model.git bmv2
     fi
     cd bmv2
@@ -251,20 +197,19 @@ function checkout_bmv2 {
 function do_pi_bmv2_deps {
     checkout_bmv2
     # From bmv2's install_deps.sh.
-    # Nanomsg is required also by PI.
     tmpdir=`mktemp -d -p .`
     cd ${tmpdir}
-    bash ../travis/install-thrift.sh
-    bash ../travis/install-nanomsg.sh
+    if [[ "${USE_STRATUM}" = false ]] ; then
+        bash ../travis/install-thrift.sh
+    fi
     sudo ldconfig
-    bash ../travis/install-nnpy.sh
     cd ..
-    sudo rm -rf $tmpdir
+    sudo rm -rf ${tmpdir}
 }
 
 function do_PI {
     cd ${BUILD_DIR}
-    if [ ! -d PI ]; then
+    if [[ ! -d PI ]]; then
         git clone https://github.com/p4lang/PI.git
     fi
     cd PI
@@ -273,53 +218,60 @@ function do_PI {
     git submodule update --init --recursive
 
     ./autogen.sh
-    # FIXME: re-enable --with-sysrepo when gNMI support becomes more stable
-    # ./configure --with-proto --with-sysrepo 'CXXFLAGS=-O0 -g'
-    if [ "${DEBUG_FLAGS}" = true ] ; then
-        ./configure --with-proto "CXXFLAGS=-O0 -g"
+    if [[ "${USE_STRATUM}" = false ]] ; then
+        ./configure --with-proto --without-internal-rpc --without-cli --prefix=${PI_INSTALL}
     else
-        ./configure --with-proto
+        # Configure for Stratum
+        ./configure --without-bmv2 --with-proto --with-fe-cpp --without-cli --without-internal-rpc --prefix=${PI_INSTALL}
     fi
     make -j${NUM_CORES}
     sudo make install
     sudo ldconfig
-
-    # FIXME: re-enable when gNMI support becomes more stable
-    # sudo proto/sysrepo/install_yangs.sh
 }
 
 function do_bmv2 {
     checkout_bmv2
 
     ./autogen.sh
-    if [ "${DEBUG_FLAGS}" = true ] ; then
-        ./configure --with-pi --enable-debugger --disable-elogger "CXXFLAGS=-O0 -g"
-    else
-        ./configure --with-pi --disable-logging-macros --disable-elogger --without-nanomsg
+
+    confOpts="--with-pi --disable-elogger --without-nanomsg --without-targets"
+    # We are building --without-targets but we know for sure we need those
+    # parts of the BMv2 PI library for simple_switch.
+    cppFlags="-I${PWD}/targets/simple_switch -DWITH_SIMPLE_SWITCH"
+    if [[ "${FAST_BUILD}" = true ]] ; then
+        confOpts="${confOpts} --disable-dependency-tracking"
     fi
+    if [[ "${DEBUG_FLAGS}" = false ]] ; then
+        confOpts="${confOpts} --disable-logging-macros"
+    fi
+    if [[ "${USE_STRATUM}" = true ]] ; then
+        confOpts="--prefix=${BMV2_INSTALL} --without-thrift ${confOpts}"
+        cppFlags="${cppFlags} -isystem${BMV2_INSTALL}/include -isystem${PI_INSTALL}/include -L${PI_INSTALL}/lib"
+    fi
+    confCmd="./configure CPPFLAGS=\"${cppFlags}\" ${confOpts}"
+    eval ${confCmd}
+
+    make -j${NUM_CORES}
+    sudo make install
+    cd targets/simple_switch
     make -j${NUM_CORES}
     sudo make install
     sudo ldconfig
 
-    # Simple_switch_grpc target
-    cd targets/simple_switch_grpc
-    ./autogen.sh
-
-    if [ "${DEBUG_FLAGS}" = true ] ; then
-        ./configure --with-thrift "CXXFLAGS=-O0 -g"
-    else
+    if [[ "${USE_STRATUM}" = false ]] ; then
+        # Simple_switch_grpc target (not using Stratum)
+        cd ../simple_switch_grpc
+        ./autogen.sh
         ./configure --with-thrift
+        make -j${NUM_CORES}
+        sudo make install
+        sudo ldconfig
     fi
-    # FIXME: re-enable --with-sysrepo when gNMI support becomes more stable
-    # ./configure --with-sysrepo --with-thrift 'CXXFLAGS=-O0 -g'
-    make -j${NUM_CORES}
-    sudo make install
-    sudo ldconfig
 }
 
 function do_p4c {
     cd ${BUILD_DIR}
-    if [ ! -d p4c ]; then
+    if [[ ! -d p4c ]]; then
         git clone https://github.com/p4lang/p4c.git
     fi
     cd p4c
@@ -329,37 +281,14 @@ function do_p4c {
 
     mkdir -p build
     cd build
-    cmake ..
+    cmake .. -DENABLE_EBPF=OFF
     make -j${NUM_CORES}
     sudo make install
     sudo ldconfig
 }
 
-function do_scapy-vxlan {
-    cd ${BUILD_DIR}
-    if [ ! -d scapy-vxlan ]; then
-        git clone https://github.com/p4lang/scapy-vxlan.git
-    fi
-    cd scapy-vxlan
-
-    git pull origin master
-
-    sudo python setup.py install
-}
-
-function do_ptf {
-    cd ${BUILD_DIR}
-    if [ ! -d ptf ]; then
-        git clone https://github.com/p4lang/ptf.git
-    fi
-    cd ptf
-    git pull origin master
-
-    sudo python setup.py install
-}
-
 function check_commit {
-    if [ ! -e $2 ]; then
+    if [[ ! -e $2 ]]; then
         return 0 # true
     fi
     if [[ $(< $2) != "$1" ]]; then
@@ -373,7 +302,54 @@ function version_ge {
     # sort -V sorts by *version number*
     latest=`printf "$1\n$2" | sort -V | tail -1`
     # If $1 is latest version, then $1 >= $2
-    [ "$1" == "$latest" ]
+    [[ "$1" == "$latest" ]]
+}
+
+function missing_lib {
+    ldconfig -p | grep $1 &> /dev/null
+    if [[ $? == 0 ]]; then
+        echo "$1 found!"
+        return 1 # false
+    fi
+    return 0 # true
+}
+
+function missing_protoc {
+    command -v protoc >/dev/null 2>&1
+    if [[ $? == 0 ]]; then
+        protoc --version | grep $1 &> /dev/null
+        if [[ $? == 0 ]]; then
+            echo "protoc ${1} found!"
+        else
+            echo "A version of protoc was found, but not $1 (you may experience issues)"
+        fi
+        return 1 # false
+    fi
+    return 0 # true
+}
+
+function missing_grpc {
+    # Is there a better way to check if a specific version of grpc is installed?
+    if [[ -f /usr/local/lib/libgrpc++.so ]]; then
+        ls -l /usr/local/lib/libgrpc++.so | grep libgrpc++.so.${1} &> /dev/null
+        if [[ $? == 0 ]]; then
+            echo "grpc ${1} found!"
+        else
+            echo "A version of grpc was found, but not $1 (you may experience issues)"
+        fi
+        return 1 # false
+    else
+        return 0 # true
+    fi
+}
+
+function all_done {
+    if [[ "${CLEAN_UP}" = true ]] ; then
+        echo "Cleaning up build dir... ${BUILD_DIR})"
+        sudo rm -rf ${BUILD_DIR}
+    fi
+    echo "Done!"
+    exit 0
 }
 
 MUST_DO_ALL=false
@@ -386,7 +362,7 @@ function check_and_do {
     func_name="$3"
     step_name="$4"
     commit_file=${BUILD_DIR}/${proj_dir}/.last_built_commit_${step_name}
-    if [ ${MUST_DO_ALL} = true ] \
+    if [[ ${MUST_DO_ALL} = true ]] \
         || check_commit ${commit_id} ${commit_file}; then
         echo "#"
         echo "# Building ${step_name} (${commit_id})"
@@ -398,10 +374,10 @@ function check_and_do {
             # TODO consider other Linux distros; presently this script assumes
             # that it is running on Ubuntu.
             RELEASE=`lsb_release -rs`
-            if version_ge $RELEASE 16.04; then
+            if version_ge ${RELEASE} 18.04; then
+                do_requirements_1804
+            elif version_ge ${RELEASE} 16.04; then
                 do_requirements_1604
-            elif version_ge $RELEASE 14.04; then
-                do_requirements_1404
             else
                 echo "Ubuntu version $RELEASE is not supported"
                 exit 1
@@ -409,33 +385,36 @@ function check_and_do {
             DID_REQUIREMENTS=true
         fi
         eval ${func_name}
-        echo ${commit_id} > ${commit_file}
-        # Build all next projects as they might depend on this one.
-        MUST_DO_ALL=true
+        if [[ -d ${BUILD_DIR}/${proj_dir} ]]; then
+            # If project was built, we expect its dir. Otherwise, we assume
+            # build was skipped.
+            echo ${commit_id} > ${commit_file}
+            # Build all next projects as they might depend on this one.
+            MUST_DO_ALL=true
+        fi
         # Disable printing to reduce output
         set +x
     else
         echo "${step_name} is up to date (commit ${commit_id})"
     fi
     # Exit if last step.
-    if [ ${step_name} = ${LAST_STEP} ]; then
-        exit
+    if [[ ${step_name} = ${LAST_STEP} ]]; then
+        all_done
     fi
 }
 
 mkdir -p ${BUILD_DIR}
 cd ${BUILD_DIR}
 # In dependency order.
-check_and_do ${PROTOBUF_COMMIT} protobuf do_protobuf protobuf
-check_and_do ${GRPC_COMMIT} grpc do_grpc grpc
-# FIXME: re-enable when gNMI support becomes more stable
-# check_and_do ${LIBYANG_COMMIT} libyang do_libyang libyang
-# check_and_do ${SYSREPO_COMMIT} sysrepo do_sysrepo sysrepo
+if missing_protoc ${PROTOBUF_VER}; then
+    check_and_do ${PROTOBUF_VER} protobuf-${PROTOBUF_VER} do_protobuf protobuf
+fi
+if missing_grpc ${GRPC_VER}; then
+    check_and_do ${GRPC_VER} grpc-${GRPC_VER} do_grpc grpc
+fi
 check_and_do ${BMV2_COMMIT} bmv2 do_pi_bmv2_deps bmv2-deps
 check_and_do ${PI_COMMIT} PI do_PI PI
 check_and_do ${BMV2_COMMIT} bmv2 do_bmv2 bmv2
 check_and_do ${P4C_COMMIT} p4c do_p4c p4c
-check_and_do master scapy-vxlan do_scapy-vxlan scapy-vxlan
-check_and_do master ptf do_ptf ptf
 
-echo "Done!"
+all_done

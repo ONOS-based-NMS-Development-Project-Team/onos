@@ -31,9 +31,11 @@ import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.Option;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.util.XmlString;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.cli.net.DeviceIdCompleter;
@@ -58,7 +60,7 @@ import org.w3c.dom.Element;
 import com.google.common.collect.Lists;
 import com.google.common.io.CharSource;
 
-
+@Service
 @Command(scope = "onos", name = "odtn-manual-test",
          description = "ODTN manual test command")
 public class OdtnManualTestCommand extends AbstractShellCommand {
@@ -75,24 +77,24 @@ public class OdtnManualTestCommand extends AbstractShellCommand {
     ModeCompleter modeCompleter;
     @Argument(index = 0, name = "mode", description = "one of Mode see source",
               required = true)
+    @Completion(ModeCompleter.class)
     String modeStr = Mode.ENABLE_TRANSCEIVER.name();
     Mode mode;
 
-    // injecting dependency for OSGi package import generation purpose
-    DeviceIdCompleter uriCompleter;
     @Option(name = "--deviceId", description = "Device ID URI to send configuration to",
               required = false)
+    @Completion(DeviceIdCompleter.class)
     String uri = null;
 
-    // injecting dependency for OSGi package import generation purpose
-    PortNumberCompleter portNoCompleter;
     // Note: this will required Port information in device subystem
     @Option(name = "--cltPortNo", description = "Client-side PortNumber to send configuration to",
             required = false)
+    @Completion(PortNumberCompleter.class)
     String cltPortNo = null;
 
     @Option(name = "--linePortNo", description = "Line-side PortNumber to send configuration to",
             required = false)
+    @Completion(PortNumberCompleter.class)
     String linePortNo = null;
 
 
@@ -121,7 +123,7 @@ public class OdtnManualTestCommand extends AbstractShellCommand {
 
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         dcs = get(DynamicConfigService.class);
         deviceService = get(DeviceService.class);
 
@@ -218,18 +220,20 @@ public class OdtnManualTestCommand extends AbstractShellCommand {
 
         for (CharSequence node : nodes) {
             Document ldoc = toDocument(CharSource.wrap(node));
-            Element cfgRoot = ldoc.getDocumentElement();
+            if (ldoc != null) {
+                Element cfgRoot = ldoc.getDocumentElement();
 
-            // is everything as merge, ok?
-            cfgRoot.setAttribute("xc:operation", "merge");
+                // is everything as merge, ok?
+                cfgRoot.setAttribute("xc:operation", "merge");
 
-            // move (or copy) node to another Document
-            config.appendChild(Optional.ofNullable(doc.adoptNode(cfgRoot))
-                                  .orElseGet(() -> doc.importNode(cfgRoot, true)));
+                // move (or copy) node to another Document
+                config.appendChild(Optional.ofNullable(doc.adoptNode(cfgRoot))
+                                           .orElseGet(() -> doc.importNode(cfgRoot, true)));
 
-            // don't have good use for JSON for now
-            //JsonNode json = toJsonNode(toJsonCompositeStream(toCompositeData(toResourceData(resourceId, node))));
-            //printlog("JSON:\n{}", toCharSequence(json));
+                // don't have good use for JSON for now
+                //JsonNode json = toJsonNode(toJsonCompositeStream(toCompositeData(toResourceData(resourceId, node))));
+                //printlog("JSON:\n{}", toCharSequence(json));
+            }
         }
 
         printlog("XML:\n{}", XmlString.prettifyXml(toCharSequence(doc)));

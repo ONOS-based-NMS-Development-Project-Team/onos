@@ -15,18 +15,16 @@
  */
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SvgModule } from '../../fw/svg/svg.module';
-import { WidgetModule } from '../../fw/widget/widget.module';
+import {Gui2FwLibModule} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 
-import { PartitionRoutingModule } from './partition-routing.module';
 import { PartitionComponent } from './partition/partition.component';
+import {RouterModule} from '@angular/router';
 
 @NgModule({
     imports: [
         CommonModule,
-        SvgModule,
-        WidgetModule,
-        PartitionRoutingModule
+        Gui2FwLibModule,
+        RouterModule.forChild([{path: '', component: PartitionComponent}]),
     ],
     declarations: [PartitionComponent]
 })

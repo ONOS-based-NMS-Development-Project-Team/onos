@@ -16,16 +16,17 @@
 
 package org.onosproject.odtn.utils.tapi;
 
-import org.onosproject.yang.gen.v1.tapicommon.rev20180307.tapicommon.DefaultContext;
-import org.onosproject.yang.gen.v1.tapicommon.rev20180307.tapicommon.Uuid;
-import org.onosproject.yang.gen.v1.tapiconnectivity.rev20180307.tapiconnectivity.ceplist.DefaultConnectionEndPoint;
-import org.onosproject.yang.gen.v1.tapiconnectivity.rev20180307.tapiconnectivity.connectionendpoint.DefaultParentNodeEdgePoint;
-import org.onosproject.yang.gen.v1.tapitopology.rev20180307.tapitopology.node.DefaultOwnedNodeEdgePoint;
-import org.onosproject.yang.gen.v1.tapitopology.rev20180307.tapitopology.node.OwnedNodeEdgePointKeys;
-import org.onosproject.yang.gen.v1.tapitopology.rev20180307.tapitopology.topology.DefaultNode;
-import org.onosproject.yang.gen.v1.tapitopology.rev20180307.tapitopology.topology.NodeKeys;
-import org.onosproject.yang.gen.v1.tapitopology.rev20180307.tapitopology.topologycontext.DefaultTopology;
-import org.onosproject.yang.gen.v1.tapitopology.rev20180307.tapitopology.topologycontext.TopologyKeys;
+import org.onosproject.yang.gen.v1.tapicommon.rev20181210.tapicommon.DefaultContext;
+import org.onosproject.yang.gen.v1.tapicommon.rev20181210.tapicommon.Uuid;
+import org.onosproject.yang.gen.v1.tapiconnectivity.rev20181210.tapiconnectivity.ceplist.DefaultConnectionEndPoint;
+import org.onosproject.yang.gen.v1.tapiconnectivity.rev20181210.tapiconnectivity.connectionendpoint.DefaultParentNodeEdgePoint;
+import org.onosproject.yang.gen.v1.tapitopology.rev20181210.tapitopology.context.augmentedtapicommoncontext.DefaultTopologyContext;
+import org.onosproject.yang.gen.v1.tapitopology.rev20181210.tapitopology.node.DefaultOwnedNodeEdgePoint;
+import org.onosproject.yang.gen.v1.tapitopology.rev20181210.tapitopology.node.OwnedNodeEdgePointKeys;
+import org.onosproject.yang.gen.v1.tapitopology.rev20181210.tapitopology.topology.DefaultNode;
+import org.onosproject.yang.gen.v1.tapitopology.rev20181210.tapitopology.topology.NodeKeys;
+import org.onosproject.yang.gen.v1.tapitopology.rev20181210.tapitopology.topologycontext.DefaultTopology;
+import org.onosproject.yang.gen.v1.tapitopology.rev20181210.tapitopology.topologycontext.TopologyKeys;
 import org.onosproject.yang.model.ModelObjectId;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -77,6 +78,7 @@ public final class TapiCepHandler extends TapiObjectHandler<DefaultConnectionEnd
 
         return ModelObjectId.builder()
                 .addChild(DefaultContext.class)
+                .addChild(DefaultTopologyContext.class)
                 .addChild(DefaultTopology.class, topologyKey)
                 .addChild(DefaultNode.class, nodeKey)
                 .addChild(DefaultOwnedNodeEdgePoint.class, nepKey)
@@ -104,10 +106,10 @@ public final class TapiCepHandler extends TapiObjectHandler<DefaultConnectionEnd
         checkNotNull(nepUuid);
 
         DefaultParentNodeEdgePoint parentNep = new DefaultParentNodeEdgePoint();
-        parentNep.topologyId(topologyUuid);
-        parentNep.nodeId(nodeUuid);
-        parentNep.ownedNodeEdgePointId(nepUuid);
-        obj.addToParentNodeEdgePoint(parentNep);
+        parentNep.topologyUuid(topologyUuid);
+        parentNep.nodeUuid(nodeUuid);
+        parentNep.nodeEdgePointUuid(nepUuid);
+        obj.parentNodeEdgePoint(parentNep);
 
         return this;
     }

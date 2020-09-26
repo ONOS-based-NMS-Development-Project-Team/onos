@@ -15,8 +15,11 @@
  */
 package org.onosproject.cli.net.completer;
 
-import static org.onlab.osgi.DefaultServiceDirectory.getService;
-import static org.onosproject.net.ConnectPoint.deviceConnectPoint;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.onosproject.cli.AbstractChoicesCompleter;
+import org.onosproject.net.ConnectPoint;
+import org.onosproject.net.device.DeviceService;
+import org.onosproject.net.link.LinkService;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,11 +29,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.karaf.shell.console.completer.ArgumentCompleter.ArgumentList;
-import org.onosproject.cli.AbstractChoicesCompleter;
-import org.onosproject.net.ConnectPoint;
-import org.onosproject.net.device.DeviceService;
-import org.onosproject.net.link.LinkService;
+import static org.onlab.osgi.DefaultServiceDirectory.getService;
+import static org.onosproject.net.ConnectPoint.deviceConnectPoint;
 
 /**
  * Completer, which proposes remote end of existing Link in the system.
@@ -38,16 +38,16 @@ import org.onosproject.net.link.LinkService;
  * This completer will look for (device id)/(port number) in the
  * existing argument and propose list of remote ports.
  */
+@Service
 public class PeerConnectPointCompleter extends AbstractChoicesCompleter {
 
     @Override
     protected List<String> choices() {
-        ArgumentList args = getArgumentList();
 
         DeviceService deviceService = getService(DeviceService.class);
         LinkService linkService = getService(LinkService.class);
 
-        Optional<ConnectPoint> port = Arrays.asList(args.getArguments()).stream()
+        Optional<ConnectPoint> port = Arrays.asList(commandLine.getArguments()).stream()
             .filter(s -> s.contains(":") && s.contains("/"))
             .map(s -> {
                 try {

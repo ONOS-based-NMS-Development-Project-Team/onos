@@ -15,8 +15,10 @@
  */
 package org.onosproject.cli.net;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.Device;
 import org.onosproject.net.DeviceId;
@@ -28,24 +30,28 @@ import org.onosproject.net.device.DeviceService;
 /**
  * Administratively enables or disabled a port on a device.
  */
+@Service
 @Command(scope = "onos", name = "portstate",
          description = "Administratively enables or disabled a port on a device")
 public class DevicePortStateCommand extends AbstractShellCommand {
     @Argument(index = 0, name = "uri", description = "Device ID",
             required = true, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     String uri = null;
 
     @Argument(index = 1, name = "portNumber", description = "Port Number",
             required = true, multiValued = false)
+    @Completion(PortNumberCompleter.class)
     String portNumber = null;
 
     @Argument(index = 2, name = "portState",
             description = "Desired State. Either \"enable\" or \"disable\".",
             required = true, multiValued = false)
+    @Completion(PortStateCompleter.class)
     String portState = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         DeviceService deviceService = get(DeviceService.class);
         DeviceAdminService deviceAdminService = get(DeviceAdminService.class);
         Device dev = deviceService.getDevice(DeviceId.deviceId(uri));
@@ -60,9 +66,9 @@ public class DevicePortStateCommand extends AbstractShellCommand {
             return;
         }
         if ("enable".equals(portState)) {
-            deviceAdminService.changePortState(dev.id(), pnum, true);
+            deviceAdminService.changePortState(dev.id(), p.number(), true);
         } else if ("disable".equals(portState)) {
-            deviceAdminService.changePortState(dev.id(), pnum, false);
+            deviceAdminService.changePortState(dev.id(), p.number(), false);
         } else {
             print(" %s", "State must be enable or disable");
         }

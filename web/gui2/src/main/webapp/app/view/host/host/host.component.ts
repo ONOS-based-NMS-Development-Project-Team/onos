@@ -14,11 +14,12 @@
 * limitations under the License.
 */
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FnService } from '../../../fw/util/fn.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { LogService } from '../../../log.service';
-import { TableBaseImpl, TableResponse, SortDir } from '../../../fw/widget/table.base';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
+import {
+    FnService,
+    LogService,
+    WebSocketService,
+    SortDir, TableBaseImpl, TableResponse
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 
 interface HostTableResponse extends TableResponse {
     hosts: Host[];
@@ -42,17 +43,16 @@ interface Host {
     selector: 'onos-host',
     templateUrl: './host.component.html',
     styleUrls: ['./host.component.css',
-        '../../../fw/widget/table.css', '../../../fw/widget/table.theme.css']
+        '../../../../../../../../gui2-fw-lib/lib/widget/table.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.theme.css']
 })
 export class HostComponent extends TableBaseImpl implements OnInit, OnDestroy {
 
     constructor(
         protected fs: FnService,
-        protected ls: LoadingService,
         protected log: LogService,
         protected wss: WebSocketService,
     ) {
-        super(fs, ls, log, wss, 'host');
+        super(fs, log, wss, 'host');
         this.responseCallback = this.hostResponseCb;
         this.sortParams = {
             firstCol: 'name',

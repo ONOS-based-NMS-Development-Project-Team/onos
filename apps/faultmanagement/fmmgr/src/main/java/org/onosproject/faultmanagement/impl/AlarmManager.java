@@ -16,26 +16,19 @@
 package org.onosproject.faultmanagement.impl;
 
 import com.google.common.collect.ImmutableSet;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onlab.util.ItemNotFoundException;
 import org.onosproject.faultmanagement.api.AlarmStore;
 import org.onosproject.faultmanagement.api.AlarmStoreDelegate;
-import org.onosproject.incubator.net.faultmanagement.alarm.Alarm;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmEntityId;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmEvent;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmId;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmListener;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmProvider;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmProviderRegistry;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmProviderService;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmService;
-import org.onosproject.incubator.net.faultmanagement.alarm.DefaultAlarm;
+import org.onosproject.alarm.Alarm;
+import org.onosproject.alarm.AlarmEntityId;
+import org.onosproject.alarm.AlarmEvent;
+import org.onosproject.alarm.AlarmId;
+import org.onosproject.alarm.AlarmListener;
+import org.onosproject.alarm.AlarmProvider;
+import org.onosproject.alarm.AlarmProviderRegistry;
+import org.onosproject.alarm.AlarmProviderService;
+import org.onosproject.alarm.AlarmService;
+import org.onosproject.alarm.DefaultAlarm;
 import org.onosproject.mastership.MastershipService;
 import org.onosproject.net.ConnectPoint;
 import org.onosproject.net.DeviceId;
@@ -44,6 +37,11 @@ import org.onosproject.net.device.DeviceListener;
 import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.provider.AbstractListenerProviderRegistry;
 import org.onosproject.net.provider.AbstractProviderService;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.Collection;
@@ -59,21 +57,20 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Implementation of the Alarm service.
  */
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = { AlarmService.class, AlarmProviderRegistry.class })
 public class AlarmManager
         extends AbstractListenerProviderRegistry<AlarmEvent, AlarmListener, AlarmProvider, AlarmProviderService>
         implements AlarmService, AlarmProviderRegistry {
 
     private final Logger log = getLogger(getClass());
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DeviceService deviceService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected MastershipService mastershipService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected AlarmStore store;
 
     protected AlarmStoreDelegate delegate = this::post;
@@ -99,12 +96,6 @@ public class AlarmManager
         store.unsetDelegate(delegate);
         eventDispatcher.removeSink(AlarmEvent.class);
         log.info("Stopped");
-    }
-
-    @Modified
-    public boolean modified() {
-        log.info("Modified");
-        return true;
     }
 
     @Override

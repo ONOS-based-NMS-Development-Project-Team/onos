@@ -15,19 +15,9 @@
  */
 package org.onosproject.event.impl;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.TimerTask;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Service;
+import com.google.common.base.Stopwatch;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import org.onlab.util.SharedExecutors;
 import org.onosproject.event.AbstractEvent;
 import org.onosproject.event.DefaultEventSinkRegistry;
@@ -40,11 +30,19 @@ import org.onosproject.net.host.HostEvent;
 import org.onosproject.net.intent.IntentEvent;
 import org.onosproject.net.link.LinkEvent;
 import org.onosproject.net.topology.TopologyEvent;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.slf4j.Logger;
 
-import com.google.common.base.Stopwatch;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimerTask;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
@@ -56,8 +54,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Simple implementation of an event dispatching service.
  */
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = EventDeliveryService.class)
 public class CoreEventDispatcher extends DefaultEventSinkRegistry
         implements EventDeliveryService {
 
@@ -114,7 +111,7 @@ public class CoreEventDispatcher extends DefaultEventSinkRegistry
     public void activate() {
 
         if (maxProcessMillis != 0) {
-            dispatchers.forEach(DispatchLoop::startWatchdog);
+            dispatchers.forEach(DispatchLoop::start);
         }
 
         log.info("Started");
@@ -166,7 +163,6 @@ public class CoreEventDispatcher extends DefaultEventSinkRegistry
                     groupedThreads("onos/event",
                     "dispatch-" + name + "%d", log));
             eventsQueue = new LinkedBlockingQueue<>();
-            dispatchFuture = executor.submit(this);
         }
 
         public boolean add(Event event) {
@@ -175,7 +171,6 @@ public class CoreEventDispatcher extends DefaultEventSinkRegistry
 
         @Override
         public void run() {
-            stopped = false;
             log.info("Dispatch loop({}) initiated", name);
             while (!stopped) {
                 try {
@@ -211,11 +206,16 @@ public class CoreEventDispatcher extends DefaultEventSinkRegistry
         void stop() {
             stopped = true;
             add(KILL_PILL);
+            if (null != dispatchFuture) {
+                dispatchFuture.cancel(true);
+            }
+            stopWatchdog();
         }
 
-        void restart() {
-            dispatchFuture.cancel(true);
+        void start() {
+            stopped = false;
             dispatchFuture = executor.submit(this);
+            startWatchdog();
         }
 
         // Monitors event sinks to make sure none take too long to execute.
@@ -235,7 +235,7 @@ public class CoreEventDispatcher extends DefaultEventSinkRegistry
                     // Cancel the old dispatch loop and submit a new one.
 
                     stop();
-                    restart();
+                    start();
                 }
             }
         }

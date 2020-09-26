@@ -20,32 +20,44 @@
 
 package org.onosproject.odtn.impl;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+
 import org.onosproject.net.ConnectPoint;
+import org.onosproject.net.device.DeviceEvent;
+import org.onosproject.net.device.DeviceListener;
+import org.onosproject.net.device.DeviceService;
+import org.onosproject.net.Port;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.Link;
+
 import org.onosproject.net.config.ConfigFactory;
 import org.onosproject.net.config.NetworkConfigEvent;
 import org.onosproject.net.config.NetworkConfigListener;
 import org.onosproject.net.config.NetworkConfigRegistry;
 import org.onosproject.net.config.NetworkConfigService;
-import org.onosproject.net.device.DeviceEvent;
-import org.onosproject.net.device.DeviceListener;
-import org.onosproject.net.device.DeviceService;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.onosproject.net.config.NetworkConfigEvent.Type.CONFIG_ADDED;
+import static org.onosproject.net.config.NetworkConfigEvent.Type.CONFIG_REMOVED;
+import static org.onosproject.net.config.NetworkConfigEvent.Type.CONFIG_UPDATED;
+import static org.onosproject.net.config.basics.SubjectFactories.CONNECT_POINT_SUBJECT_FACTORY;
+
+
 import org.onosproject.net.link.LinkEvent;
 import org.onosproject.net.link.LinkListener;
 import org.onosproject.net.link.LinkService;
+
 import org.onosproject.odtn.TapiResolver;
+import org.onosproject.odtn.TapiConnectivityConfig;
+import org.onosproject.odtn.TapiConnectivityService;
 import org.onosproject.odtn.TapiTopologyManager;
 import org.onosproject.odtn.config.TerminalDeviceConfig;
 import org.onosproject.odtn.internal.DcsBasedTapiCommonRpc;
 import org.onosproject.odtn.internal.DcsBasedTapiConnectivityRpc;
-import org.onosproject.odtn.internal.DcsBasedTapiDataProducer;
-import org.onosproject.odtn.internal.TapiDataProducer;
 import org.onosproject.odtn.internal.DefaultOdtnTerminalDeviceDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,42 +70,69 @@ import org.onosproject.yang.model.RpcRegistry;
 
 import static org.onosproject.config.DynamicConfigEvent.Type.NODE_ADDED;
 import static org.onosproject.config.DynamicConfigEvent.Type.NODE_DELETED;
-import static org.onosproject.net.config.NetworkConfigEvent.Type.CONFIG_ADDED;
-import static org.onosproject.net.config.NetworkConfigEvent.Type.CONFIG_REMOVED;
-import static org.onosproject.net.config.NetworkConfigEvent.Type.CONFIG_UPDATED;
-import static org.onosproject.net.config.basics.SubjectFactories.CONNECT_POINT_SUBJECT_FACTORY;
+import org.onosproject.core.ApplicationId;
+import org.onosproject.core.CoreService;
+import static org.onosproject.net.optical.device.OpticalDeviceServiceView.opticalView;
+
+import org.onosproject.net.intent.IntentService;
+import org.onosproject.net.intent.Intent;
+import org.onosproject.net.intent.IntentState;
+import org.onosproject.net.intent.IntentEvent;
+import org.onosproject.net.intent.IntentListener;
+import static org.onosproject.net.intent.IntentState.FAILED;
+import static org.onosproject.net.intent.IntentState.WITHDRAWN;
+import org.onosproject.net.intent.Key;
+import org.onosproject.net.intent.OpticalConnectivityIntent;
+import org.onosproject.net.optical.OchPort;
+import org.onosproject.net.OduSignalType;
+
+import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * OSGi Component for ODTN Service application.
  */
-@Component(immediate = true)
-public class ServiceApplicationComponent {
+@Component(immediate = true, service = TapiConnectivityService.class)
+public class ServiceApplicationComponent implements TapiConnectivityService  {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DynamicConfigService dynConfigService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DeviceService deviceService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
+    protected IntentService intentService;
+
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected LinkService linkService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
+    protected CoreService coreService;
+
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected NetworkConfigService netcfgService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected NetworkConfigRegistry netcfgRegistry;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected RpcRegistry rpcRegistry;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected TapiTopologyManager tapiTopologyManager;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected TapiResolver resolver;
+
+    private static final int WITHDRAW_EVENT_TIMEOUT_SECONDS = 5;
+
+    private static final String APP_ID = "org.onosproject.odtn-service";
+
+    private ApplicationId appId;
 
     // Listener for events from the DCS
     private final DynamicConfigListener dynamicConfigServiceListener =
@@ -102,7 +141,6 @@ public class ServiceApplicationComponent {
     private DeviceListener deviceListener = new InternalDeviceListener();
     private final LinkListener linkListener = new InternalLinkListener();
     private final NetworkConfigListener netcfgListener = new InternalNetCfgListener();
-    private TapiDataProducer dataProvider = new DcsBasedTapiDataProducer();
 
     // Rpc Service for TAPI Connectivity
     private final DcsBasedTapiConnectivityRpc rpcTapiConnectivity = new DcsBasedTapiConnectivityRpc();
@@ -112,16 +150,17 @@ public class ServiceApplicationComponent {
     private final ConfigFactory<ConnectPoint, TerminalDeviceConfig> factory =
             new ConfigFactory<ConnectPoint, TerminalDeviceConfig>(CONNECT_POINT_SUBJECT_FACTORY,
                     TerminalDeviceConfig.class, TerminalDeviceConfig.CONFIG_KEY) {
+
                 @Override
                 public TerminalDeviceConfig createConfig() {
                     return new TerminalDeviceConfig();
                 }
             };
 
-
     @Activate
     protected void activate() {
         log.info("Started");
+        appId = coreService.registerApplication(APP_ID);
         dynConfigService.addListener(dynamicConfigServiceListener);
         deviceService.addListener(deviceListener);
         linkService.addListener(linkListener);
@@ -133,7 +172,6 @@ public class ServiceApplicationComponent {
         rpcTapiConnectivity.init();
         rpcTapiCommon.init();
     }
-
 
     @Deactivate
     protected void deactivate() {
@@ -149,10 +187,101 @@ public class ServiceApplicationComponent {
 
 
     /**
+     * Process TAPI Event from NBI.
+     *
+     * @param config TAPI Connectivity config for the event
+     */
+    public void processTapiEvent(TapiConnectivityConfig config) {
+        checkNotNull(config, "Config can't be null");
+        Key key = Key.of(config.uuid(), appId);
+        // Setup the Intent
+        if (config.isSetup()) {
+            log.debug("TAPI config: {} to setup intent", config);
+            Intent intent = createOpticalIntent(config.leftCp(), config.rightCp(), key, appId);
+            intentService.submit(intent);
+        } else {
+        // Release the intent
+            Intent intent = intentService.getIntent(key);
+            if (intent == null) {
+                log.error("Intent for uuid {} does not exist", config.uuid());
+                return;
+            }
+            log.debug("TAPI config: {} to purge intent {}", config, intent);
+            CountDownLatch latch = new CountDownLatch(1);
+            IntentListener listener = new DeleteListener(key, latch);
+            intentService.addListener(listener);
+            try {
+                /*
+                 * RCAS: Note, withdraw is asynchronous. We cannot call purge
+                 * directly, because at this point it remains in the "INSTALLED"
+                 * state.
+                 */
+                intentService.withdraw(intent);
+
+                /*
+                 * org.onosproject.onos-core-net - 2.1.0.SNAPSHOT |
+                 * Purge for intent 0x0 is rejected because intent state is INSTALLED
+                 * intentService.purge(intent);
+                 */
+                try {
+                    latch.await(WITHDRAW_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                // double check the state
+                IntentState state = intentService.getIntentState(key);
+                if (state == WITHDRAWN || state == FAILED) {
+                    intentService.purge(intent);
+                }
+            } finally {
+                intentService.removeListener(listener);
+            }
+        }
+    }
+
+    /**
+     * Returns a new optical intent created from the method parameters.
+     *
+     * @param ingress ingress description (device/port)
+     * @param egress egress description (device/port)
+     * @param key intent key
+     * @param appId application id. As per Intent class, it cannot be null
+     *
+     * @return created intent
+     */
+    protected Intent createOpticalIntent(ConnectPoint ingress, ConnectPoint egress,
+                                         Key key, ApplicationId appId) {
+
+        if (ingress == null || egress == null) {
+            log.error("Invalid endpoint(s) for optical intent: ingress {}, egress {}",
+                ingress, egress);
+            return null;
+        }
+        DeviceService ds = opticalView(deviceService);
+        Port srcPort = ds.getPort(ingress.deviceId(), ingress.port());
+        Port dstPort = ds.getPort(egress.deviceId(), egress.port());
+        if (srcPort == null || dstPort == null) {
+            log.error("Invalid port(s) for optical intent: src {}, dst {}",
+                srcPort, dstPort);
+            return null;
+        }
+
+        OduSignalType signalType = ((OchPort) srcPort).signalType();
+        return OpticalConnectivityIntent.builder()
+            .appId(appId)
+            .key(key)
+            .src(ingress)
+            .dst(egress)
+            .signalType(signalType)
+            .bidirectional(true) //TODO Revisit this.
+            .build();
+    }
+
+
+    /**
      * Representation of internal listener, listening for device event.
      */
     private class InternalDeviceListener implements DeviceListener {
-
         /**
          * Process an Event from the Device Service.
          *
@@ -161,8 +290,7 @@ public class ServiceApplicationComponent {
         @Override
         public void event(DeviceEvent event) {
 
-            log.info("Device event type: {}", event.type());
-            log.info("Device event subject: {}", event.subject());
+            log.debug("Device event type: {}, subject: {}", event.type(), event.subject());
             switch (event.type()) {
                 case DEVICE_ADDED:
                     tapiTopologyManager.addDevice(event.subject());
@@ -176,8 +304,9 @@ public class ServiceApplicationComponent {
                 case PORT_REMOVED:
                     tapiTopologyManager.removePort(event.port());
                     break;
+                // TODO: Process device / port updated events
                 default:
-                    log.warn("Unknown Event", event.type());
+                    log.warn("Unprocessed Event {}", event.type());
                     break;
             }
 
@@ -188,7 +317,6 @@ public class ServiceApplicationComponent {
      * Representation of internal listener, listening for link event.
      */
     private class InternalLinkListener implements LinkListener {
-
         /**
          * Process an Event from the Device Service.
          *
@@ -206,17 +334,17 @@ public class ServiceApplicationComponent {
                     tapiTopologyManager.removeLink(link);
                     break;
                 default:
-                    log.warn("Unknown Event", event.type());
+                    log.warn("Unknown Event {}", event.type());
                     break;
             }
         }
     }
 
+
     /**
      * Representation of internal listener, listening for netcfg event.
      */
     private class InternalNetCfgListener implements NetworkConfigListener {
-
         /**
          * Check if the netcfg event should be further processed.
          *
@@ -225,7 +353,6 @@ public class ServiceApplicationComponent {
          */
         @Override
         public boolean isRelevant(NetworkConfigEvent event) {
-
             if (event.type() == CONFIG_ADDED || event.type() == CONFIG_UPDATED) {
                 if (event.config().orElse(null) instanceof TerminalDeviceConfig) {
                     return true;
@@ -246,28 +373,51 @@ public class ServiceApplicationComponent {
          */
         @Override
         public void event(NetworkConfigEvent event) {
-
-            log.info("type: {}", event.type());
-            log.info("subject: {}", event.subject());
+            log.debug("Event type: {}, subject: {}", event.type(), event.subject());
             DeviceId did = ((ConnectPoint) event.subject()).deviceId();
-
+            TerminalDeviceConfig config = (TerminalDeviceConfig) event.config().get();
             DefaultOdtnTerminalDeviceDriver driver = DefaultOdtnTerminalDeviceDriver.create();
-            TerminalDeviceConfig config;
-
+            log.debug("config: {}", config);
             switch (event.type()) {
                 case CONFIG_ADDED:
                 case CONFIG_UPDATED:
-                    config = (TerminalDeviceConfig) event.config().get();
-                    log.info("config: {}", config);
                     driver.apply(did, config.clientCp().port(), config.subject().port(), config.isEnabled());
                     break;
+
                 case CONFIG_REMOVED:
-                    config = (TerminalDeviceConfig) event.prevConfig().get();
-                    log.info("config: {}", config);
                     driver.apply(did, config.clientCp().port(), config.subject().port(), false);
                     break;
                 default:
                     log.error("Unsupported event type.");
+            }
+        }
+    }
+
+
+    /**
+     * Internal listener for tracking the intent deletion events.
+     */
+    private class DeleteListener implements IntentListener {
+        final Key key;
+        final CountDownLatch latch;
+
+        /**
+         * Default constructor.
+         *
+         * @param key   key
+         * @param latch count down latch
+         */
+        DeleteListener(Key key, CountDownLatch latch) {
+            this.key = key;
+            this.latch = latch;
+        }
+
+        @Override
+        public void event(IntentEvent event) {
+            if (Objects.equals(event.subject().key(), key) &&
+                    (event.type() == IntentEvent.Type.WITHDRAWN ||
+                            event.type() == IntentEvent.Type.FAILED)) {
+                latch.countDown();
             }
         }
     }
@@ -302,69 +452,7 @@ public class ServiceApplicationComponent {
         @Override
         public void event(DynamicConfigEvent event) {
             resolver.makeDirty();
-//            ResourceId rsId = event.subject();
-//            DataNode node;
-//            try {
-//                Filter filter = Filter.builder().addCriteria(rsId).build();
-//                node = dynConfigService.readNode(rsId, filter);
-//            } catch (FailedException e) {
-//                node = null;
-//            }
-//            switch (event.type()) {
-//                case NODE_ADDED:
-//                    onDcsNodeAdded(rsId, node);
-//                    break;
-//
-//                case NODE_DELETED:
-//                    onDcsNodeDeleted(node);
-//                    break;
-//
-//                default:
-//                    log.warn("Unknown Event", event.type());
-//                    break;
-//            }
         }
-
-//        /**
-//         * Process the event that a node has been added to the DCS.
-//         *
-//         * @param rsId ResourceId of the added node
-//         * @param node added node. Access the key and value
-//         */
-//        private void onDcsNodeAdded(ResourceId rsId, DataNode node) {
-//
-//            switch (node.type()) {
-//                case SINGLE_INSTANCE_NODE:
-//                    break;
-//                case MULTI_INSTANCE_NODE:
-//                    break;
-//                case SINGLE_INSTANCE_LEAF_VALUE_NODE:
-//                    break;
-//                case MULTI_INSTANCE_LEAF_VALUE_NODE:
-//                    break;
-//                default:
-//                    break;
-//            }
-//
-//            NodeKey dataNodeKey = node.key();
-//            SchemaId schemaId = dataNodeKey.schemaId();
-
-        // Consolidate events
-//            if (!schemaId.namespace().contains("tapi")) {
-//                return;
-//            }
-//            log.info("namespace {}", schemaId.namespace());
-//        }
-
-//        /**
-//         * Process the event that a node has been deleted from the DCS.
-//         *
-//         * @param dataNode data node
-//         */
-//        private void onDcsNodeDeleted(DataNode dataNode) {
-//            // TODO: Implement release logic
-//        }
-
     }
 
 }

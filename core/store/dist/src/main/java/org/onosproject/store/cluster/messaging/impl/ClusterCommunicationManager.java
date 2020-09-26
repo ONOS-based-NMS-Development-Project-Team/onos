@@ -15,14 +15,9 @@
  */
 package org.onosproject.store.cluster.messaging.impl;
 
+import java.time.Duration;
 import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onlab.util.Tools;
 import org.onosproject.cluster.ClusterService;
 import org.onosproject.cluster.ControllerNode;
@@ -34,6 +29,11 @@ import org.onosproject.store.cluster.messaging.Endpoint;
 import org.onosproject.store.cluster.messaging.MessageSubject;
 import org.onosproject.store.cluster.messaging.MessagingService;
 import org.onosproject.utils.MeteringAgent;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,14 +52,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.onosproject.security.AppGuard.checkPermission;
 import static org.onosproject.security.AppPermission.Type.CLUSTER_WRITE;
 
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = ClusterCommunicationService.class)
 public class ClusterCommunicationManager implements ClusterCommunicationService {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private final MeteringAgent subjectMeteringAgent = new MeteringAgent(PRIMITIVE_NAME, SUBJECT_PREFIX, true);
-    private final MeteringAgent endpointMeteringAgent = new MeteringAgent(PRIMITIVE_NAME, ENDPOINT_PREFIX, true);
+    private final MeteringAgent subjectMeteringAgent = new MeteringAgent(PRIMITIVE_NAME, SUBJECT_PREFIX, false);
+    private final MeteringAgent endpointMeteringAgent = new MeteringAgent(PRIMITIVE_NAME, ENDPOINT_PREFIX, false);
 
     private static final String PRIMITIVE_NAME = "clusterCommunication";
     private static final String SUBJECT_PREFIX = "subject";
@@ -71,10 +70,10 @@ public class ClusterCommunicationManager implements ClusterCommunicationService 
     private static final String ROUND_TRIP_SUFFIX = ".rtt";
     private static final String ONE_WAY_SUFFIX = ".oneway";
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ClusterService clusterService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected MessagingService messagingService;
 
     private NodeId localNodeId;
@@ -156,7 +155,8 @@ public class ClusterCommunicationManager implements ClusterCommunicationService 
                                                       MessageSubject subject,
                                                       Function<M, byte[]> encoder,
                                                       Function<byte[], R> decoder,
-                                                      NodeId toNodeId) {
+                                                      NodeId toNodeId,
+                                                      Duration timeout) {
         checkPermission(CLUSTER_WRITE);
         try {
             ClusterMessage envelope = new ClusterMessage(
@@ -164,7 +164,7 @@ public class ClusterCommunicationManager implements ClusterCommunicationService 
                     subject,
                     timeFunction(encoder, subjectMeteringAgent, SERIALIZING).
                             apply(message));
-            return sendAndReceive(subject, envelope.getBytes(), toNodeId).
+            return sendAndReceive(subject, envelope.getBytes(), toNodeId, timeout).
                     thenApply(bytes -> timeFunction(decoder, subjectMeteringAgent, DESERIALIZING).apply(bytes));
         } catch (Exception e) {
             return Tools.exceptionalFuture(e);
@@ -179,7 +179,8 @@ public class ClusterCommunicationManager implements ClusterCommunicationService 
         return messagingService.sendAsync(nodeEp, subject.toString(), payload).whenComplete((r, e) -> context.stop(e));
     }
 
-    private CompletableFuture<byte[]> sendAndReceive(MessageSubject subject, byte[] payload, NodeId toNodeId) {
+    private CompletableFuture<byte[]> sendAndReceive(
+        MessageSubject subject, byte[] payload, NodeId toNodeId, Duration timeout) {
         ControllerNode node = clusterService.getNode(toNodeId);
         checkArgument(node != null, "Unknown nodeId: %s", toNodeId);
         Endpoint nodeEp = new Endpoint(node.ip(), node.tcpPort());
@@ -187,7 +188,7 @@ public class ClusterCommunicationManager implements ClusterCommunicationService 
                 startTimer(NODE_PREFIX + toNodeId.toString() + ROUND_TRIP_SUFFIX);
         MeteringAgent.Context subjectContext = subjectMeteringAgent.
                 startTimer(subject.toString() + ROUND_TRIP_SUFFIX);
-        return messagingService.sendAndReceive(nodeEp, subject.toString(), payload).
+        return messagingService.sendAndReceive(nodeEp, subject.toString(), payload, timeout).
                 whenComplete((bytes, throwable) -> {
                     subjectContext.stop(throwable);
                     epContext.stop(throwable);

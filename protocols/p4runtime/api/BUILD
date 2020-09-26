@@ -1,7 +1,6 @@
-GRPC_VER = "1_3_1"
-
 COMPILE_DEPS = CORE_DEPS + [
-    "@grpc_core_" + GRPC_VER + "//jar",
+    "//protocols/grpc/api:onos-protocols-grpc-api",
+    "//deps:io_grpc_grpc_api_context",
 ]
 
 TEST_DEPS = TEST + [

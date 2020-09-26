@@ -26,20 +26,6 @@ import com.google.common.annotations.Beta;
 public interface PiPreEntry extends PiEntity {
 
     /**
-     * Type of PRE entry.
-     */
-    enum PiPreEntryType {
-        /**
-         * Multicast group entry.
-         */
-        MULTICAST_GROUP,
-        /**
-         * Clone session entry.
-         */
-        CLONE_SESSION
-    }
-
-    /**
      * Returns the type of this PRE entry.
      *
      * @return PRE entry type

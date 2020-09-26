@@ -15,8 +15,6 @@
  */
 package org.onosproject.openstacktelemetry.api;
 
-import org.onosproject.openstacktelemetry.api.config.TelemetryConfig;
-
 /**
  * Admin service API for publishing openstack telemetry.
  */
@@ -25,19 +23,38 @@ public interface TelemetryAdminService extends TelemetryService {
     /**
      * Prepares and launches the telemetry producer.
      *
-     * @param config telemetry server config
+     * @param name telemetry service name
+     * @return true if the service is successfully started, false otherwise
      */
-    void start(TelemetryConfig config);
+    boolean start(String name);
 
     /**
      * Terminates the telemetry producer.
+     *
+     * @param name telemetry service name
      */
-    void stop();
+    void stop(String name);
 
     /**
      * Restarts the telemetry producer.
      *
-     * @param config telemetry server config
+     * @param name telemetry service name
+     * @return true if the service is successfully restarted, false otherwise
      */
-    void restart(TelemetryConfig config);
+    boolean restart(String name);
+
+    /**
+     * Launches all telemetry services.
+     */
+    void startAll();
+
+    /**
+     * Terminates all telemetry services.
+     */
+    void stopAll();
+
+    /**
+     * Restarts all telemetry services.
+     */
+    void restartAll();
 }

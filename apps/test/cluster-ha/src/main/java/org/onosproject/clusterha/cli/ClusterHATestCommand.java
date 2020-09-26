@@ -16,11 +16,13 @@
 
 package org.onosproject.clusterha.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.clusterha.ClusterHATest;
 
+@Service
 @Command(scope = "onos", name = "cluster-ha-test",
         description = "test addition & deletion on consistent map")
 public class ClusterHATestCommand extends AbstractShellCommand {
@@ -45,7 +47,7 @@ public class ClusterHATestCommand extends AbstractShellCommand {
     private static final String CONSTANT = new String(new char[COUNT]).replace("\0", STR);
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         ClusterHATest service = get(ClusterHATest.class);
         int iStartIdx = 0, iEndIdx = 0;
         long lInterOpDelay = 0L;

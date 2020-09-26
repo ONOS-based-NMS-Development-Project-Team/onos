@@ -1,14 +1,11 @@
 COMPILE_DEPS = CORE_DEPS + [
     "@minimal_json//jar",
-    "//drivers/default:onos-drivers-default",
     "//protocols/p4runtime/model:onos-protocols-p4runtime-model",
     "//protocols/p4runtime/api:onos-protocols-p4runtime-api",
-    "//apps/inbandtelemetry/api:onos-apps-inbandtelemetry-api",
 ]
 
 BUNDLES = [
     "//pipelines/basic:onos-pipelines-basic",
-    "//apps/inbandtelemetry/api:onos-apps-inbandtelemetry-api",
 ]
 
 osgi_jar(

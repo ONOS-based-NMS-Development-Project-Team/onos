@@ -15,10 +15,13 @@
  */
 package org.onosproject.cli.net;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.net.completer.AnnotationKeysCompleter;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.config.NetworkConfigService;
 import org.onosproject.net.config.basics.DeviceAnnotationConfig;
@@ -27,18 +30,21 @@ import org.onosproject.net.provider.ProviderId;
 /**
  * Annotates network device model.
  */
+@Service
 @Command(scope = "onos", name = "annotate-device",
         description = "Annotates network model entities")
 public class AnnotateDeviceCommand extends AbstractShellCommand {
 
-    static final ProviderId PID = new ProviderId("cli", "org.onosproject.cli", true);
+    static final ProviderId PID = new ProviderId("cli", "org.onosproject.cli");
 
     @Argument(index = 0, name = "uri", description = "Device ID",
             required = true, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     String uri = null;
 
     @Argument(index = 1, name = "key", description = "Annotation key",
             required = true, multiValued = false)
+    @Completion(AnnotationKeysCompleter.class)
     String key = null;
 
     @Argument(index = 2, name = "value",
@@ -51,7 +57,7 @@ public class AnnotateDeviceCommand extends AbstractShellCommand {
     private boolean removeCfg = false;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         NetworkConfigService netcfgService = get(NetworkConfigService.class);
         DeviceId deviceId = DeviceId.deviceId(uri);
 

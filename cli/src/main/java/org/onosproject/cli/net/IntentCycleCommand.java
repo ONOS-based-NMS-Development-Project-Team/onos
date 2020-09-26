@@ -19,8 +19,11 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.support.completers.NullCompleter;
 import org.onlab.packet.Ethernet;
 import org.onlab.packet.MacAddress;
 import org.onosproject.cli.AbstractShellCommand;
@@ -49,6 +52,7 @@ import static org.onosproject.net.PortNumber.portNumber;
 /**
  * Installs point-to-point connectivity intents.
  */
+@Service
 @Command(scope = "onos", name = "cycle-intents",
          description = "Installs random intents to test throughput")
 public class IntentCycleCommand extends AbstractShellCommand
@@ -57,16 +61,19 @@ public class IntentCycleCommand extends AbstractShellCommand
     @Argument(index = 0, name = "ingressDevice",
               description = "Ingress Device/Port Description",
               required = true, multiValued = false)
+    @Completion(ConnectPointCompleter.class)
     String ingressDeviceString = null;
 
     @Argument(index = 1, name = "egressDevice",
               description = "Egress Device/Port Description",
               required = true, multiValued = false)
+    @Completion(ConnectPointCompleter.class)
     String egressDeviceString = null;
 
     @Argument(index = 2, name = "numberOfIntents",
             description = "Number of intents to install/withdraw",
             required = true, multiValued = false)
+    @Completion(NullCompleter.class)
     String numberOfIntents = null;
 
     @Argument(index = 3, name = "keyOffset",
@@ -83,7 +90,7 @@ public class IntentCycleCommand extends AbstractShellCommand
     private boolean add;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         service = get(IntentService.class);
 
 

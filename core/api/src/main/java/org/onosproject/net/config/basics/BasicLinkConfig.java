@@ -41,18 +41,32 @@ public final class BasicLinkConfig extends AllowedEntityConfig<LinkKey> {
     public static final String METRIC = "metric";
     public static final String LATENCY = "latency";
     public static final String BANDWIDTH = "bandwidth";
+    public static final String JITTER = "jitter";
+    public static final String DELAY = "delay";
+    public static final String LOSS = "loss";
+    public static final String AVAILABILITY = "availability";
+    public static final String TIER = "tier";
+    public static final String METERED_USAGE = "meteredUsage";
+    public static final String FLAPPING = "flapping";
     public static final String IS_DURABLE = "durable";
     public static final String IS_BIDIRECTIONAL = "bidirectional";
+    public static final String IS_METERED = "metered";
 
     @Override
     public boolean isValid() {
         // Validate type/devices
         type();
 
-        return hasOnlyFields(ALLOWED, TYPE, METRIC, LATENCY, BANDWIDTH, IS_DURABLE, IS_BIDIRECTIONAL) &&
+        return hasOnlyFields(ALLOWED, TYPE, METRIC, LATENCY, BANDWIDTH, JITTER, DELAY, LOSS, AVAILABILITY, FLAPPING,
+                IS_DURABLE, IS_BIDIRECTIONAL, IS_METERED, TIER, METERED_USAGE) &&
                 isBoolean(ALLOWED, OPTIONAL) && isNumber(METRIC, OPTIONAL) &&
-                isNumber(LATENCY, OPTIONAL) && isNumber(BANDWIDTH, OPTIONAL) &&
-                isBoolean(IS_BIDIRECTIONAL, OPTIONAL);
+                isNumber(LATENCY, OPTIONAL) && isNumber(BANDWIDTH, OPTIONAL) && isDecimal(JITTER, OPTIONAL) &&
+                isDecimal(DELAY, OPTIONAL) && isDecimal(LOSS, OPTIONAL) && isDecimal(AVAILABILITY, OPTIONAL) &&
+                isDecimal(FLAPPING, OPTIONAL) &&
+                isNumber(TIER, OPTIONAL) &&
+                isDecimal(METERED_USAGE, OPTIONAL) &&
+                isBoolean(IS_BIDIRECTIONAL, OPTIONAL) &&
+                isBoolean(IS_METERED, OPTIONAL);
     }
 
     /**
@@ -201,6 +215,162 @@ public final class BasicLinkConfig extends AllowedEntityConfig<LinkKey> {
     public BasicLinkConfig(LinkKey linkKey) {
         ObjectMapper mapper = new ObjectMapper();
         init(linkKey, CONFIG_KEY, mapper.createObjectNode(), mapper, null);
+    }
+
+    /**
+     * Returns link jitter in terms of seconds.
+     *
+     * @return link jitter valuer; -1 if not set
+     */
+    public double jitter() {
+        return get(JITTER, -1.0);
+    }
+
+    /**
+     * Sets the link jitter.
+     *
+     * @param jitter new jitter value; null to clear
+     * @return self
+     */
+    public BasicLinkConfig jitter(Double jitter) {
+        return (BasicLinkConfig) setOrClear(JITTER, jitter);
+    }
+
+    /**
+     * Returns link delay in terms of seconds.
+     *
+     * @return link delay value; -1 if not set
+     */
+    public double delay() {
+        return get(DELAY, -1.0);
+    }
+
+    /**
+     * Sets the link delay.
+     *
+     * @param delay new delay value; null to clear
+     * @return self
+     */
+    public BasicLinkConfig delay(Double delay) {
+        return (BasicLinkConfig) setOrClear(DELAY, delay);
+    }
+
+    /**
+     * Returns link loss in terms of Percentage.
+     *
+     * @return link loss value; -1 if not set
+     */
+    public double loss() {
+        return get(LOSS, -1.0);
+    }
+
+    /**
+     * Sets the link loss.
+     *
+     * @param loss new loss value; null to clear
+     * @return self
+     */
+    public BasicLinkConfig loss(Double loss) {
+        return (BasicLinkConfig) setOrClear(LOSS, loss);
+    }
+
+    /**
+     * Returns link availability in terms of percentage.
+     *
+     * @return link availability value; -1 if not set
+     */
+    public double availability() {
+        return get(AVAILABILITY, -1.0);
+    }
+
+    /**
+     * Sets the link availability.
+     *
+     * @param availability new availability value; null to clear
+     * @return self
+     */
+    public BasicLinkConfig availability(Double availability) {
+        return (BasicLinkConfig) setOrClear(AVAILABILITY, availability);
+    }
+
+    /**
+     * Returns link flapping in terms of percentage.
+     *
+     * @return link flapping value; -1 if not set
+     */
+    public double flapping() {
+        return get(FLAPPING, -1.0);
+    }
+
+    /**
+     * Sets the link flapping.
+     *
+     * @param flapping new flapping value; null to clear
+     * @return self
+     */
+    public BasicLinkConfig flapping(Double flapping) {
+        return (BasicLinkConfig) setOrClear(FLAPPING, flapping);
+    }
+
+    /**
+     * Returns if link is metered in the network model or not.
+     *
+     * @return true for metered, false otherwise
+     */
+    public Boolean isMetered() {
+        JsonNode res = object.path(IS_METERED);
+        if (res.isMissingNode()) {
+            return true;
+        }
+        return res.asBoolean();
+    }
+
+    /**
+     * Sets metered flag for this link.
+     *
+     * @param isMetered true for metered, false otherwise
+     * @return this BasicLinkConfig
+     */
+    public BasicLinkConfig isMetered(Boolean isMetered) {
+        return (BasicLinkConfig) setOrClear(IS_METERED, isMetered);
+    }
+
+    /**
+     * Returns link tier.
+     *
+     * @return link tier value; -1 if not set
+     */
+    public long tier() {
+        return get(TIER, -1);
+    }
+
+    /**
+     * Sets the link tier.
+     *
+     * @param tier new link tier value; null to clear
+     * @return self
+     */
+    public BasicLinkConfig tier(Long tier) {
+        return (BasicLinkConfig) setOrClear(TIER, tier);
+    }
+
+    /**
+     * Returns metered link usage in terms of percentage.
+     *
+     * @return metered link usage value; -1 if not set
+     */
+    public double meteredUsage() {
+        return get(METERED_USAGE, -1.0);
+    }
+
+    /**
+     * Sets the metered link usage.
+     *
+     * @param meteredUsage new metered usage value; null to clear
+     * @return self
+     */
+    public BasicLinkConfig meteredUsage(Double meteredUsage) {
+        return (BasicLinkConfig) setOrClear(METERED_USAGE, meteredUsage);
     }
 
     /**

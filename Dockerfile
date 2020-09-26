@@ -1,51 +1,79 @@
-# First stage is the build environment
-FROM sgrio/java-oracle:jdk_8 as builder
-MAINTAINER Jonathan Hart <jono@opennetworking.org>
+ARG JOBS=2
+ARG PROFILE=default
+ARG TAG=11.0.8-11.41.23
+ARG JAVA_PATH=/usr/lib/jvm/zulu11-ca-amd64
 
-# Set the environment variables
-ENV HOME /root
+# First stage is the build environment.
+# zulu-openjdk images are based on Ubuntu.
+FROM azul/zulu-openjdk:${TAG} as builder
+
+ENV BUILD_DEPS \
+    ca-certificates \
+    zip \
+    python \
+    python3 \
+    git \
+    bzip2 \
+    build-essential \
+    curl \
+    unzip
+RUN apt-get update && apt-get install -y ${BUILD_DEPS}
+
+# Install Bazelisk, which will download the version of bazel specified in
+# .bazelversion
+RUN curl -L -o bazelisk https://github.com/bazelbuild/bazelisk/releases/download/v1.5.0/bazelisk-linux-amd64
+RUN chmod +x bazelisk && mv bazelisk /usr/bin
+
+# Build-stage environment variables
+ENV ONOS_ROOT /src/onos
 ENV BUILD_NUMBER docker
 ENV JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8
 
-# Copy in the source
-COPY . /src/onos/
+# Copy in the sources
+COPY . ${ONOS_ROOT}
+WORKDIR ${ONOS_ROOT}
 
-# Build ONOS
-# We extract the tar in the build environment to avoid having to put the tar
-# in the runtime environment - this saves a lot of space
-# FIXME - dependence on ONOS_ROOT and git at build time is a hack to work around
-# build problems
-WORKDIR /src/onos
-RUN apt-get update && apt-get install -y zip python git bzip2 && \
-        export ONOS_ROOT=/src/onos && \
-        tools/build/onos-buck build onos && \
-        mkdir -p /src/tar && \
-        cd /src/tar && \
-        tar -xf /src/onos/buck-out/gen/tools/package/onos-package/onos.tar.gz --strip-components=1 && \
-        rm -rf /src/onos/buck-out .git
+# Build ONOS using the JDK pre-installed in the base image, instead of the
+# Bazel-provided remote one. By doing wo we make sure to build with the most
+# updated JDK, including bug and security fixes, independently of the Bazel
+# version.
+ARG JOBS
+ARG JAVA_PATH
+ARG PROFILE
+RUN bazelisk build onos \
+    --jobs ${JOBS} \
+    --verbose_failures \
+    --javabase=@bazel_tools//tools/jdk:absolute_javabase \
+    --host_javabase=@bazel_tools//tools/jdk:absolute_javabase \
+    --define=ABSOLUTE_JAVABASE=${JAVA_PATH} \
+    --define profile=${PROFILE}
 
+# We extract the tar in the build environment to avoid having to put the tar in
+# the runtime stage. This saves a lot of space.
+RUN mkdir /output
+RUN tar -xf bazel-bin/onos.tar.gz -C /output --strip-components=1
 
-# Second stage is the runtime environment
-FROM anapsix/alpine-java:8_server-jre
-
-# Change to /root directory
-RUN apk update && \
-        apk add curl && \
-        mkdir -p /root/onos
-WORKDIR /root/onos
-
-# Install ONOS
-COPY --from=builder /src/tar/ .
-
-# Configure ONOS to log to stdout
-RUN sed -ibak '/log4j.rootLogger=/s/$/, stdout/' $(ls -d apache-karaf-*)/etc/org.ops4j.pax.logging.cfg
+# Second and final stage is the runtime environment.
+FROM azul/zulu-openjdk:${TAG}
 
 LABEL org.label-schema.name="ONOS" \
       org.label-schema.description="SDN Controller" \
       org.label-schema.usage="http://wiki.onosproject.org" \
       org.label-schema.url="http://onosproject.org" \
       org.label-scheme.vendor="Open Networking Foundation" \
-      org.label-schema.schema-version="1.0"
+      org.label-schema.schema-version="1.0" \
+      maintainer="onos-dev@onosproject.org"
+
+RUN apt-get update && apt-get install -y curl && \
+	rm -rf /var/lib/apt/lists/*
+
+# Install ONOS in /root/onos
+COPY --from=builder /output/ /root/onos/
+WORKDIR /root/onos
+
+# Set JAVA_HOME (by default not exported by zulu images)
+ARG JAVA_PATH
+ENV JAVA_HOME ${JAVA_PATH}
 
 # Ports
 # 6653 - OpenFlow
@@ -55,6 +83,6 @@ LABEL org.label-schema.name="ONOS" \
 # 9876 - ONOS intra-cluster communication
 EXPOSE 6653 6640 8181 8101 9876
 
-# Get ready to run command
+# Run ONOS
 ENTRYPOINT ["./bin/onos-service"]
 CMD ["server"]

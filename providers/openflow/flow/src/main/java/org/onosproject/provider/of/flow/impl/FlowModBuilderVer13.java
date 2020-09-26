@@ -75,6 +75,7 @@ import org.projectfloodlight.openflow.types.EthType;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.IPv6Address;
 import org.projectfloodlight.openflow.types.IPv6FlowLabel;
+import org.projectfloodlight.openflow.types.IpDscp;
 import org.projectfloodlight.openflow.types.MacAddress;
 import org.projectfloodlight.openflow.types.OFBooleanValue;
 import org.projectfloodlight.openflow.types.OFBufferId;
@@ -447,6 +448,11 @@ public class FlowModBuilderVer13 extends FlowModBuilder {
                 ip4 = ip.ip().getIp4Address();
                 oxm = factory().oxms().ipv4Dst(IPv4Address.of(ip4.toInt()));
                 break;
+            case IP_DSCP:
+                L3ModificationInstruction.ModDscpInstruction dscp = (L3ModificationInstruction.ModDscpInstruction) i;
+                IpDscp ipDscp = IpDscp.of(dscp.dscp());
+                oxm = factory().oxms().ipDscp(ipDscp);
+                break;
             case IPV6_SRC:
                 ip = (ModIPInstruction) i;
                 ip6 = ip.ip().getIp6Address();
@@ -464,13 +470,22 @@ public class FlowModBuilderVer13 extends FlowModBuilder {
                 oxm = factory().oxms().ipv6Flabel(IPv6FlowLabel.of(flowLabel));
                 break;
             case ARP_SPA:
-                ModArpIPInstruction aip = (ModArpIPInstruction) i;
-                ip4 = aip.ip().getIp4Address();
+                ModArpIPInstruction sAip = (ModArpIPInstruction) i;
+                ip4 = sAip.ip().getIp4Address();
                 oxm = factory().oxms().arpSpa(IPv4Address.of(ip4.toInt()));
                 break;
             case ARP_SHA:
-                ModArpEthInstruction ei = (ModArpEthInstruction) i;
-                oxm = factory().oxms().arpSha(MacAddress.of(ei.mac().toLong()));
+                ModArpEthInstruction sAei = (ModArpEthInstruction) i;
+                oxm = factory().oxms().arpSha(MacAddress.of(sAei.mac().toLong()));
+                break;
+            case ARP_TPA:
+                ModArpIPInstruction dAip = (ModArpIPInstruction) i;
+                ip4 = dAip.ip().getIp4Address();
+                oxm = factory().oxms().arpTpa(IPv4Address.of(ip4.toInt()));
+                break;
+            case ARP_THA:
+                ModArpEthInstruction dAei = (ModArpEthInstruction) i;
+                oxm = factory().oxms().arpTha(MacAddress.of(dAei.mac().toLong()));
                 break;
             case ARP_OP:
                 ModArpOpInstruction oi = (ModArpOpInstruction) i;

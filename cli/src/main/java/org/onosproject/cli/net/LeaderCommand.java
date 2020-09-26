@@ -15,27 +15,28 @@
  */
 package org.onosproject.cli.net;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
+import org.onlab.util.Tools;
+import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cluster.Leadership;
+import org.onosproject.cluster.LeadershipAdminService;
+import org.onosproject.cluster.NodeId;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
-import org.onlab.util.Tools;
-import org.onosproject.cli.AbstractShellCommand;
-import org.onosproject.cluster.Leadership;
-import org.onosproject.cluster.LeadershipService;
-import org.onosproject.cluster.NodeId;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-
 /**
  * Prints the leader for every topic.
  */
+@Service
 @Command(scope = "onos", name = "leaders",
         description = "Finds the leader for particular topic.")
 public class LeaderCommand extends AbstractShellCommand {
@@ -135,8 +136,8 @@ public class LeaderCommand extends AbstractShellCommand {
     }
 
     @Override
-    protected void execute() {
-        LeadershipService leaderService = get(LeadershipService.class);
+    protected void doExecute() {
+        LeadershipAdminService leaderService = get(LeadershipAdminService.class);
         Map<String, Leadership> leaderBoard = leaderService.getLeaderBoard();
         if (topicPattern == null) {
             allTopics = true;

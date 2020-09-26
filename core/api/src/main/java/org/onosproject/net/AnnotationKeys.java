@@ -9,6 +9,7 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
+ *
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -204,6 +205,60 @@ public final class AnnotationKeys {
      * Annotation key for the sshkey.
      */
     public static final String SSHKEY = "sshkey";
+
+    /**
+     * Annotation key for the protocol layer.
+     */
+    public static final String LAYER = "layer";
+
+    /**
+     * Annotation key for jitter.
+     * The value of this key is expected to be jitter in seconds
+     */
+    public static final String JITTER = "jitter";
+
+    /**
+     * Annotation key for delay.
+     * The value of this key is expected to be delay in seconds
+     */
+    public static final String DELAY = "delay";
+
+    /**
+     * Annotation key for loss.
+     * The value of this key is expected to be loss in percentage.
+     */
+    public static final String LOSS = "loss";
+
+    /**
+     * Annotation key for availability.
+     * The value of this key is expected to be availability as a percentage
+     */
+    public static final String AVAILABILITY = "availability";
+
+    /**
+     * Annotation key for flapping.
+     * The value of this key is expected to be a subjective percentage for flapping
+     */
+    public static final String FLAPPING = "flapping";
+
+    /**
+     * Annotation key for identifying a metered link.
+     * The value of this key is expected to be a boolean for metered as true/false.
+     */
+    public static final String METERED = "metered";
+
+    /**
+     * Annotation key for data usage on a metered link.
+     * The value of this key is expected to be a percentage of the data available within the plan.
+     */
+    public static final String METERED_USAGE = "meteredUsage";
+
+    /**
+     * Annotation key for identifying the tier ranking of a link. Links with a lower tier would be
+     * selected in the path over links with a higher tier.
+     * The value of this key is expected to be a number that represents the tier value.
+     */
+    public static final String TIER = "tier";
 
     /**
      * Returns the value annotated object for the specified annotation key.

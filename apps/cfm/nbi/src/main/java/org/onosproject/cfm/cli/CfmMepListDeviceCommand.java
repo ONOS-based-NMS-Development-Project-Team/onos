@@ -15,8 +15,11 @@
  */
 package org.onosproject.cfm.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.onosproject.cfm.cli.completer.CfmDeviceIdCompleter;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.incubator.net.l2monitoring.cfm.Mep;
 import org.onosproject.incubator.net.l2monitoring.cfm.service.CfmConfigException;
@@ -26,16 +29,18 @@ import org.onosproject.net.DeviceId;
 /**
  * Lists all the MEPs on a particular device.
  */
+@Service
 @Command(scope = "onos", name = "cfm-mep-device-list",
         description = "Lists a set of MEPs filtered by device.")
 public class CfmMepListDeviceCommand extends AbstractShellCommand {
     @Argument(name = "device",
             description = "Device Id",
             required = true)
+    @Completion(CfmDeviceIdCompleter.class)
     private String deviceStr = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         CfmMepService mepService = get(CfmMepService.class);
         if (deviceStr != null) {
             DeviceId deviceId = DeviceId.deviceId(deviceStr);

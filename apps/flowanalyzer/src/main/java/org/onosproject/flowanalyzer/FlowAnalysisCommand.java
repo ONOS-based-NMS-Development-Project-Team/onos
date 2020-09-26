@@ -15,18 +15,20 @@
  */
 package org.onosproject.flowanalyzer;
 
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 
 /**
  * Analyzes flows for cycles and black holes.
  */
+@Service
 @Command(scope = "onos", name = "flow-analysis",
          description = "Analyzes flows for cycles and black holes")
 public class FlowAnalysisCommand extends AbstractShellCommand {
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         FlowAnalyzer service = get(FlowAnalyzer.class);
         print(service.analyze());
     }

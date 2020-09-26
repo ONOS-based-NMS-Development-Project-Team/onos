@@ -27,7 +27,6 @@ import org.onosproject.net.Link;
 import org.onosproject.net.Port;
 import org.onosproject.net.PortNumber;
 import org.onosproject.net.device.DeviceService;
-import org.onosproject.net.driver.AbstractHandlerBehaviour;
 import org.onosproject.net.flow.FlowEntry;
 import org.onosproject.net.flow.FlowRule;
 import org.onosproject.net.flow.FlowRuleProgrammable;
@@ -38,7 +37,6 @@ import org.onosproject.net.flow.instructions.Instruction;
 import org.onosproject.net.flow.instructions.Instructions.OutputInstruction;
 import org.onosproject.net.link.LinkService;
 import org.onosproject.netconf.DatastoreId;
-import org.onosproject.netconf.NetconfController;
 import org.onosproject.netconf.NetconfException;
 import org.onosproject.netconf.NetconfSession;
 
@@ -77,22 +75,19 @@ import static org.slf4j.LoggerFactory.getLogger;
  * to find the next hop IP address.
  */
 @Beta
-public class FlowRuleJuniperImpl extends AbstractHandlerBehaviour
+public class FlowRuleJuniperImpl extends JuniperAbstractHandlerBehaviour
         implements FlowRuleProgrammable {
 
     private static final String OK = "<ok/>";
-    public static final String IP_STRING = "ip";
     private final org.slf4j.Logger log = getLogger(getClass());
 
     @Override
     public Collection<FlowEntry> getFlowEntries() {
 
         DeviceId devId = checkNotNull(this.data().deviceId());
-        NetconfController controller = checkNotNull(handler().get(NetconfController.class));
-        NetconfSession session = controller.getDevicesMap().get(devId).getSession();
+        NetconfSession session = lookupNetconfSession(devId);
         if (session == null) {
-            log.warn("Device {} is not registered in netconf", devId);
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
 
         //Installed static routes
@@ -177,10 +172,7 @@ public class FlowRuleJuniperImpl extends AbstractHandlerBehaviour
         DeviceId deviceId = this.data().deviceId();
 
         log.debug("{} flow entries to NETCONF device {}", type, deviceId);
-        NetconfController controller = checkNotNull(handler()
-                .get(NetconfController.class));
-        NetconfSession session = controller.getDevicesMap().get(deviceId)
-                .getSession();
+        NetconfSession session = lookupNetconfSession(deviceId);
         Collection<FlowRule> managedRules = new HashSet<>();
 
         for (FlowRule flowRule : rules) {
@@ -273,7 +265,7 @@ public class FlowRuleJuniperImpl extends AbstractHandlerBehaviour
         //Find if the route refers to a local interface.
         Optional<Port> local = deviceService.getPorts(devId).stream().filter(this::isIp)
                 .filter(p -> criteria.ip().getIp4Prefix().contains(
-                        Ip4Address.valueOf(p.annotations().value(IP_STRING)))).findAny();
+                        Ip4Address.valueOf(p.annotations().value(JuniperUtils.AK_IP)))).findAny();
 
         if (local.isPresent()) {
             return Optional.of(new StaticRoute(criteria.ip().getIp4Prefix(),
@@ -310,12 +302,11 @@ public class FlowRuleJuniperImpl extends AbstractHandlerBehaviour
      * @return the output instruction
      */
     private Optional<OutputInstruction> getOutput(FlowRule flowRule) {
-        Optional<OutputInstruction> output = flowRule
+        return flowRule
                 .treatment().allInstructions().stream()
                 .filter(instruction -> instruction
                         .type() == Instruction.Type.OUTPUT)
-                .map(x -> (OutputInstruction) x).findFirst();
-        return output;
+                .map(OutputInstruction.class::cast).findFirst();
     }
 
     private String routingTableBuilder() {
@@ -326,10 +317,7 @@ public class FlowRuleJuniperImpl extends AbstractHandlerBehaviour
     }
 
     private boolean commit() {
-        NetconfController controller = checkNotNull(handler()
-                .get(NetconfController.class));
-        NetconfSession session = controller.getDevicesMap()
-                .get(handler().data().deviceId()).getSession();
+        NetconfSession session = lookupNetconfSession(handler().data().deviceId());
 
         String replay;
         try {
@@ -339,17 +327,11 @@ public class FlowRuleJuniperImpl extends AbstractHandlerBehaviour
                     e));
         }
 
-        if (replay != null && replay.indexOf(OK) >= 0) {
-            return true;
-        }
-        return false;
+        return replay != null && replay.contains(OK);
     }
 
     private boolean rollback() {
-        NetconfController controller = checkNotNull(handler()
-                .get(NetconfController.class));
-        NetconfSession session = controller.getDevicesMap()
-                .get(handler().data().deviceId()).getSession();
+        NetconfSession session = lookupNetconfSession(handler().data().deviceId());
 
         String replay;
         try {
@@ -359,10 +341,7 @@ public class FlowRuleJuniperImpl extends AbstractHandlerBehaviour
                     e));
         }
 
-        if (replay != null && replay.indexOf(OK) >= 0) {
-            return true;
-        }
-        return false;
+        return replay != null && replay.contains(OK);
     }
 
     /**
@@ -381,7 +360,7 @@ public class FlowRuleJuniperImpl extends AbstractHandlerBehaviour
         DeviceService deviceService = this.handler().get(DeviceService.class);
         //Using only links with adjacency discovered by the LLDP protocol (see LinkDiscoveryJuniperImpl)
         Map<DeviceId, Port> dstPorts = links.stream().filter(l ->
-                IP_STRING.toUpperCase().equals(l.annotations().value("layer")))
+                JuniperUtils.AK_IP.toUpperCase().equals(l.annotations().value(AnnotationKeys.LAYER)))
                 .collect(Collectors.toMap(
                         l -> l.dst().deviceId(),
                         l -> deviceService.getPort(l.dst().deviceId(), l.dst().port())));
@@ -391,10 +370,10 @@ public class FlowRuleJuniperImpl extends AbstractHandlerBehaviour
             Optional<Port> childPort = deviceService.getPorts(entry.getKey()).stream()
                     .filter(p -> Strings.nullToEmpty(
                             p.annotations().value(AnnotationKeys.PORT_NAME)).contains(portName.trim()))
-                    .filter(p -> isIp(p))
+                    .filter(this::isIp)
                     .findAny();
             if (childPort.isPresent()) {
-                return Optional.ofNullable(Ip4Address.valueOf(childPort.get().annotations().value("ip")));
+                return Optional.ofNullable(Ip4Address.valueOf(childPort.get().annotations().value(JuniperUtils.AK_IP)));
             }
         }
 
@@ -409,13 +388,12 @@ public class FlowRuleJuniperImpl extends AbstractHandlerBehaviour
      * @return true if the IP address is present. Otherwise false.
      */
     private boolean isIp(Port port) {
-        String ip4 = port.annotations().value(IP_STRING);
-        if (StringUtils.isEmpty(ip4)) {
+        final String ipv4 = port.annotations().value(JuniperUtils.AK_IP);
+        if (StringUtils.isEmpty(ipv4)) {
             return false;
         }
         try {
-
-            Ip4Address.valueOf(port.annotations().value(IP_STRING));
+            Ip4Address.valueOf(ipv4);
         } catch (IllegalArgumentException e) {
             return false;
         }

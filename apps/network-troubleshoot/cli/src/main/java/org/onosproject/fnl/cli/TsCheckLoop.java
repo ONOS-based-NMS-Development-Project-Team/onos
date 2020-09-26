@@ -15,7 +15,8 @@
  */
 package org.onosproject.fnl.cli;
 
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.fnl.intf.NetworkDiagnostic;
 import org.onosproject.fnl.intf.NetworkDiagnosticService;
 import org.onosproject.cli.AbstractShellCommand;
@@ -27,6 +28,7 @@ import org.onosproject.net.link.LinkService;
 /**
  * Search for all potential routing loops.
  */
+@Service
 @Command(scope = "onos",
         name = "ts-check-loops",
         description = "Check if there are some routing loops in the network",
@@ -35,7 +37,7 @@ import org.onosproject.net.link.LinkService;
 public class TsCheckLoop extends AbstractShellCommand {
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         NetworkDiagnosticService service = getService(NetworkDiagnosticService.class);
 
         DeviceService ds = getService(DeviceService.class);

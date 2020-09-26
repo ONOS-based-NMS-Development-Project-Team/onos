@@ -21,14 +21,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.math.RandomUtils;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onlab.packet.MacAddress;
 import org.onlab.util.Counter;
 import org.onosproject.cfg.ComponentConfigService;
@@ -52,11 +44,16 @@ import org.onosproject.net.intent.IntentEvent;
 import org.onosproject.net.intent.IntentListener;
 import org.onosproject.net.intent.IntentService;
 import org.onosproject.net.intent.Key;
-import org.onosproject.net.intent.WorkPartitionService;
 import org.onosproject.net.intent.PointToPointIntent;
+import org.onosproject.net.intent.WorkPartitionService;
 import org.onosproject.store.cluster.messaging.ClusterCommunicationService;
 import org.onosproject.store.cluster.messaging.MessageSubject;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -77,26 +74,40 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
-import static org.apache.felix.scr.annotations.ReferenceCardinality.MANDATORY_UNARY;
-import static org.onlab.util.Tools.*;
-import static org.onosproject.net.intent.IntentEvent.Type.*;
+import static org.onlab.util.Tools.delay;
+import static org.onlab.util.Tools.get;
+import static org.onlab.util.Tools.groupedThreads;
+import static org.onosproject.intentperf.OsgiPropertyConstants.CYCLE_PERIOD;
+import static org.onosproject.intentperf.OsgiPropertyConstants.CYCLE_PERIOD_DEFAULT;
+import static org.onosproject.intentperf.OsgiPropertyConstants.NUM_KEYS;
+import static org.onosproject.intentperf.OsgiPropertyConstants.NUM_KEYS_DEFAULT;
+import static org.onosproject.intentperf.OsgiPropertyConstants.NUM_NEIGHBORS;
+import static org.onosproject.intentperf.OsgiPropertyConstants.NUM_NEIGHBORS_DEFAULT;
+import static org.onosproject.intentperf.OsgiPropertyConstants.NUM_WORKERS;
+import static org.onosproject.intentperf.OsgiPropertyConstants.NUM_WORKERS_DEFAULT;
+import static org.onosproject.net.intent.IntentEvent.Type.INSTALLED;
+import static org.onosproject.net.intent.IntentEvent.Type.INSTALL_REQ;
+import static org.onosproject.net.intent.IntentEvent.Type.WITHDRAWN;
+import static org.onosproject.net.intent.IntentEvent.Type.WITHDRAW_REQ;
+import static org.osgi.service.component.annotations.ReferenceCardinality.MANDATORY;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Application to test sustained intent throughput.
  */
-@Component(immediate = true)
-@Service(value = IntentPerfInstaller.class)
+@Component(
+    immediate = true,
+    service = IntentPerfInstaller.class,
+    property = {
+        NUM_KEYS + ":Integer=" + NUM_KEYS_DEFAULT,
+        NUM_WORKERS + ":Integer=" + NUM_WORKERS_DEFAULT,
+        CYCLE_PERIOD + ":Integer=" + CYCLE_PERIOD_DEFAULT,
+        NUM_NEIGHBORS + ":Integer=" + NUM_NEIGHBORS_DEFAULT,
+    }
+)
 public class IntentPerfInstaller {
 
     private final Logger log = getLogger(getClass());
-
-    private static final int DEFAULT_NUM_WORKERS = 1;
-
-    private static final int DEFAULT_NUM_KEYS = 40000;
-    private static final int DEFAULT_GOAL_CYCLE_PERIOD = 1000; //ms
-
-    private static final int DEFAULT_NUM_NEIGHBORS = 0;
 
     private static final int START_DELAY = 5_000; // ms
     private static final int REPORT_PERIOD = 1_000; //ms
@@ -107,48 +118,43 @@ public class IntentPerfInstaller {
 
     //FIXME add path length
 
-    @Property(name = "numKeys", intValue = DEFAULT_NUM_KEYS,
-            label = "Number of keys (i.e. unique intents) to generate per instance")
-    private int numKeys = DEFAULT_NUM_KEYS;
+    /** Number of keys (i.e. unique intents) to generate per instance. */
+    private int numKeys = NUM_KEYS_DEFAULT;
 
-    //TODO implement numWorkers property
-//    @Property(name = "numThreads", intValue = DEFAULT_NUM_WORKERS,
-//              label = "Number of installer threads per instance")
-//    private int numWokers = DEFAULT_NUM_WORKERS;
+    /** Number of installer threads per instance. */
+    private int numWorkers = NUM_WORKERS_DEFAULT;
 
-    @Property(name = "cyclePeriod", intValue = DEFAULT_GOAL_CYCLE_PERIOD,
-            label = "Goal for cycle period (in ms)")
-    private int cyclePeriod = DEFAULT_GOAL_CYCLE_PERIOD;
+    /** Goal for cycle period (in ms). */
+    private int cyclePeriod = CYCLE_PERIOD_DEFAULT;
 
-    @Property(name = "numNeighbors", intValue = DEFAULT_NUM_NEIGHBORS,
-            label = "Number of neighbors to generate intents for")
-    private int numNeighbors = DEFAULT_NUM_NEIGHBORS;
+    /** Number of neighbors to generate intents for. */
+    private int numNeighbors = NUM_NEIGHBORS_DEFAULT;
 
-    @Reference(cardinality = MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected IntentService intentService;
 
-    @Reference(cardinality = MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected ClusterService clusterService;
 
-    @Reference(cardinality = MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected DeviceService deviceService;
 
-    @Reference(cardinality = MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected MastershipService mastershipService;
 
-    @Reference(cardinality = MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected WorkPartitionService partitionService;
 
-    @Reference(cardinality = MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected ComponentConfigService configService;
 
-    @Reference(cardinality = MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected IntentPerfCollector sampleCollector;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected ClusterCommunicationService communicationService;
 
     private ExecutorService messageHandlingExecutor;
@@ -176,7 +182,7 @@ public class IntentPerfInstaller {
 
         // TODO: replace with shared timer
         reportTimer = new Timer("onos-intent-perf-reporter");
-        workers = Executors.newFixedThreadPool(DEFAULT_NUM_WORKERS, groupedThreads("onos/intent-perf", "worker-%d"));
+        workers = Executors.newFixedThreadPool(numWorkers, groupedThreads("onos/intent-perf", "worker-%d"));
 
         // TODO: replace with shared executor
         messageHandlingExecutor = Executors.newSingleThreadExecutor(
@@ -216,28 +222,33 @@ public class IntentPerfInstaller {
         }
 
         Dictionary<?, ?> properties = context.getProperties();
-        int newNumKeys, newCyclePeriod, newNumNeighbors;
+        int newNumKeys, newCyclePeriod, newNumNeighbors, newNumWorkers;
         try {
-            String s = get(properties, "numKeys");
+            String s = get(properties, NUM_KEYS);
             newNumKeys = isNullOrEmpty(s) ? numKeys : Integer.parseInt(s.trim());
 
-            s = get(properties, "cyclePeriod");
+            s = get(properties, CYCLE_PERIOD);
             newCyclePeriod = isNullOrEmpty(s) ? cyclePeriod : Integer.parseInt(s.trim());
 
-            s = get(properties, "numNeighbors");
+            s = get(properties, NUM_NEIGHBORS);
             newNumNeighbors = isNullOrEmpty(s) ? numNeighbors : Integer.parseInt(s.trim());
+
+            s = get(properties, NUM_WORKERS);
+            newNumWorkers = isNullOrEmpty(s) ? numWorkers : Integer.parseInt(s.trim());
 
         } catch (NumberFormatException | ClassCastException e) {
             log.warn("Malformed configuration detected; using defaults", e);
-            newNumKeys = DEFAULT_NUM_KEYS;
-            newCyclePeriod = DEFAULT_GOAL_CYCLE_PERIOD;
-            newNumNeighbors = DEFAULT_NUM_NEIGHBORS;
+            newNumKeys = NUM_KEYS_DEFAULT;
+            newCyclePeriod = CYCLE_PERIOD_DEFAULT;
+            newNumNeighbors = NUM_NEIGHBORS_DEFAULT;
+            newNumWorkers = NUM_WORKERS_DEFAULT;
         }
 
         if (newNumKeys != numKeys || newCyclePeriod != cyclePeriod || newNumNeighbors != numNeighbors) {
             numKeys = newNumKeys;
             cyclePeriod = newCyclePeriod;
             numNeighbors = newNumNeighbors;
+            numWorkers = newNumWorkers;
             logConfig("Reconfigured");
         }
     }
@@ -276,7 +287,7 @@ public class IntentPerfInstaller {
 
         // Submit workers
         stopped = false;
-        for (int i = 0; i < DEFAULT_NUM_WORKERS; i++) {
+        for (int i = 0; i < numWorkers; i++) {
             workers.submit(new Submitter(createIntents(numKeys, /*FIXME*/ 2, lastKey)));
         }
         log.info("Started test run");

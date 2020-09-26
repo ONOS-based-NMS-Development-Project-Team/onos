@@ -14,11 +14,12 @@
 * limitations under the License.
 */
 import { Component, OnInit, Input, OnDestroy, OnChanges } from '@angular/core';
-import { FnService } from '../../../fw/util/fn.service';
-import { DetailsPanelBaseImpl } from '../../../fw/widget/detailspanel.base';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { LogService } from '../../../log.service';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
+import {
+    FnService,
+    LogService,
+    DetailsPanelBaseImpl,
+    WebSocketService
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { Settings } from '../settings/settings.component';
 
@@ -37,7 +38,7 @@ import { Settings } from '../settings/settings.component';
 @Component({
     selector: 'onos-settingsdetails',
     templateUrl: './settingsdetails.component.html',
-    styleUrls: ['./settingsdetails.component.css', '../../../fw/widget/panel.css', '../../../fw/widget/panel-theme.css'],
+    styleUrls: ['./settingsdetails.component.css', '../../../../../../../../gui2-fw-lib/lib/widget/panel.css', '../../../../../../../../gui2-fw-lib/lib/widget/panel-theme.css'],
     animations: [
         trigger('settingsDetailsState', [
             state('true', style({
@@ -60,11 +61,10 @@ export class SettingsDetailsComponent extends DetailsPanelBaseImpl implements On
 
     constructor(
         protected fs: FnService,
-        protected ls: LoadingService,
         protected log: LogService,
         protected wss: WebSocketService
     ) {
-        super(fs, ls, log, wss, 'setting');
+        super(fs, log, wss, 'setting');
     }
 
     ngOnInit() {

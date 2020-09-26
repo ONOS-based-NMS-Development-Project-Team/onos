@@ -95,23 +95,6 @@ public class OchSignal implements Lambda {
     }
 
     /**
-     * Creates OCh signal.
-     *
-     * @param centerFrequency frequency
-     * @param channelSpacing spacing
-     * @param slotGranularity granularity
-     * @deprecated 1.4.0 Emu Release
-     */
-    @Deprecated
-    public OchSignal(Frequency centerFrequency, ChannelSpacing channelSpacing, int slotGranularity) {
-        this.gridType = DEFAULT_OCH_GRIDTYPE;
-        this.channelSpacing = channelSpacing;
-        this.spacingMultiplier = (int) Math.round((double) centerFrequency.
-                subtract(Spectrum.CENTER_FREQUENCY).asHz() / channelSpacing().frequency().asHz());
-        this.slotGranularity = slotGranularity;
-    }
-
-    /**
      * Returns grid type.
      *
      * @return grid type
@@ -234,7 +217,7 @@ public class OchSignal implements Lambda {
 
     @Override
     public String toString() {
-        return String.format("%s{%+d×%.2fGHz ± %.2fGHz}",
+        return String.format("%s{%+d x %.2fGHz +/- %.2fGHz}",
                 this.getClass().getSimpleName(),
                 spacingMultiplier,
                 (double) channelSpacing.frequency().asHz() / Frequency.ofGHz(1).asHz(),

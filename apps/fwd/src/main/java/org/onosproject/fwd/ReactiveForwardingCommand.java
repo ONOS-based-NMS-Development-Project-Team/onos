@@ -14,22 +14,26 @@
  * limitations under the License.
  */
 package org.onosproject.fwd;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
-import org.apache.karaf.shell.commands.Argument;
+import org.apache.karaf.shell.api.action.Argument;
 import org.onlab.packet.MacAddress;
 
 /**
  * Sample reactive forwarding application.
  */
+@Service
 @Command(scope = "onos", name = "reactive-fwd-metrics",
         description = "List all the metrics of reactive fwd app based on mac address")
 public class ReactiveForwardingCommand extends AbstractShellCommand {
     @Argument(index = 0, name = "mac", description = "One Mac Address",
             required = false, multiValued = false)
+    @Completion(MacAddressCompleter.class)
     String mac = null;
     @Override
-    protected void execute() {
+    protected void doExecute() {
         ReactiveForwarding reactiveForwardingService = AbstractShellCommand.get(ReactiveForwarding.class);
         MacAddress macAddress = null;
         if (mac != null) {

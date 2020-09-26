@@ -15,8 +15,9 @@
  */
 package org.onosproject.openstacknetworking.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.packet.Ethernet;
 import org.onlab.packet.IPv4;
 import org.onlab.packet.IpAddress;
@@ -34,10 +35,15 @@ import org.onosproject.openstacknetworking.api.OpenstackFlowRuleService;
 
 import java.util.Optional;
 
-import static org.onosproject.openstacknetworking.api.Constants.DHCP_ARP_TABLE;
+import static org.onosproject.cli.AbstractShellCommand.get;
+import static org.onosproject.openstacknetworking.api.Constants.DHCP_TABLE;
 import static org.onosproject.openstacknetworking.api.Constants.OPENSTACK_NETWORKING_APP_ID;
 import static org.onosproject.openstacknetworking.api.Constants.PRIORITY_FORCED_ACL_RULE;
 
+/**
+ * Removes the registered acl.
+ */
+@Service
 @Command(scope = "onos", name = "openstack-remove-acl",
         description = "Remove acl rules to VM")
 public class OpenstackRemoveAclCommand extends AbstractShellCommand {
@@ -54,14 +60,14 @@ public class OpenstackRemoveAclCommand extends AbstractShellCommand {
     private int dstPort = 0;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
 
-        OpenstackFlowRuleService flowRuleService = AbstractShellCommand.get(OpenstackFlowRuleService.class);
-        CoreService coreService = AbstractShellCommand.get(CoreService.class);
+        OpenstackFlowRuleService flowRuleService = get(OpenstackFlowRuleService.class);
+        CoreService coreService = get(CoreService.class);
 
         ApplicationId appId = coreService.getAppId(OPENSTACK_NETWORKING_APP_ID);
 
-        InstancePortService instancePortService = AbstractShellCommand.get(InstancePortService.class);
+        InstancePortService instancePortService = get(InstancePortService.class);
 
         IpAddress srcIpAddress = null;
 
@@ -72,7 +78,7 @@ public class OpenstackRemoveAclCommand extends AbstractShellCommand {
 
             dstIpAddress = IpAddress.valueOf(dstIpStr);
         } catch (IllegalArgumentException e) {
-            log.error("IllegalArgumentException occurred because of {}", e.toString());
+            log.error("IllegalArgumentException occurred because of {}", e);
             return;
         }
 
@@ -116,7 +122,7 @@ public class OpenstackRemoveAclCommand extends AbstractShellCommand {
                 sBuilder.build(),
                 treatment,
                 PRIORITY_FORCED_ACL_RULE,
-                DHCP_ARP_TABLE,
+                DHCP_TABLE,
                 false);
     }
 }

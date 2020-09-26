@@ -18,8 +18,9 @@ package org.onosproject.openstacknetworking.cli;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Lists;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.openstacknetworking.api.OpenstackSecurityGroupService;
 import org.openstack4j.model.network.SecurityGroup;
@@ -28,12 +29,14 @@ import org.openstack4j.openstack.networking.domain.NeutronSecurityGroup;
 import java.util.Comparator;
 import java.util.List;
 
+import static org.onosproject.cli.AbstractShellCommand.get;
 import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.modelEntityToJson;
 import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.prettyJson;
 
 /**
  * Lists OpenStack security groups.
  */
+@Service
 @Command(scope = "onos", name = "openstack-security-groups",
         description = "Lists all OpenStack security groups")
 public class OpenstackSecurityGroupListCommand extends AbstractShellCommand {
@@ -44,9 +47,8 @@ public class OpenstackSecurityGroupListCommand extends AbstractShellCommand {
     private String networkId = null;
 
     @Override
-    protected void execute() {
-        OpenstackSecurityGroupService service =
-                AbstractShellCommand.get(OpenstackSecurityGroupService.class);
+    protected void doExecute() {
+        OpenstackSecurityGroupService service = get(OpenstackSecurityGroupService.class);
 
         List<SecurityGroup> sgs = Lists.newArrayList(service.securityGroups());
         sgs.sort(Comparator.comparing(SecurityGroup::getId));

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-present Open Networking Foundation
+ * Copyright 2019-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.onosproject.netconf.ctl.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,6 +25,9 @@ import org.onlab.osgi.ComponentContextAdapter;
 import org.onlab.packet.IpAddress;
 import org.onosproject.cfg.ComponentConfigAdapter;
 import org.onosproject.cfg.ComponentConfigService;
+import org.onosproject.cluster.ClusterService;
+import org.onosproject.mastership.MastershipService;
+import org.onosproject.mastership.MastershipServiceAdapter;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.config.Config;
 import org.onosproject.net.config.ConfigApplyDelegate;
@@ -44,6 +46,8 @@ import org.onosproject.netconf.NetconfException;
 import org.onosproject.netconf.NetconfSession;
 import org.onosproject.netconf.config.NetconfDeviceConfig;
 import org.onosproject.netconf.config.NetconfSshClientLib;
+import org.onosproject.store.cluster.messaging.ClusterCommunicationService;
+import org.onosproject.store.cluster.messaging.ClusterCommunicationServiceAdapter;
 import org.osgi.service.component.ComponentContext;
 
 import java.io.ByteArrayInputStream;
@@ -56,8 +60,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.easymock.EasyMock.createMock;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
+import static org.onosproject.netconf.ctl.impl.OsgiPropertyConstants.NETCONF_CONNECT_TIMEOUT_DEFAULT;
+import static org.onosproject.netconf.ctl.impl.OsgiPropertyConstants.NETCONF_IDLE_TIMEOUT_DEFAULT;
+import static org.onosproject.netconf.ctl.impl.OsgiPropertyConstants.NETCONF_REPLY_TIMEOUT_DEFAULT;
 
 /**
  * Unit tests for the Netconf controller implementation test.
@@ -114,6 +122,10 @@ public class NetconfControllerImplTest {
     private static DeviceService deviceService = new NetconfDeviceServiceMock();
     private static DeviceKeyService deviceKeyService = new NetconfDeviceKeyServiceMock();
     private final NetworkConfigRegistry netCfgService = new MockNetworkConfigRegistry();
+    private final MastershipService mastershipService = new MockmastershipService();
+    private final ClusterCommunicationService clusterCommunicationService =
+            new ClusterCommunicationServiceMock();
+    private final ClusterService mockClusterService = createMock(ClusterService.class);
 
     private final ComponentContext context = new MockComponentContext();
 
@@ -125,9 +137,12 @@ public class NetconfControllerImplTest {
         ctrl.deviceService = deviceService;
         ctrl.deviceKeyService = deviceKeyService;
         ctrl.netCfgService = netCfgService;
-        NetconfControllerImpl.netconfConnectTimeout = NetconfControllerImpl.DEFAULT_CONNECT_TIMEOUT_SECONDS;
-        NetconfControllerImpl.netconfIdleTimeout = NetconfControllerImpl.DEFAULT_IDLE_TIMEOUT_SECONDS;
-        NetconfControllerImpl.netconfReplyTimeout = NetconfControllerImpl.DEFAULT_REPLY_TIMEOUT_SECONDS;
+        ctrl.mastershipService = mastershipService;
+        NetconfControllerImpl.netconfConnectTimeout = NETCONF_CONNECT_TIMEOUT_DEFAULT;
+        NetconfControllerImpl.netconfIdleTimeout = NETCONF_IDLE_TIMEOUT_DEFAULT;
+        NetconfControllerImpl.netconfReplyTimeout = NETCONF_REPLY_TIMEOUT_DEFAULT;
+        ctrl.clusterCommunicator = clusterCommunicationService;
+        ctrl.clusterService = mockClusterService;
 
         //Creating mock devices
         deviceInfo1 = new NetconfDeviceInfo("device1", "001", IpAddress.valueOf(DEVICE_1_IP), DEVICE_1_PORT);
@@ -183,9 +198,9 @@ public class NetconfControllerImplTest {
     public void tearDown() {
         ctrl.deactivate();
         // resetting static variables..
-        NetconfControllerImpl.netconfConnectTimeout = NetconfControllerImpl.DEFAULT_CONNECT_TIMEOUT_SECONDS;
-        NetconfControllerImpl.netconfIdleTimeout = NetconfControllerImpl.DEFAULT_IDLE_TIMEOUT_SECONDS;
-        NetconfControllerImpl.netconfReplyTimeout = NetconfControllerImpl.DEFAULT_REPLY_TIMEOUT_SECONDS;
+        NetconfControllerImpl.netconfConnectTimeout = NETCONF_CONNECT_TIMEOUT_DEFAULT;
+        NetconfControllerImpl.netconfIdleTimeout = NETCONF_IDLE_TIMEOUT_DEFAULT;
+        NetconfControllerImpl.netconfReplyTimeout = NETCONF_REPLY_TIMEOUT_DEFAULT;
     }
 
     /**
@@ -228,9 +243,9 @@ public class NetconfControllerImplTest {
      */
     @Test
     public void testAddRemoveDeviceListener() {
-        NetconfDeviceListener deviceListener1 = EasyMock.createMock(NetconfDeviceListener.class);
-        NetconfDeviceListener deviceListener2 = EasyMock.createMock(NetconfDeviceListener.class);
-        NetconfDeviceListener deviceListener3 = EasyMock.createMock(NetconfDeviceListener.class);
+        NetconfDeviceListener deviceListener1 = createMock(NetconfDeviceListener.class);
+        NetconfDeviceListener deviceListener2 = createMock(NetconfDeviceListener.class);
+        NetconfDeviceListener deviceListener3 = createMock(NetconfDeviceListener.class);
 
         ctrl.addDeviceListener(deviceListener1);
         ctrl.addDeviceListener(deviceListener2);
@@ -319,7 +334,9 @@ public class NetconfControllerImplTest {
         reflectedDeviceMap.clear();
         NetconfDevice device1 = ctrl.connectDevice(deviceInfo1.getDeviceId());
         NetconfDevice device2 = ctrl.connectDevice(deviceInfo2.getDeviceId());
-        assertTrue("Incorrect device connection", ctrl.getDevicesMap().containsKey(deviceId1));
+        assertTrue(String.format("Incorrect device connection from '%s' we get '%s' contains '%s'",
+                    deviceInfo1, ctrl.getDevicesMap(), deviceId1),
+                ctrl.getDevicesMap().containsKey(deviceId1));
         assertTrue("Incorrect device connection", ctrl.getDevicesMap().containsKey(deviceId2));
         assertEquals("Incorrect device connection", 2, ctrl.getDevicesMap().size());
     }
@@ -408,7 +425,7 @@ public class NetconfControllerImplTest {
         public TestNetconfDevice(NetconfDeviceInfo deviceInfo) throws NetconfException {
             netconfDeviceInfo = deviceInfo;
             if (!badDeviceInfo3.getDeviceId().equals(deviceInfo.getDeviceId())) {
-                netconfSession = EasyMock.createMock(NetconfSession.class);
+                netconfSession = createMock(NetconfSession.class);
                 deviceState = true;
             } else {
                 throw new NetconfException("Cannot create Connection and Session");
@@ -530,5 +547,14 @@ public class NetconfControllerImplTest {
         @Override
         public void onApply(Config configFile) {
         }
+    }
+
+    private class MockmastershipService extends MastershipServiceAdapter {
+        @Override
+        public boolean isLocalMaster(DeviceId deviceId) {
+            return true;
+        }
+    }
+    private class ClusterCommunicationServiceMock extends ClusterCommunicationServiceAdapter {
     }
 }

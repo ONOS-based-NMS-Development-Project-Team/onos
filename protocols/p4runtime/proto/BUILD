@@ -1,32 +1,19 @@
-load("//tools/build/bazel:osgi_java_library.bzl", "wrapped_osgi_jar")
+load("//tools/build/bazel:osgi_java_library.bzl", "osgi_proto_jar")
 
-java_proto_library(
-    name = "p4_runtime_java_proto_proto",
-    visibility = ["//visibility:public"],
-    deps = ["@p4lang_pi//:p4_runtime_proto"],
-)
+PROTOS = [
+    "@com_github_p4lang_p4runtime//:" + p
+    for p in [
+        "p4info_proto",
+        "p4types_proto",
+        "p4data_proto",
+        "p4runtime_proto",
+    ]
+]
 
-wrapped_osgi_jar(
-    name = "rpc_java_proto-osgi",
-    jar = "@google_rpc//:rpc_java_proto",
-    visibility = ["//visibility:public"],
-    deps = CORE_DEPS + ["@protobuf_java_3_2_0//jar"],
-)
-
-wrapped_osgi_jar(
-    name = "grpc-core-repkg-1.3.1",
-    jar = "@grpc_src_zip_131//:grpc-core-repkg-1.3.1-native",
-    visibility = ["//visibility:public"],
-    deps = COMPILE,
-)
-
-wrapped_osgi_jar(
-    name = "p4_runtime_java_proto",
-    jar = ":p4_runtime_java_proto_proto",
-    visibility = ["//visibility:public"],
-    deps = CORE_DEPS + [
-        "@protobuf_java_3_2_0//jar",
-        "@google_rpc//:rpc_java_proto",
-        ":grpc-core-repkg-1.3.1",
+osgi_proto_jar(
+    grpc_proto_lib = "@com_github_p4lang_p4runtime//:p4runtime_proto",
+    proto_libs = PROTOS,
+    deps = [
+        "@com_google_api_grpc_proto_google_common_protos//jar",
     ],
 )

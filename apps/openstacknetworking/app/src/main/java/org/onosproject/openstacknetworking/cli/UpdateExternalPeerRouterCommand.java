@@ -16,8 +16,10 @@
 package org.onosproject.openstacknetworking.cli;
 
 import com.google.common.collect.Lists;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.packet.Ip4Address;
 import org.onlab.packet.IpAddress;
 import org.onlab.packet.MacAddress;
@@ -28,32 +30,39 @@ import org.onosproject.openstacknetworking.api.OpenstackNetworkAdminService;
 
 import java.util.List;
 
+import static org.onosproject.cli.AbstractShellCommand.get;
+
 /**
  * Updates external peer router.
  */
+@Service
 @Command(scope = "onos", name = "openstack-update-peer-router",
         description = "Update external peer router")
 public class UpdateExternalPeerRouterCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "ip address", description = "ip address",
             required = true, multiValued = false)
+    @Completion(IpAddressCompleter.class)
     private String ipAddress = null;
 
     @Argument(index = 1, name = "mac address", description = "mac address",
             required = true, multiValued = false)
+    @Completion(MacAddressCompleter.class)
     private String macAddress = null;
 
     @Argument(index = 2, name = "vlan id", description = "vlan id",
             required = true, multiValued = false)
+    @Completion(VlanIdCompleter.class)
     private String vlanId = null;
 
     private static final String FORMAT = "%-20s%-20s%-20s";
-    private static final String NO_ELEMENT = "There's no external peer router information with given ip address";
+    private static final String NO_ELEMENT =
+            "There's no external peer router information with given ip address";
     private static final String NONE = "None";
 
     @Override
-    protected void execute() {
-        OpenstackNetworkAdminService service = AbstractShellCommand.get(OpenstackNetworkAdminService.class);
+    protected void doExecute() {
+        OpenstackNetworkAdminService service = get(OpenstackNetworkAdminService.class);
 
         IpAddress externalPeerIpAddress = IpAddress.valueOf(
                 IpAddress.Version.INET, Ip4Address.valueOf(ipAddress).toOctets());

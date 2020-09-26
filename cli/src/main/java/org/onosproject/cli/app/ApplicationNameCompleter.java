@@ -15,8 +15,10 @@
  */
 package org.onosproject.cli.app;
 
-import org.apache.karaf.shell.console.completer.ArgumentCompleter;
-import org.apache.karaf.shell.console.completer.StringsCompleter;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.console.CommandLine;
+import org.apache.karaf.shell.api.console.Session;
+import org.apache.karaf.shell.support.completers.StringsCompleter;
 import org.onosproject.app.ApplicationService;
 import org.onosproject.app.ApplicationState;
 import org.onosproject.cli.AbstractCompleter;
@@ -42,45 +44,39 @@ import static org.onosproject.cli.AbstractShellCommand.get;
 /**
  * Application name completer.
  */
+@Service
 public class ApplicationNameCompleter extends AbstractCompleter {
     @Override
-    public int complete(String buffer, int cursor, List<String> candidates) {
+    public int complete(Session session, CommandLine commandLine, List<String> candidates) {
         // Delegate string completer
         StringsCompleter delegate = new StringsCompleter();
 
         // Command name is the second argument.
-        ArgumentCompleter.ArgumentList list = getArgumentList();
-        String cmd = list.getArguments()[1];
-
-        // Grab apps already on the command (to prevent tab-completed duplicates)
-        // FIXME: This does not work.
-//        final Set previousApps;
-//        if (list.getArguments().length > 2) {
-//            previousApps = Sets.newHashSet(
-//                    Arrays.copyOfRange(list.getArguments(), 2, list.getArguments().length));
-//        } else {
-//            previousApps = Collections.emptySet();
-//        }
+        String cmd = commandLine.getArguments()[1];
 
         // Fetch our service and feed it's offerings to the string completer
         ApplicationService service = get(ApplicationService.class);
         Iterator<Application> it = service.getApplications().iterator();
         SortedSet<String> strings = delegate.getStrings();
-        while (it.hasNext()) {
-            Application app = it.next();
-            ApplicationState state = service.getState(app.id());
-//            if (previousApps.contains(app.id().name())) {
-//                continue;
-//            }
-            if ("uninstall".equals(cmd) || "download".equals(cmd) ||
-                    ("activate".equals(cmd) && state == INSTALLED) ||
-                    ("deactivate".equals(cmd) && state == ACTIVE)) {
-                strings.add(app.id().name());
+        if ("install".equals(cmd)) {
+            it = service.getRegisteredApplications().iterator();
+            while (it.hasNext()) {
+                strings.add(it.next().id().name());
+            }
+        } else {
+            while (it.hasNext()) {
+                Application app = it.next();
+                ApplicationState state = service.getState(app.id());
+                if ("uninstall".equals(cmd) || "download".equals(cmd) ||
+                        ("activate".equals(cmd) && state == INSTALLED) ||
+                        ("deactivate".equals(cmd) && state == ACTIVE)) {
+                    strings.add(app.id().name());
+                }
             }
         }
 
         // add unique suffix to candidates, if user has something in buffer
-        if (!Strings.isNullOrEmpty(buffer)) {
+        if (!Strings.isNullOrEmpty(commandLine.getCursorArgument())) {
             List<String> suffixCandidates = strings.stream()
                     // remove onos common prefix
                     .map(full -> full.replaceFirst("org\\.onosproject\\.", ""))
@@ -107,7 +103,7 @@ public class ApplicationNameCompleter extends AbstractCompleter {
         }
 
         // Now let the completer do the work for figuring out what to offer.
-        return delegate.complete(buffer, cursor, candidates);
+        return delegate.complete(session, commandLine, candidates);
     }
 
 }

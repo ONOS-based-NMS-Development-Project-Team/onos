@@ -24,20 +24,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.configuration.tree.xpath.XPathExpressionEngine;
+import org.onlab.packet.ChassisId;
 import org.onosproject.net.DefaultAnnotations;
+import org.onosproject.net.Device;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.Port.Type;
 import org.onosproject.net.PortNumber;
+import org.onosproject.net.device.DefaultDeviceDescription;
 import org.onosproject.net.device.DefaultPortDescription;
 import org.onosproject.net.device.DefaultPortDescription.Builder;
 import org.onosproject.net.device.DeviceDescription;
-import org.onosproject.net.device.DeviceDescriptionDiscovery;
 import org.onosproject.net.device.PortDescription;
 import org.onosproject.net.driver.AbstractHandlerBehaviour;
 import org.onosproject.netconf.NetconfController;
@@ -55,15 +58,17 @@ import com.google.common.io.CharSource;
  */
 public class OpenConfigDeviceDiscovery
     extends AbstractHandlerBehaviour
-    implements OdtnDeviceDescriptionDiscovery, DeviceDescriptionDiscovery {
+    implements OdtnDeviceDescriptionDiscovery {
 
     private static final Logger log = getLogger(OpenConfigDeviceDiscovery.class);
 
+    private static final AtomicInteger COUNTER = new AtomicInteger();
+
     @Override
     public DeviceDescription discoverDeviceDetails() {
-        // TODO Auto-generated method stub
-        // Not really used right now
-        return null;
+        return new DefaultDeviceDescription(handler().data().deviceId().uri(),
+                Device.Type.TERMINAL_DEVICE, "unknown", "unknown",
+                "unknown", "unknown", new ChassisId());
     }
 
     @Override
@@ -163,18 +168,24 @@ public class OpenConfigDeviceDiscovery
             props.put(pName, pValue);
         });
 
+        PortNumber number = null;
+
         if (!props.containsKey(ONOS_PORT_INDEX)) {
             log.info("DEBUG: Component {} does not include onos-index, skipping", name);
             // ODTN: port must have onos-index property
-            return null;
+            number = PortNumber.portNumber(COUNTER.getAndIncrement(), name);
+        } else {
+            number = PortNumber.portNumber(Long.parseLong(props.get(ONOS_PORT_INDEX)), name);
         }
 
         Builder builder = DefaultPortDescription.builder();
-        builder.withPortNumber(PortNumber.portNumber(Long.parseLong(props.get(ONOS_PORT_INDEX)), name));
+        builder.withPortNumber(number);
 
         switch (type) {
-        case "oc-platform-types:PORT":
-        case "oc-opt-types:OPTICAL_CHANNEL":
+          case "oc-platform-types:PORT": case "PORT":
+
+
+          case "oc-opt-types:OPTICAL_CHANNEL": case "OPTICAL CHANNEL":
             // TODO assign appropriate port type & annotations at some point
             // for now we just need a Port with annotations
             builder.type(Type.OCH);
@@ -187,7 +198,7 @@ public class OpenConfigDeviceDiscovery
             props.putIfAbsent(CONNECTION_ID, "the-only-one");
             break;
 
-        case "oc-platform-types:TRANSCEIVER":
+          case "oc-platform-types:TRANSCEIVER": case "TRANSCEIVER":
             // TODO assign appropriate port type & annotations at some point
             // for now we just need a Port with annotations
             builder.type(Type.PACKET);

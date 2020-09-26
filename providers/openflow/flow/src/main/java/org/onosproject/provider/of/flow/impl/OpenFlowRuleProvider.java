@@ -23,18 +23,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.onosproject.cfg.ComponentConfigService;
-import org.onosproject.core.ApplicationId;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.driver.DefaultDriverData;
 import org.onosproject.net.driver.DefaultDriverHandler;
@@ -45,13 +36,13 @@ import org.onosproject.net.flow.CompletedBatchOperation;
 import org.onosproject.net.flow.DefaultTableStatisticsEntry;
 import org.onosproject.net.flow.FlowEntry;
 import org.onosproject.net.flow.FlowRule;
-import org.onosproject.net.flow.oldbatch.FlowRuleBatchEntry;
-import org.onosproject.net.flow.oldbatch.FlowRuleBatchOperation;
-import org.onosproject.net.flow.FlowRuleExtPayLoad;
 import org.onosproject.net.flow.FlowRuleProvider;
 import org.onosproject.net.flow.FlowRuleProviderRegistry;
 import org.onosproject.net.flow.FlowRuleProviderService;
+import org.onosproject.net.flow.IndexTableId;
 import org.onosproject.net.flow.TableStatisticsEntry;
+import org.onosproject.net.flow.oldbatch.FlowRuleBatchEntry;
+import org.onosproject.net.flow.oldbatch.FlowRuleBatchOperation;
 import org.onosproject.net.provider.AbstractProvider;
 import org.onosproject.net.provider.ProviderId;
 import org.onosproject.net.statistic.DefaultLoad;
@@ -61,9 +52,14 @@ import org.onosproject.openflow.controller.OpenFlowEventListener;
 import org.onosproject.openflow.controller.OpenFlowSwitch;
 import org.onosproject.openflow.controller.OpenFlowSwitchListener;
 import org.onosproject.openflow.controller.RoleState;
-import org.onosproject.openflow.controller.ThirdPartyMessage;
 import org.onosproject.provider.of.flow.util.FlowEntryBuilder;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.projectfloodlight.openflow.protocol.OFBadRequestCode;
 import org.projectfloodlight.openflow.protocol.OFBarrierRequest;
 import org.projectfloodlight.openflow.protocol.OFCapabilities;
@@ -96,49 +92,61 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.Timer;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static java.util.concurrent.Executors.newScheduledThreadPool;
 import static org.onlab.util.Tools.get;
+import static org.onosproject.provider.of.flow.impl.OsgiPropertyConstants.ADAPTIVE_FLOW_SAMPLING;
+import static org.onosproject.provider.of.flow.impl.OsgiPropertyConstants.ADAPTIVE_FLOW_SAMPLING_DEFAULT;
+import static org.onosproject.provider.of.flow.impl.OsgiPropertyConstants.POLL_FREQUENCY;
+import static org.onosproject.provider.of.flow.impl.OsgiPropertyConstants.POLL_FREQUENCY_DEFAULT;
+import static org.onosproject.provider.of.flow.impl.OsgiPropertyConstants.POLL_STATS_PERIODICALLY;
+import static org.onosproject.provider.of.flow.impl.OsgiPropertyConstants.POLL_STATS_PERIODICALLY_DEFAULT;
+import static org.onlab.util.Tools.groupedThreads;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Provider which uses an OpenFlow controller to detect network end-station
  * hosts.
  */
-@Component(immediate = true)
+@Component(immediate = true,
+        property = {
+                POLL_FREQUENCY + ":Integer=" + POLL_FREQUENCY_DEFAULT,
+                ADAPTIVE_FLOW_SAMPLING + ":Boolean=" + ADAPTIVE_FLOW_SAMPLING_DEFAULT,
+        })
 public class OpenFlowRuleProvider extends AbstractProvider
         implements FlowRuleProvider {
 
     private final Logger log = getLogger(getClass());
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected FlowRuleProviderRegistry providerRegistry;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected OpenFlowController controller;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService cfgService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DriverService driverService;
 
-    private static final int DEFAULT_POLL_FREQUENCY = 5;
     private static final int MIN_EXPECTED_BYTE_LEN = 56;
     private static final int SKIP_BYTES = 4;
-    private static final boolean DEFAULT_ADAPTIVE_FLOW_SAMPLING = false;
 
-    @Property(name = "flowPollFrequency", intValue = DEFAULT_POLL_FREQUENCY,
-            label = "Frequency (in seconds) for polling flow statistics")
-    private int flowPollFrequency = DEFAULT_POLL_FREQUENCY;
+    /** Frequency (in seconds) for polling flow statistics. */
+    private int flowPollFrequency = POLL_FREQUENCY_DEFAULT;
 
-    @Property(name = "adaptiveFlowSampling", boolValue = DEFAULT_ADAPTIVE_FLOW_SAMPLING,
-            label = "Adaptive Flow Sampling is on or off")
-    private boolean adaptiveFlowSampling = DEFAULT_ADAPTIVE_FLOW_SAMPLING;
+    /** Adaptive Flow Sampling is on or off. */
+    private boolean adaptiveFlowSampling = ADAPTIVE_FLOW_SAMPLING_DEFAULT;
+
+    /** Poll Stats Periodically ON/OFF. */
+    private boolean pollStatsPeriodically = POLL_STATS_PERIODICALLY_DEFAULT;
 
     private FlowRuleProviderService providerService;
 
@@ -146,8 +154,8 @@ public class OpenFlowRuleProvider extends AbstractProvider
 
     private Cache<Long, InternalCacheEntry> pendingBatches;
 
-    private final Timer timer = new Timer("onos-openflow-collector");
-
+    private ScheduledExecutorService executorService = newScheduledThreadPool(1,
+                                   groupedThreads("onos/of", "collector-%d", log));
 
     // Old simple collector set
     private final Map<Dpid, FlowStatsCollector> simpleCollectors = Maps.newConcurrentMap();
@@ -169,6 +177,8 @@ public class OpenFlowRuleProvider extends AbstractProvider
         providerService = providerRegistry.register(this);
         controller.addListener(listener);
         controller.addEventListener(listener);
+        // Evicts the tasks if cancelled
+        ((ScheduledThreadPoolExecutor) executorService).setRemoveOnCancelPolicy(true);
 
         modified(context);
 
@@ -186,6 +196,7 @@ public class OpenFlowRuleProvider extends AbstractProvider
         stopCollectors();
         providerRegistry.unregister(this);
         providerService = null;
+        executorService.shutdown();
 
         log.info("Stopped");
     }
@@ -195,9 +206,8 @@ public class OpenFlowRuleProvider extends AbstractProvider
         Dictionary<?, ?> properties = context.getProperties();
         int newFlowPollFrequency;
         try {
-            String s = get(properties, "flowPollFrequency");
+            String s = get(properties, POLL_FREQUENCY);
             newFlowPollFrequency = isNullOrEmpty(s) ? flowPollFrequency : Integer.parseInt(s.trim());
-
         } catch (NumberFormatException | ClassCastException e) {
             newFlowPollFrequency = flowPollFrequency;
         }
@@ -206,22 +216,34 @@ public class OpenFlowRuleProvider extends AbstractProvider
             flowPollFrequency = newFlowPollFrequency;
             adjustRate();
         }
-
         log.info("Settings: flowPollFrequency={}", flowPollFrequency);
 
         boolean newAdaptiveFlowSampling;
-        String s = get(properties, "adaptiveFlowSampling");
+        String s = get(properties, ADAPTIVE_FLOW_SAMPLING);
         newAdaptiveFlowSampling = isNullOrEmpty(s) ? adaptiveFlowSampling : Boolean.parseBoolean(s.trim());
-
         if (newAdaptiveFlowSampling != adaptiveFlowSampling) {
             // stop previous collector
             stopCollectors();
             adaptiveFlowSampling = newAdaptiveFlowSampling;
-            // create new collectors
-            createCollectors();
+            if (pollStatsPeriodically) {
+                // create new collectors
+                createCollectors();
+            }
         }
-
         log.info("Settings: adaptiveFlowSampling={}", adaptiveFlowSampling);
+
+        boolean newPollStatsPeriodically;
+        String flag = get(properties, POLL_STATS_PERIODICALLY);
+        newPollStatsPeriodically = isNullOrEmpty(flag) ? pollStatsPeriodically : Boolean.parseBoolean(flag.trim());
+        if (newPollStatsPeriodically != pollStatsPeriodically) {
+            // stop previous collector
+            stopCollectors();
+            pollStatsPeriodically = newPollStatsPeriodically;
+            if (pollStatsPeriodically) {
+                createCollectors();
+            }
+        }
+        log.info("Settings: pollStatsPeriodically={}", pollStatsPeriodically);
     }
 
     private Cache<Long, InternalCacheEntry> createBatchCache() {
@@ -251,13 +273,13 @@ public class OpenFlowRuleProvider extends AbstractProvider
                 stopCollectorIfNeeded(afsCollectors.put(new Dpid(sw.getId()), fsc));
                 fsc.start();
             } else {
-                FlowStatsCollector fsc = new FlowStatsCollector(timer, sw, flowPollFrequency);
+                FlowStatsCollector fsc = new FlowStatsCollector(executorService, sw, flowPollFrequency);
                 stopCollectorIfNeeded(simpleCollectors.put(new Dpid(sw.getId()), fsc));
                 fsc.start();
             }
         }
         if (sw.features().getCapabilities().contains(OFCapabilities.TABLE_STATS)) {
-            TableStatisticsCollector tsc = new TableStatisticsCollector(timer, sw, flowPollFrequency);
+            TableStatisticsCollector tsc = new TableStatisticsCollector(executorService, sw, flowPollFrequency);
             stopCollectorIfNeeded(tableStatsCollectors.put(new Dpid(sw.getId()), tsc));
             tsc.start();
         }
@@ -293,6 +315,39 @@ public class OpenFlowRuleProvider extends AbstractProvider
         tableStatsCollectors.values().forEach(tsc -> tsc.adjustPollInterval(flowPollFrequency));
     }
 
+    private void resetEvents(Dpid dpid) {
+        SwitchDataCollector collector;
+        if (adaptiveFlowSampling) {
+            collector = afsCollectors.get(dpid);
+        } else {
+            collector = simpleCollectors.get(dpid);
+        }
+        if (collector != null) {
+            collector.resetEvents();
+        }
+    }
+
+    private void recordEvent(Dpid dpid) {
+        recordEvents(dpid, 1);
+    }
+
+    private void recordEvents(Dpid dpid, int events) {
+        SwitchDataCollector collector;
+        if (adaptiveFlowSampling) {
+            collector = afsCollectors.get(dpid);
+        } else {
+            collector = simpleCollectors.get(dpid);
+        }
+        if (collector != null) {
+            collector.recordEvents(events);
+        }
+
+        if (!pollStatsPeriodically) {
+            log.debug("Triggering Flow/Table Stats, Flow Add/Del/Mod event, switch : {}", dpid.toString());
+            triggerStatsCollection(dpid);
+        }
+    }
+
     @Override
     public void applyFlowRule(FlowRule... flowRules) {
         for (FlowRule flowRule : flowRules) {
@@ -308,14 +363,10 @@ public class OpenFlowRuleProvider extends AbstractProvider
             return;
         }
 
-        FlowRuleExtPayLoad flowRuleExtPayLoad = flowRule.payLoad();
-        if (hasPayload(flowRuleExtPayLoad)) {
-            OFMessage msg = new ThirdPartyMessage(flowRuleExtPayLoad.payLoad());
-            sw.sendMsg(msg);
-            return;
-        }
         sw.sendMsg(FlowModBuilder.builder(flowRule, sw.factory(),
                 Optional.empty(), Optional.of(driverService)).buildFlowAdd());
+
+        recordEvent(dpid);
     }
 
     @Override
@@ -333,20 +384,10 @@ public class OpenFlowRuleProvider extends AbstractProvider
             return;
         }
 
-        FlowRuleExtPayLoad flowRuleExtPayLoad = flowRule.payLoad();
-        if (hasPayload(flowRuleExtPayLoad)) {
-            OFMessage msg = new ThirdPartyMessage(flowRuleExtPayLoad.payLoad());
-            sw.sendMsg(msg);
-            return;
-        }
         sw.sendMsg(FlowModBuilder.builder(flowRule, sw.factory(),
                                           Optional.empty(), Optional.of(driverService)).buildFlowDel());
-    }
 
-    @Override
-    public void removeRulesById(ApplicationId id, FlowRule... flowRules) {
-        // TODO: optimize using the ApplicationId
-        removeFlowRule(flowRules);
+        recordEvent(dpid);
     }
 
     @Override
@@ -364,16 +405,10 @@ public class OpenFlowRuleProvider extends AbstractProvider
             return;
         }
         pendingBatches.put(batch.id(), new InternalCacheEntry(batch));
+        // Build a batch of flow mods - to reduce the number i/o asked to the SO
+        Set<OFFlowMod> mods = Sets.newHashSet();
         OFFlowMod mod;
         for (FlowRuleBatchEntry fbe : batch.getOperations()) {
-            // flow is the third party privacy flow
-
-            FlowRuleExtPayLoad flowRuleExtPayLoad = fbe.target().payLoad();
-            if (hasPayload(flowRuleExtPayLoad)) {
-                OFMessage msg = new ThirdPartyMessage(flowRuleExtPayLoad.payLoad());
-                sw.sendMsg(msg);
-                continue;
-            }
             FlowModBuilder builder =
                     FlowModBuilder.builder(fbe.target(), sw.factory(),
                             Optional.of(batch.id()), Optional.of(driverService));
@@ -392,17 +427,43 @@ public class OpenFlowRuleProvider extends AbstractProvider
                             fbe.operator(), fbe);
                     continue;
             }
-            sw.sendMsg(mod);
+            mods.add(mod);
         }
+        // Build a list to mantain the order
+        List<OFMessage> modsTosend = Lists.newArrayList(mods);
         OFBarrierRequest.Builder builder = sw.factory().buildBarrierRequest()
                 .setXid(batch.id());
-        sw.sendMsg(builder.build());
+        // Adds finally the barrier request
+        modsTosend.add(builder.build());
+        sw.sendMsg(modsTosend);
+        // Take into account also the barrier request
+        recordEvents(dpid, (batch.getOperations().size() + 1));
     }
 
-    private boolean hasPayload(FlowRuleExtPayLoad flowRuleExtPayLoad) {
-        return flowRuleExtPayLoad != null &&
-                flowRuleExtPayLoad.payLoad() != null &&
-                flowRuleExtPayLoad.payLoad().length > 0;
+    private void triggerStatsCollection(Dpid dpid) {
+        OpenFlowSwitch sw = controller.getSwitch(dpid);
+        if (sw == null) {
+            return;
+        }
+
+        SwitchDataCollector sdc = adaptiveFlowSampling ? afsCollectors.get(dpid) : simpleCollectors.get(dpid);
+        if (sdc == null) {
+            if (adaptiveFlowSampling) {
+                sdc = new NewAdaptiveFlowStatsCollector(driverService, sw, -1);
+                afsCollectors.put(dpid, (NewAdaptiveFlowStatsCollector) sdc);
+            } else {
+                sdc = new FlowStatsCollector(executorService, sw, -1);
+                simpleCollectors.put(dpid, (FlowStatsCollector) sdc);
+            }
+        }
+        sdc.start();
+
+        TableStatisticsCollector tsc = tableStatsCollectors.get(dpid);
+        if (tsc == null) {
+            tsc = new TableStatisticsCollector(executorService, sw, -1);
+            tableStatsCollectors.put(dpid, tsc);
+        }
+        tsc.start();
     }
 
     private class InternalFlowProvider
@@ -410,7 +471,12 @@ public class OpenFlowRuleProvider extends AbstractProvider
 
         @Override
         public void switchAdded(Dpid dpid) {
-            createCollector(controller.getSwitch(dpid));
+            if (pollStatsPeriodically) {
+                createCollector(controller.getSwitch(dpid));
+            } else {
+                log.debug("Triggering Flow/Table Stats, Switch: {} added, ", dpid.toString());
+                triggerStatsCollection(dpid);
+            }
         }
 
         @Override
@@ -448,6 +514,16 @@ public class OpenFlowRuleProvider extends AbstractProvider
                     break;
                 case STATS_REPLY:
                     if (((OFStatsReply) msg).getStatsType() == OFStatsType.FLOW) {
+                        // Let's unblock first the collector
+                        SwitchDataCollector collector;
+                        if (adaptiveFlowSampling) {
+                            collector = afsCollectors.get(dpid);
+                        } else {
+                            collector = simpleCollectors.get(dpid);
+                        }
+                        if (collector != null) {
+                            collector.received();
+                        }
                         pushFlowMetrics(dpid, (OFFlowStatsReply) msg, getDriver(deviceId));
                     } else if (((OFStatsReply) msg).getStatsType() == OFStatsType.TABLE) {
                         pushTableStatistics(dpid, (OFTableStatsReply) msg);
@@ -616,7 +692,17 @@ public class OpenFlowRuleProvider extends AbstractProvider
         @Override
         public void receivedRoleReply(Dpid dpid, RoleState requested,
                                       RoleState response) {
-            // Do nothing here for now.
+            if (response == RoleState.MASTER) {
+                resetEvents(dpid);
+            }
+        }
+
+        @Override
+        public void roleChangedToMaster(Dpid dpid) {
+            if (!pollStatsPeriodically) {
+                log.debug("Triggering Flow/Table Stats, Mastership change: {}, ", dpid.toString());
+                triggerStatsCollection(dpid);
+            }
         }
 
         private DriverHandler getDriver(DeviceId devId) {
@@ -631,9 +717,9 @@ public class OpenFlowRuleProvider extends AbstractProvider
             NewAdaptiveFlowStatsCollector afsc = afsCollectors.get(dpid);
 
             if (adaptiveFlowSampling && afsc != null)  {
-                List<FlowEntry> flowEntries = replies.getEntries().stream()
+                Set<FlowEntry> flowEntries = replies.getEntries().stream()
                         .map(entry -> new FlowEntryBuilder(did, entry, handler).withSetAfsc(afsc).build())
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toSet());
 
                 // Check that OFFlowStatsReply Xid is same with the one of OFFlowStatsRequest?
                 if (afsc.getFlowMissingXid() != NewAdaptiveFlowStatsCollector.NO_FLOW_MISSING_XID) {
@@ -652,9 +738,9 @@ public class OpenFlowRuleProvider extends AbstractProvider
                     providerService.pushFlowMetricsWithoutFlowMissing(did, flowEntries);
                 }
             } else {
-                List<FlowEntry> flowEntries = replies.getEntries().stream()
+                Set<FlowEntry> flowEntries = replies.getEntries().stream()
                         .map(entry -> new FlowEntryBuilder(did, entry, handler).build())
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toSet());
 
                 // call existing entire flow stats update with flowMissing synchronization
                 providerService.pushFlowMetrics(did, flowEntries);
@@ -667,6 +753,7 @@ public class OpenFlowRuleProvider extends AbstractProvider
             List<TableStatisticsEntry> tableStatsEntries = replies.getEntries().stream()
                     .map(entry -> buildTableStatistics(did, entry))
                     .filter(Objects::nonNull)
+                    .distinct()
                     .collect(Collectors.toList());
             providerService.pushTableStatistics(did, tableStatsEntries);
         }
@@ -676,9 +763,9 @@ public class OpenFlowRuleProvider extends AbstractProvider
             DeviceId did = DeviceId.deviceId(Dpid.uri(dpid));
             NewAdaptiveFlowStatsCollector afsc = afsCollectors.get(dpid);
             if (adaptiveFlowSampling && afsc != null)  {
-                List<FlowEntry> flowEntries = replies.getEntries().stream()
+                Set<FlowEntry> flowEntries = replies.getEntries().stream()
                         .map(entry -> new FlowEntryBuilder(did, entry, driverService).withSetAfsc(afsc).build())
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toSet());
 
                 // Check that OFFlowStatsReply Xid is same with the one of OFFlowStatsRequest?
                 if (afsc.getFlowMissingXid() != NewAdaptiveFlowStatsCollector.NO_FLOW_MISSING_XID) {
@@ -697,9 +784,9 @@ public class OpenFlowRuleProvider extends AbstractProvider
                     providerService.pushFlowMetricsWithoutFlowMissing(did, flowEntries);
                 }
             } else {
-                List<FlowEntry> flowEntries = replies.getEntries().stream()
+                Set<FlowEntry> flowEntries = replies.getEntries().stream()
                         .map(entry -> new FlowEntryBuilder(did, entry, driverService).build())
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toSet());
                 // call existing entire flow stats update with flowMissing synchronization
                 providerService.pushFlowMetrics(did, flowEntries);
             }
@@ -709,11 +796,25 @@ public class OpenFlowRuleProvider extends AbstractProvider
                                                           OFTableStatsEntry ofEntry) {
             TableStatisticsEntry entry = null;
             if (ofEntry != null) {
-                entry = new DefaultTableStatisticsEntry(deviceId,
-                                                        ofEntry.getTableId().getValue(),
-                                                        ofEntry.getActiveCount(),
-                                                        ofEntry.getLookupCount().getValue(),
-                                                        ofEntry.getMatchedCount().getValue());
+                IndexTableId tid = IndexTableId.of(ofEntry.getTableId().getValue());
+
+                try {
+                    entry = DefaultTableStatisticsEntry.builder()
+                            .withDeviceId(deviceId)
+                            .withTableId(tid)
+                            .withActiveFlowEntries(ofEntry.getActiveCount())
+                            .withPacketsLookedUpCount(ofEntry.getLookupCount().getValue())
+                            .withPacketsMatchedCount(ofEntry.getMatchedCount().getValue())
+                            .withMaxSize(ofEntry.getMaxEntries()).build();
+                } catch (UnsupportedOperationException e) {
+                    // The exception "UnsupportedOperationException" is thrown by "getMaxEntries()".
+                    entry = DefaultTableStatisticsEntry.builder()
+                            .withDeviceId(deviceId)
+                            .withTableId(tid)
+                            .withActiveFlowEntries(ofEntry.getActiveCount())
+                            .withPacketsLookedUpCount(ofEntry.getLookupCount().getValue())
+                            .withPacketsMatchedCount(ofEntry.getMatchedCount().getValue()).build();
+                }
             }
 
             return entry;

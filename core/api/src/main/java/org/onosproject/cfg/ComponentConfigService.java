@@ -73,6 +73,17 @@ public interface ComponentConfigService {
     void preSetProperty(String componentName, String name, String value);
 
     /**
+     * Presets the value of the specified configuration property, regardless
+     * of the component's state.
+     *
+     * @param componentName component name
+     * @param name          property name
+     * @param value         new property value
+     * @param override      true to override even if the property has been set to other value
+     */
+    void preSetProperty(String componentName, String name, String value, boolean override);
+
+    /**
      * Clears the value of the specified configuration property thus making
      * the property take on its default value.
      *
@@ -80,6 +91,15 @@ public interface ComponentConfigService {
      * @param name          property name
      */
     void unsetProperty(String componentName, String name);
+
+    /**
+     * Returns configuration property of the named components.
+     *
+     * @param componentName component name
+     * @param attribute component attribute
+     * @return configuration property
+     */
+    ConfigProperty getProperty(String componentName, String attribute);
 
 }
 

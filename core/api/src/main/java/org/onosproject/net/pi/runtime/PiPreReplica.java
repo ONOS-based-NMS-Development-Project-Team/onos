@@ -16,6 +16,7 @@
 
 package org.onosproject.net.pi.runtime;
 
+import com.google.common.annotations.Beta;
 import com.google.common.base.Objects;
 import org.onosproject.net.PortNumber;
 
@@ -29,10 +30,11 @@ import static java.lang.String.format;
  * Each replica is uniquely identified inside a given multicast group or clone
  * session by the pair (egress port, instance ID).
  */
-public class PiPreReplica {
+@Beta
+public final class PiPreReplica {
 
     private final PortNumber egressPort;
-    private final long instanceId;
+    private final int instanceId;
 
     /**
      * Returns a new PRE packet replica for the given egress port and instance
@@ -41,7 +43,7 @@ public class PiPreReplica {
      * @param egressPort egress port
      * @param instanceId instance ID
      */
-    public PiPreReplica(PortNumber egressPort, long instanceId) {
+    public PiPreReplica(PortNumber egressPort, int instanceId) {
         this.egressPort = checkNotNull(egressPort);
         this.instanceId = instanceId;
     }
@@ -60,7 +62,7 @@ public class PiPreReplica {
      *
      * @return instance ID
      */
-    public long instanceId() {
+    public int instanceId() {
         return instanceId;
     }
 
@@ -84,6 +86,6 @@ public class PiPreReplica {
 
     @Override
     public String toString() {
-        return format("%s:%d", egressPort, instanceId);
+        return format("%s:0x%s", egressPort, Integer.toHexString(instanceId));
     }
 }

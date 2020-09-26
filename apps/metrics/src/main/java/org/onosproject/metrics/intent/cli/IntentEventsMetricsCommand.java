@@ -15,7 +15,6 @@
  */
 package org.onosproject.metrics.intent.cli;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import com.codahale.metrics.Gauge;
@@ -25,7 +24,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.metrics.EventMetric;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.metrics.intent.IntentMetricsService;
@@ -33,6 +33,7 @@ import org.onosproject.metrics.intent.IntentMetricsService;
 /**
  * Command to show the intent events metrics.
  */
+@Service
 @Command(scope = "onos", name = "intents-events-metrics",
          description = "Lists intent events metrics")
 public class IntentEventsMetricsCommand extends AbstractShellCommand {
@@ -43,7 +44,7 @@ public class IntentEventsMetricsCommand extends AbstractShellCommand {
         "Intent %s Events count=%d rate(events/sec) mean=%f m1=%f m5=%f m15=%f";
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         IntentMetricsService service = get(IntentMetricsService.class);
 
         if (outputJson()) {
@@ -119,8 +120,6 @@ public class IntentEventsMetricsCommand extends AbstractShellCommand {
             JsonNode jsonNode = mapper.readTree(objectJson);
             return jsonNode;
         } catch (JsonProcessingException e) {
-            log.error("Error writing value as JSON string", e);
-        } catch (IOException e) {
             log.error("Error writing value as JSON string", e);
         }
         return null;

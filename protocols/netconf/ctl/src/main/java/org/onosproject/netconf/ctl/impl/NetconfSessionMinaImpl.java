@@ -21,6 +21,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.channel.ClientChannel;
 import org.apache.sshd.client.future.ConnectFuture;
@@ -29,11 +30,18 @@ import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.FactoryManager;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.onlab.osgi.DefaultServiceDirectory;
+import org.onlab.osgi.ServiceDirectory;
+import org.onlab.util.ItemNotFoundException;
 import org.onlab.util.SharedExecutors;
+import org.onosproject.net.DeviceId;
+import org.onosproject.net.driver.Driver;
+import org.onosproject.net.driver.DriverService;
 import org.onosproject.netconf.AbstractNetconfSession;
+import org.onosproject.netconf.NetconfController;
 import org.onosproject.netconf.NetconfDeviceInfo;
 import org.onosproject.netconf.NetconfDeviceOutputEvent;
 import org.onosproject.netconf.NetconfDeviceOutputEvent.Type;
@@ -43,10 +51,8 @@ import org.onosproject.netconf.NetconfSession;
 import org.onosproject.netconf.NetconfSessionFactory;
 import org.onosproject.netconf.NetconfTransportException;
 import org.slf4j.Logger;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.slf4j.LoggerFactory.getLogger;
 
-import java.io.CharArrayReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -54,14 +60,15 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.ArrayList;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -71,6 +78,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Implementation of a NETCONF session to talk to a device.
@@ -110,6 +120,12 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
     private static final String MSGLEN_REGEX_PATTERN = "\n#\\d+\n";
     private static final String NETCONF_10_CAPABILITY = "urn:ietf:params:netconf:base:1.0";
     private static final String NETCONF_11_CAPABILITY = "urn:ietf:params:netconf:base:1.1";
+    private static final String NETCONF_CLIENT_CAPABILITY = "netconfClientCapability";
+    private static final String NOTIFICATION_STREAM = "notificationStream";
+    private static final String SSH_KEY_PATH = "/root/.ssh/id_rsa";
+    private static final String EMPTY_STRING = "";
+
+    private static ServiceDirectory directory = new DefaultServiceDirectory();
 
     private String sessionID;
     private final AtomicInteger messageIdInteger = new AtomicInteger(1);
@@ -137,17 +153,21 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
     private int replyTimeout;
     private int idleTimeout;
 
-
     private ClientChannel channel = null;
     private ClientSession session = null;
     private SshClient client = null;
 
+    private boolean disconnected = false;
 
     public NetconfSessionMinaImpl(NetconfDeviceInfo deviceInfo) throws NetconfException {
         this.deviceInfo = deviceInfo;
         replies = new ConcurrentHashMap<>();
         errorReplies = new ArrayList<>();
-
+        Set<String> capabilities = getClientCapabilites(deviceInfo.getDeviceId());
+        if (!capabilities.isEmpty()) {
+            capabilities.addAll(Sets.newHashSet(onosCapabilities));
+            setOnosCapabilities(capabilities);
+        }
         // FIXME should not immediately start session on construction
         // setOnosCapabilities() is useless due to this behavior
         startConnection();
@@ -163,35 +183,67 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
         startConnection();
     }
 
+    /**
+     * Get the list of the netconf client capabilities from device driver property.
+     *
+     * @param deviceId the deviceID for which to recover the capabilities from the driver.
+     * @return the String list of clientCapability property, or null if it is not configured
+     */
+    public Set<String> getClientCapabilites(DeviceId deviceId) {
+        Set<String> capabilities = new LinkedHashSet<>();
+        DriverService driverService = directory.get(DriverService.class);
+        try {
+            Driver driver = driverService.getDriver(deviceId);
+            if (driver == null) {
+                return capabilities;
+            }
+            String clientCapabilities = driver.getProperty(NETCONF_CLIENT_CAPABILITY);
+            if (clientCapabilities == null) {
+                return capabilities;
+            }
+            String[] textStr = clientCapabilities.split("\\|");
+            capabilities.addAll(Arrays.asList(textStr));
+            return capabilities;
+        } catch (ItemNotFoundException e) {
+            log.warn("Driver for device {} currently not available", deviceId);
+            return capabilities;
+        }
+    }
+
     private void startConnection() throws NetconfException {
         connectTimeout = deviceInfo.getConnectTimeoutSec().orElse(
-                                NetconfControllerImpl.netconfConnectTimeout);
+                NetconfControllerImpl.netconfConnectTimeout);
         replyTimeout = deviceInfo.getReplyTimeoutSec().orElse(
-                                NetconfControllerImpl.netconfReplyTimeout);
+                NetconfControllerImpl.netconfReplyTimeout);
         idleTimeout = deviceInfo.getIdleTimeoutSec().orElse(
-                                NetconfControllerImpl.netconfIdleTimeout);
+                NetconfControllerImpl.netconfIdleTimeout);
         log.info("Connecting to {} with timeouts C:{}, R:{}, I:{}", deviceInfo,
                 connectTimeout, replyTimeout, idleTimeout);
 
         try {
             startClient();
-        } catch (IOException e) {
+        } catch (Exception e) {
+            stopClient();
             throw new NetconfException("Failed to establish SSH with device " + deviceInfo, e);
         }
     }
 
     private void startClient() throws IOException {
         log.info("Creating NETCONF session to {}",
-                 deviceInfo.getDeviceId());
+                deviceInfo.getDeviceId());
 
         client = SshClient.setUpDefaultClient();
-        client.getProperties().putIfAbsent(FactoryManager.IDLE_TIMEOUT,
-                TimeUnit.SECONDS.toMillis(idleTimeout));
-        client.getProperties().putIfAbsent(FactoryManager.NIO2_READ_TIMEOUT,
-                TimeUnit.SECONDS.toMillis(idleTimeout + 15L));
+        if (idleTimeout != NetconfControllerImpl.netconfIdleTimeout) {
+            client.getProperties().putIfAbsent(FactoryManager.IDLE_TIMEOUT,
+                    TimeUnit.SECONDS.toMillis(idleTimeout));
+            client.getProperties().putIfAbsent(FactoryManager.NIO2_READ_TIMEOUT,
+                    TimeUnit.SECONDS.toMillis(idleTimeout + 15L));
+        }
         client.start();
         client.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
         startSession();
+
+        disconnected = false;
     }
 
     //TODO: Remove the default methods already implemented in NetconfSession
@@ -205,16 +257,16 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
                 deviceInfo.port())
                 .verify(connectTimeout, TimeUnit.SECONDS);
         session = connectFuture.getSession();
-        //Using the device ssh key if possible
-        if (deviceInfo.getKey() != null) {
-            try (PEMParser pemParser = new PEMParser(new CharArrayReader(deviceInfo.getKey()))) {
+        //Using the onos private ssh key at path SSH_KEY_PATH
+        if (deviceInfo.password().equals(EMPTY_STRING)) {
+            try (PEMParser pemParser = new PEMParser(new FileReader(SSH_KEY_PATH))) {
                 JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider(BouncyCastleProvider.PROVIDER_NAME);
                 try {
                     KeyPair kp = converter.getKeyPair((PEMKeyPair) pemParser.readObject());
                     session.addPublicKeyIdentity(kp);
                 } catch (IOException e) {
-                    throw new NetconfException("Failed to authenticate session with device " +
-                            deviceInfo + "check key to be a valid key", e);
+                    throw new NetconfException("Failed to authenticate session. Please check if ssk key is generated" +
+" on ONOS host machine at path " + SSH_KEY_PATH + " : ", e);
                 }
             }
         } else {
@@ -253,6 +305,7 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
                 streamHandler = new NetconfStreamThread(channel.getInvertedOut(), channel.getInvertedIn(),
                         channel.getInvertedErr(), deviceInfo,
                         new NetconfSessionDelegateImpl(), replies);
+                primaryListeners.forEach(l -> streamHandler.addDeviceEventListener(l));
             } else {
                 throw new NetconfException("Failed to open channel with device " +
                         deviceInfo);
@@ -316,6 +369,16 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
         subscriptionbuffer.append("<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n");
         subscriptionbuffer.append("  <create-subscription\n");
         subscriptionbuffer.append("xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">\n");
+        DriverService driverService = directory.get(DriverService.class);
+        Driver driver = driverService.getDriver(deviceInfo.getDeviceId());
+        if (driver != null) {
+            String stream = driver.getProperty(NOTIFICATION_STREAM);
+            if (stream != null) {
+                subscriptionbuffer.append("    <stream>");
+                subscriptionbuffer.append(stream);
+                subscriptionbuffer.append("</stream>\n");
+            }
+        }
         // FIXME Only subtree filtering supported at the moment.
         if (filterSchema != null) {
             subscriptionbuffer.append("    ");
@@ -336,6 +399,34 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
             streamHandler.setEnableNotifications(false);
         } else {
             throw new NetconfException("Subscription does not exist.");
+        }
+    }
+
+    private void stopClient() {
+        if (session != null) {
+            try {
+                session.close();
+            } catch (IOException ex) {
+                log.warn("Cannot close session {} {}", sessionID, deviceInfo, ex);
+            }
+        }
+
+        if (channel != null) {
+            try {
+                channel.close();
+            } catch (IOException ex) {
+                log.warn("Cannot close channel {} {}", sessionID, deviceInfo, ex);
+            }
+        }
+
+        if (client != null) {
+            try {
+                client.close();
+            } catch (IOException ex) {
+                log.warn("Cannot close client {} {}", sessionID, deviceInfo, ex);
+            }
+
+            client.stop();
         }
     }
 
@@ -375,16 +466,21 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
 
     @Override
     public void checkAndReestablish() throws NetconfException {
+        if (disconnected) {
+            log.warn("Can't reopen connection for device because of disconnected {}", deviceInfo.getDeviceId());
+            throw new NetconfException("Can't reopen connection for device because of disconnected " + deviceInfo);
+        }
+
         try {
-            if (client.isClosed()) {
+            if (client.isClosed() || client.isClosing()) {
                 log.debug("Trying to restart the whole SSH connection with {}", deviceInfo.getDeviceId());
                 cleanUp();
                 startConnection();
-            } else if (session.isClosed()) {
-                log.debug("Trying to restart the session with {}", session, deviceInfo.getDeviceId());
+            } else if (session.isClosed() || session.isClosing()) {
+                log.debug("Trying to restart the session {} with {}", session, deviceInfo.getDeviceId());
                 cleanUp();
                 startSession();
-            } else if (channel.isClosed()) {
+            } else if (channel.isClosed() || channel.isClosing()) {
                 log.debug("Trying to reopen the channel with {}", deviceInfo.getDeviceId());
                 cleanUp();
                 openChannel();
@@ -405,17 +501,29 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
     private void cleanUp() {
         //makes sure everything is at a clean state.
         replies.clear();
+        if (streamHandler != null) {
+            streamHandler.close();
+        }
     }
 
     @Override
     public String requestSync(String request) throws NetconfException {
-        String reply = sendRequest(request);
-        checkReply(reply);
+        return requestSync(request, replyTimeout);
+    }
+
+    @Override
+    public String requestSync(String request, int timeout) throws NetconfException {
+        String reply = sendRequest(request, timeout);
+        if (!checkReply(reply)) {
+            throw new NetconfException("Request not successful with device "
+                    + deviceInfo + " with reply " + reply);
+        }
         return reply;
     }
 
 
     // FIXME rename to align with what it actually do
+
     /**
      * Validate and format netconf message.
      * - NC1.0 if no EOM sequence present on {@code message}, append.
@@ -486,18 +594,21 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
 
         log.debug("Sending {} to {}", rpc, this.deviceInfo.getDeviceId());
         return streamHandler.sendMessage(rpc, msgId)
-                    .handleAsync((reply, t) -> {
-                        if (t != null) {
-                            // secure transport-layer error
-                            // cannot use NetconfException, which is
-                            // checked Exception.
-                            throw new NetconfTransportException(t);
-                        } else {
-                            // FIXME avoid using checkReply, error handling is weird
-                            checkReply(reply);
-                            return reply;
+                .handleAsync((reply, t) -> {
+                    if (t != null) {
+                        // secure transport-layer error
+                        // cannot use NetconfException, which is
+                        // checked Exception.
+                        throw new NetconfTransportException(t);
+                    } else {
+                        // FIXME avoid using checkReply, error handling is weird
+                        if (!checkReply(reply)) {
+                            throw new NetconfTransportException("rpc-request not successful with device "
+                                    + deviceInfo + " with reply " + reply);
                         }
-                    }, SharedExecutors.getPoolThreadExecutor());
+                        return reply;
+                    }
+                }, SharedExecutors.getPoolThreadExecutor());
     }
 
     @Override
@@ -519,13 +630,23 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
         return streamHandler.sendMessage(request, messageId);
     }
 
+    private String sendRequest(String request, boolean isHello) throws NetconfException {
+        return sendRequest(request, isHello, replyTimeout);
+    }
+
     private String sendRequest(String request) throws NetconfException {
         // FIXME probably chunk-encoding too early
         request = formatNetconfMessage(request);
-        return sendRequest(request, false);
+        return sendRequest(request, false, replyTimeout);
     }
 
-    private String sendRequest(String request, boolean isHello) throws NetconfException {
+    private String sendRequest(String request, int timeout) throws NetconfException {
+        // FIXME probably chunk-encoding too early
+        request = formatNetconfMessage(request);
+        return sendRequest(request, false, timeout);
+    }
+
+    private String sendRequest(String request, boolean isHello, int timeout) throws NetconfException {
         checkAndReestablish();
         int messageId = -1;
         if (!isHello) {
@@ -534,28 +655,23 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
         // FIXME potentially re-writing chunked encoded String?
         request = formatXmlHeader(request);
         request = formatRequestMessageId(request, messageId);
+        int useTimeout = timeout > 0 ? timeout : replyTimeout;
         log.debug("Sending request to NETCONF with timeout {} for {}",
-                  replyTimeout, deviceInfo.name());
+                  useTimeout, deviceInfo.name());
         CompletableFuture<String> futureReply = request(request, messageId);
         String rp;
         try {
-            rp = futureReply.get(replyTimeout, TimeUnit.SECONDS);
+            rp = futureReply.get(useTimeout, TimeUnit.SECONDS);
             replies.remove(messageId); // Why here???
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new NetconfException("Interrupted waiting for reply for request" + request, e);
         } catch (TimeoutException e) {
             throw new NetconfException("Timed out waiting for reply for request " +
-                    request + " after " + replyTimeout + " sec.", e);
+                    request + " after " + useTimeout + " sec.", e);
         } catch (ExecutionException e) {
             log.warn("Closing session {} for {} due to unexpected Error", sessionID, deviceInfo, e);
-            try {
-                session.close();
-                channel.close(); //Closes the socket which should interrupt NetconfStreamThread
-                client.close();
-            } catch (IOException ioe) {
-                log.warn("Error closing session {} on {}", sessionID, deviceInfo, ioe);
-            }
+            stopClient();
             NetconfDeviceOutputEvent event = new NetconfDeviceOutputEvent(
                     NetconfDeviceOutputEvent.Type.SESSION_CLOSED,
                     null, "Closed due to unexpected error " + e.getCause(),
@@ -602,6 +718,7 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
 
     /**
      * Ensures xml start directive/declaration appears in the {@code request}.
+     *
      * @param request RPC request message
      * @return XML RPC message
      */
@@ -662,6 +779,22 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
         }
         log.warn("Device {} has error in reply {}", deviceInfo, reply);
         return false;
+    }
+
+    @Override
+    public boolean close() throws NetconfException {
+        try {
+            if (client != null && (client.isClosed() || client.isClosing())) {
+                return true;
+            }
+
+            return super.close();
+        } catch (IOException ioe) {
+            throw new NetconfException(ioe.getMessage());
+        } finally {
+            disconnected = true;
+            stopClient();
+        }
     }
 
     protected void publishEvent(NetconfDeviceOutputEvent event) {
@@ -732,8 +865,8 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
                         event.getDeviceInfo(), event.getMessagePayload());
                 return;
             }
-            CompletableFuture<String> completedReply =
-                    replies.get(messageId.get()); // remove(..)?
+            // Remove the message as it has been processed.
+            CompletableFuture<String> completedReply = replies.remove(messageId.get());
             if (completedReply != null) {
                 completedReply.complete(event.getMessagePayload());
             }
@@ -747,7 +880,8 @@ public class NetconfSessionMinaImpl extends AbstractNetconfSession {
     public static class MinaSshNetconfSessionFactory implements NetconfSessionFactory {
 
         @Override
-        public NetconfSession createNetconfSession(NetconfDeviceInfo netconfDeviceInfo) throws NetconfException {
+        public NetconfSession createNetconfSession(NetconfDeviceInfo netconfDeviceInfo,
+                                                   NetconfController netconfController) throws NetconfException {
             return new NetconfSessionMinaImpl(netconfDeviceInfo);
         }
     }

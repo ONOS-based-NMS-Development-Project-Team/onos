@@ -18,9 +18,8 @@ package org.onosproject.net.intent.impl.compiler;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.onlab.graph.DefaultEdgeWeigher;
 import org.onlab.graph.ScalarWeight;
 import org.onlab.graph.Weight;
@@ -66,7 +65,6 @@ import java.util.stream.Collectors;
  * Base class for compilers of various
  * {@link org.onosproject.net.intent.ConnectivityIntent connectivity intents}.
  */
-@Component(immediate = true)
 public abstract class ConnectivityIntentCompiler<T extends ConnectivityIntent>
         implements IntentCompiler<T> {
 
@@ -74,16 +72,16 @@ public abstract class ConnectivityIntentCompiler<T extends ConnectivityIntent>
 
     private static final Logger log = LoggerFactory.getLogger(ConnectivityIntentCompiler.class);
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DeviceService deviceService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected IntentExtensionService intentManager;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected PathService pathService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ResourceService resourceService;
 
     /**
@@ -160,6 +158,28 @@ public abstract class ConnectivityIntentCompiler<T extends ConnectivityIntent>
         }
 
         return filtered.iterator().next();
+    }
+
+    /**
+     * Computes all the paths between two ConnectPoints.
+     *
+     * @param intent intent on which behalf path is being computed
+     * @param one    start of the path
+     * @param two    end of the path
+     * @return Paths between the two, or null if no path can be found
+     */
+    protected List<Path> getPaths(ConnectivityIntent intent,
+                           ElementId one, ElementId two) {
+        Set<Path> paths = pathService.getPaths(one, two, weigher(intent.constraints()));
+        final List<Constraint> constraints = intent.constraints();
+        ImmutableList<Path> filtered = FluentIterable.from(paths)
+                .filter(path -> checkPath(path, constraints))
+                .toList();
+        if (filtered.isEmpty()) {
+            return null;
+        }
+
+        return filtered;
     }
 
     /**

@@ -26,8 +26,8 @@
     var dstDeviceId = null;
 
     var traceInfoDialogId = 'traceInfoDialogId',
-        traceInfoDialogOpt = {
-            width: 300,
+        traceInfoDialogOpt =   {
+            width: 350,
             edge: 'left',
             margin: 20,
             hideMargin: -20
@@ -117,7 +117,7 @@
                         flash.flash('Trace to External')
                     }
                }
-            }
+            },
         },
 
         keyBindings: {
@@ -203,11 +203,10 @@
         texts.append('hr');
 
         return texts;
-
     }
 
     function flowTraceResultBtn() {
-        sts.sendFlowTraceRequest(traceSrc, traceDst, srcDeviceId, dstDeviceId);
+        sts.sendFlowTraceRequest(traceSrc, traceDst, srcDeviceId, dstDeviceId, true);
         ds.closeDialog();
         traceSrc = null;
         traceDst = null;

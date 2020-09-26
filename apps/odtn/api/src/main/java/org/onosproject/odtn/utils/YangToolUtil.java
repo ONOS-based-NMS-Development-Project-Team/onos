@@ -22,6 +22,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -32,11 +33,11 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.onlab.osgi.DefaultServiceDirectory;
 import org.onosproject.yang.model.DataNode;
 import org.onosproject.yang.model.DefaultModelObjectData;
@@ -47,6 +48,7 @@ import org.onosproject.yang.model.ModelObject;
 import org.onosproject.yang.model.ModelObjectData;
 import org.onosproject.yang.model.ResourceData;
 import org.onosproject.yang.model.ResourceId;
+import org.onosproject.yang.runtime.AnnotatedNodeInfo;
 import org.onosproject.yang.runtime.CompositeData;
 import org.onosproject.yang.runtime.CompositeStream;
 import org.onosproject.yang.runtime.DefaultCompositeData;
@@ -71,11 +73,11 @@ import com.google.common.io.CharStreams;
 public class YangToolUtil {
     private static final Logger log = getLogger(YangToolUtil.class);
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected YangRuntimeService yangRuntimeService;
     protected static YangRuntimeService yrs;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ModelConverter modelConverter;
     protected static ModelConverter converter;
 
@@ -265,6 +267,27 @@ public class YangToolUtil {
         builder.resourceData(input);
         // remove, merge, replace, ...
         //builder.addAnnotatedNodeInfo(info)
+
+        return builder.build();
+    }
+
+    /**
+     * Converts ResourceData & AnnotatedNodeInfo into CompositeData.
+     *
+     * @param input ResourceData to convert
+     * @param annotatedNodeInfos AnnotatedNodeInfoList to convert
+     * @return CompositeData
+     */
+    public static CompositeData toCompositeData(
+            ResourceData input,
+            List<AnnotatedNodeInfo> annotatedNodeInfos) {
+        CompositeData.Builder builder =
+                DefaultCompositeData.builder();
+        builder.resourceData(input);
+
+        // Set AnnotationNodeInfo
+        annotatedNodeInfos.stream()
+                .forEach(a -> builder.addAnnotatedNodeInfo(a));
 
         return builder.build();
     }

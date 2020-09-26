@@ -15,18 +15,20 @@
  */
 package org.onosproject.intentperf;
 
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 
 /**
  * Stops intent performance test run.
  */
+@Service
 @Command(scope = "onos", name = "intent-perf-stop",
         description = "Stops intent performance test run")
 public class IntentPerfStopCommand extends AbstractShellCommand {
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         get(IntentPerfInstaller.class).stop();
     }
 

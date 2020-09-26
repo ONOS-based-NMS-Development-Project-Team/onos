@@ -15,8 +15,10 @@
  */
 package org.onosproject.openstacknetworking.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.device.DeviceService;
 import org.onosproject.openstacknetworking.api.OpenstackNetworkService;
@@ -27,6 +29,9 @@ import org.openstack4j.model.network.Port;
 
 import java.util.Optional;
 
+import static org.onosproject.cli.AbstractShellCommand.get;
+import static org.onosproject.openstacknetworking.api.Constants.UNSUPPORTED_VENDOR;
+import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.getIntfNameFromPciAddress;
 import static org.onosproject.openstacknode.api.OpenstackNode.NodeType.COMPUTE;
 
 /**
@@ -34,17 +39,19 @@ import static org.onosproject.openstacknode.api.OpenstackNode.NodeType.COMPUTE;
  * VM is instantiated but the related VF port can't be added.
  * After recovering ovsdb connection, you can manually add VF ports by this CLI.
  */
+@Service
 @Command(scope = "onos", name = "openstack-direct-port-add",
         description = "Manually adds OpenStack direct ports to the device")
 public class OpenstackDirectPortAddCommand extends AbstractShellCommand {
     @Argument(index = 0, name = "port ID", description = "port ID", required = true)
+    @Completion(DirectPortListCompleter.class)
     private String portId = null;
 
     @Override
-    protected void execute() {
-        OpenstackNetworkService osNetService = AbstractShellCommand.get(OpenstackNetworkService.class);
-        OpenstackNodeService osNodeService = AbstractShellCommand.get(OpenstackNodeService.class);
-        DeviceService deviceService = AbstractShellCommand.get(DeviceService.class);
+    protected void doExecute() {
+        OpenstackNetworkService osNetService = get(OpenstackNetworkService.class);
+        OpenstackNodeService osNodeService = get(OpenstackNodeService.class);
+        DeviceService deviceService = get(DeviceService.class);
 
         Port port = osNetService.port(portId);
         if (port == null) {
@@ -61,9 +68,11 @@ public class OpenstackDirectPortAddCommand extends AbstractShellCommand {
             return;
         }
 
-        String intfName = OpenstackNetworkingUtil.getIntfNameFromPciAddress(port);
+        String intfName = getIntfNameFromPciAddress(port);
         if (intfName == null) {
             log.error("Failed to retrieve interface name from a port {}", portId);
+            return;
+        } else if (intfName.equals(UNSUPPORTED_VENDOR)) {
             return;
         }
 

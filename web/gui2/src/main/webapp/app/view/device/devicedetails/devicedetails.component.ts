@@ -15,14 +15,13 @@
  */
 import { Component, Input, OnInit, OnDestroy, OnChanges } from '@angular/core';
 import { trigger, state, style, animate, transition } from '@angular/animations';
-
-import { FnService } from '../../../fw/util/fn.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { LogService } from '../../../log.service';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
-
-import { DetailsPanelBaseImpl } from '../../../fw/widget/detailspanel.base';
-import { IconService } from '../../../fw/svg/icon.service';
+import {
+    FnService,
+    IconService,
+    LogService,
+    DetailsPanelBaseImpl,
+    WebSocketService
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 
 /**
  * The details view when a device row is clicked from the Device view
@@ -40,7 +39,7 @@ import { IconService } from '../../../fw/svg/icon.service';
     selector: 'onos-devicedetails',
     templateUrl: './devicedetails.component.html',
     styleUrls: ['./devicedetails.component.css',
-        '../../../fw/widget/panel.css', '../../../fw/widget/panel-theme.css'
+        '../../../../../../../../gui2-fw-lib/lib/widget/panel.css', '../../../../../../../../gui2-fw-lib/lib/widget/panel-theme.css'
     ],
     animations: [
         trigger('deviceDetailsState', [
@@ -63,17 +62,16 @@ export class DeviceDetailsComponent extends DetailsPanelBaseImpl implements OnIn
     @Input() id: string;
 
     constructor(protected fs: FnService,
-        protected ls: LoadingService,
         protected log: LogService,
         protected is: IconService,
         protected wss: WebSocketService
     ) {
-        super(fs, ls, log, wss, 'device');
+        super(fs, log, wss, 'device');
     }
 
     ngOnInit() {
         this.init();
-        this.log.debug('App Details Component initialized:', this.id);
+        this.log.debug('Device Details Component initialized:', this.id);
     }
 
     /**
@@ -81,7 +79,7 @@ export class DeviceDetailsComponent extends DetailsPanelBaseImpl implements OnIn
      */
     ngOnDestroy() {
         this.destroy();
-        this.log.debug('App Details Component destroyed');
+        this.log.debug('Device Details Component destroyed');
     }
 
     /**

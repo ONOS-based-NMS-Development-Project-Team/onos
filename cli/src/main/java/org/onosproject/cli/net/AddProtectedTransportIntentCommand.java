@@ -17,9 +17,11 @@ package org.onosproject.cli.net;
 
 import java.util.Optional;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.intent.Intent;
@@ -30,6 +32,7 @@ import org.onosproject.net.intent.ProtectedTransportIntent;
 /**
  * Installs ProtectedTransportIntent.
  */
+@Service
 @Command(scope = "onos", name = "add-protected-transport",
          description = "Adds ProtectedTransportIntent")
 public class AddProtectedTransportIntentCommand
@@ -43,17 +46,19 @@ public class AddProtectedTransportIntentCommand
     @Argument(index = 0, name = "deviceId1",
             description = "First Device ID of protected path",
             required = true, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     private String deviceId1Str = null;
 
     @Argument(index = 1, name = "deviceId2",
             description = "Second Device ID of protected path",
             required = true, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     private String deviceId2Str = null;
 
     private IntentService intentService;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         intentService = get(IntentService.class);
 
         DeviceId did1 = DeviceId.deviceId(deviceId1Str);

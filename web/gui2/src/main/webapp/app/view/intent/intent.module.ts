@@ -16,21 +16,15 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { IntentRoutingModule } from './intent-routing.module';
 import { IntentComponent } from './intent/intent.component';
-import { SvgModule } from '../../fw/svg/svg.module';
-import { WidgetModule } from '../../fw/widget/widget.module';
+import { Gui2FwLibModule } from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 import { RouterModule } from '@angular/router';
-import { LayerModule } from '../../fw/layer/layer.module';
 
 @NgModule({
     imports: [
         CommonModule,
-        SvgModule,
-        WidgetModule,
-        RouterModule,
-        IntentRoutingModule,
-        LayerModule
+        Gui2FwLibModule,
+        RouterModule.forChild([{path: '', component: IntentComponent}]),
     ],
     declarations: [IntentComponent],
     exports: [IntentComponent]

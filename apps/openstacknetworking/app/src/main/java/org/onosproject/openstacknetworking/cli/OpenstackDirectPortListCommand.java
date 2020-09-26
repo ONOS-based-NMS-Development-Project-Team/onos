@@ -15,7 +15,8 @@
  */
 package org.onosproject.openstacknetworking.cli;
 
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.openstacknetworking.api.OpenstackNetworkService;
 import org.openstack4j.model.network.IP;
@@ -25,6 +26,7 @@ import org.openstack4j.model.network.Port;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.onosproject.cli.AbstractShellCommand.get;
 import static org.onosproject.openstacknetworking.api.Constants.DIRECT;
 import static org.onosproject.openstacknetworking.api.Constants.PCISLOT;
 import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.getIntfNameFromPciAddress;
@@ -32,6 +34,7 @@ import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.g
 /**
  * Lists OpenStack direct ports.
  */
+@Service
 @Command(scope = "onos", name = "openstack-direct-ports",
         description = "Lists all OpenStack direct ports")
 public class OpenstackDirectPortListCommand extends AbstractShellCommand {
@@ -39,8 +42,8 @@ public class OpenstackDirectPortListCommand extends AbstractShellCommand {
     private static final String FORMAT = "%-40s%-20s%-20s%-20s%-20s%-20s";
 
     @Override
-    protected void execute() {
-        OpenstackNetworkService service = AbstractShellCommand.get(OpenstackNetworkService.class);
+    protected void doExecute() {
+        OpenstackNetworkService service = get(OpenstackNetworkService.class);
 
         List<Port> ports = service.ports().stream()
                 .filter(port -> port.getvNicType().equals(DIRECT))
@@ -65,7 +68,8 @@ public class OpenstackDirectPortListCommand extends AbstractShellCommand {
                         osNet.getName(),
                         port.getMacAddress(),
                         fixedIps.isEmpty() ? "" : fixedIps,
-                        port.getProfile().containsKey(PCISLOT) ? port.getProfile().get(PCISLOT).toString() : "",
+                        port.getProfile().containsKey(PCISLOT) ?
+                                port.getProfile().get(PCISLOT).toString() : "",
                         getIntfNameFromPciAddress(port));
             }
 

@@ -23,7 +23,7 @@ import org.onlab.util.XmlString;
 import org.onosproject.config.DynamicConfigService;
 import org.onosproject.config.FailedException;
 import org.onosproject.config.Filter;
-import org.onosproject.yang.gen.v1.tapicommon.rev20180307.tapicommon.Uuid;
+import org.onosproject.yang.gen.v1.tapicommon.rev20181210.tapicommon.Uuid;
 import org.onosproject.yang.model.DataNode;
 import org.onosproject.yang.model.DefaultModelObjectData;
 import org.onosproject.yang.model.DefaultResourceData;
@@ -226,7 +226,8 @@ public abstract class TapiObjectHandler<T extends ModelObject> {
             try {
                 dcs.createNode(rid, node);
             } catch (FailedException e) {
-                log.warn("Failed to add resource", e);
+                    log.warn("Failed to add resource {}", rid);
+                    log.debug("Exception", e);
             }
         }
     }
@@ -238,6 +239,9 @@ public abstract class TapiObjectHandler<T extends ModelObject> {
         ModelObjectData modelObjectData = modelConverter.createModel(rData);
         if (modelObjectData.modelObjects().size() > 1) {
             throw new IllegalStateException("Multiple modelObject found.");
+        }
+        if (modelObjectData.modelObjects().isEmpty()) {
+            throw new IllegalStateException("ModelObject must not be empty.");
         }
         return (T) modelObjectData.modelObjects().get(0);
     }
@@ -255,7 +259,7 @@ public abstract class TapiObjectHandler<T extends ModelObject> {
 
         // for debug
         CharSequence strNode = toCharSequence(toXmlCompositeStream(toCompositeData(rData)));
-        log.info("XML:\n{}", XmlString.prettifyXml(strNode));
+        log.debug("XML:\n{}", XmlString.prettifyXml(strNode));
 
         return rData;
     }

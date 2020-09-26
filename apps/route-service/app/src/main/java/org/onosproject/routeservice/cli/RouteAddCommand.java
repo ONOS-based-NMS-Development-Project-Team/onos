@@ -16,8 +16,9 @@
 
 package org.onosproject.routeservice.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.packet.IpAddress;
 import org.onlab.packet.IpPrefix;
 import org.onosproject.cli.AbstractShellCommand;
@@ -29,6 +30,7 @@ import java.util.Collections;
 /**
  * Command to add a route to the routing table.
  */
+@Service
 @Command(scope = "onos", name = "route-add",
         description = "Adds a route to the route table")
 public class RouteAddCommand extends AbstractShellCommand {
@@ -42,7 +44,7 @@ public class RouteAddCommand extends AbstractShellCommand {
     String nextHopString = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         RouteAdminService service = AbstractShellCommand.get(RouteAdminService.class);
 
         IpPrefix prefix = IpPrefix.valueOf(prefixString);

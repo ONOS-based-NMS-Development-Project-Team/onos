@@ -15,10 +15,13 @@
  */
 package org.onosproject.provider.nil.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cfg.ComponentConfigService;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.StartStopCompleter;
 import org.onosproject.provider.nil.NullProviders;
 import org.onosproject.provider.nil.TopologySimulator;
 
@@ -27,21 +30,24 @@ import static org.onosproject.cli.StartStopCompleter.START;
 /**
  * Starts or stops topology simulation.
  */
+@Service
 @Command(scope = "onos", name = "null-simulation",
         description = "Starts or stops topology simulation")
 public class NullControlCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "cmd", description = "Control command: start/stop",
             required = true)
+    @Completion(StartStopCompleter.class)
     String cmd = null;
 
     @Argument(index = 1, name = "topoShape",
             description = "Topology shape: e.g. configured, linear, reroute, " +
                     "centipede, tree, spineleaf, mesh, fattree, custom")
+    @Completion(TopologyShapeCompleter.class)
     String topoShape = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         ComponentConfigService service = get(ComponentConfigService.class);
         // If there is an existing topology; make sure it's stopped before restarting
         if (cmd.equals(START)) {

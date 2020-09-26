@@ -14,11 +14,12 @@
 * limitations under the License.
 */
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { SortDir, TableBaseImpl, TableResponse } from '../../../fw/widget/table.base';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
-import { LogService } from '../../../log.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { FnService } from '../../../fw/util/fn.service';
+import {
+    FnService,
+    LogService,
+    WebSocketService,
+    SortDir, TableBaseImpl, TableResponse
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 import { ActivatedRoute } from '@angular/router';
 
 /**
@@ -46,7 +47,7 @@ interface Meter {
     selector: 'onos-meter',
     templateUrl: './meter.component.html',
     styleUrls: ['./meter.component.css', './meter.theme.css',
-        '../../../fw/widget/table.css', '../../../fw/widget/table.theme.css']
+        '../../../../../../../../gui2-fw-lib/lib/widget/table.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.theme.css']
 })
 export class MeterComponent extends TableBaseImpl implements OnInit, OnDestroy {
 
@@ -64,11 +65,10 @@ export class MeterComponent extends TableBaseImpl implements OnInit, OnDestroy {
     constructor(
         protected fs: FnService,
         protected log: LogService,
-        protected ls: LoadingService,
         protected as: ActivatedRoute,
         protected wss: WebSocketService,
     ) {
-        super(fs, ls, log, wss, 'meter');
+        super(fs, log, wss, 'meter');
         this.as.queryParams.subscribe(params => {
             this.id = params['devId'];
         });

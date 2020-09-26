@@ -18,24 +18,26 @@ package org.onosproject.ra.cli;
 
 import java.util.List;
 
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.host.InterfaceIpAddress;
 import org.onosproject.ra.RoutingAdvertisementService;
 import org.onosproject.cli.AbstractShellCommand;
 
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
 
 import com.google.common.collect.ImmutableMap;
 
 /**
  * Command to list global-prefixes in Routing Advertisement.
  */
+@Service
 @Command(scope = "onos", name = "ra-global-prefixes",
         description = "List Routing Advertisement global prefixes")
 public class GlobalPrefixesListCommand extends AbstractShellCommand {
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         RoutingAdvertisementService raService =
                 AbstractShellCommand.get(RoutingAdvertisementService.class);
         printGlobalPrefixes(raService.getGlobalPrefixes());

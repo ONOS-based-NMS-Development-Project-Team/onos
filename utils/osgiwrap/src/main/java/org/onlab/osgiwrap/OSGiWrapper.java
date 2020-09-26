@@ -84,10 +84,13 @@ public class OSGiWrapper {
     private String destdir;
 
     private String bundleClasspath;
+    private String karafCommands;
+
+    private String fragmentHost;
 
     // FIXME should consider using Commons CLI, etc.
     public static void main(String[] args) {
-        if (args.length < 14) {
+        if (args.length < 17) {
             System.err.println("Not enough args");
             System.exit(1);
         }
@@ -107,7 +110,9 @@ public class OSGiWrapper {
         String dynamicimportPackages = args[12];
         String destdir = args[13];
         String bundleClasspath = args[14];
-        String desc = Joiner.on(' ').join(Arrays.copyOfRange(args, 12, args.length));
+        String karafCommands = args[15];
+        String fragmentHost = args[16];
+        String desc = Joiner.on(' ').join(Arrays.copyOfRange(args, 17, args.length));
 
         OSGiWrapper wrapper = new OSGiWrapper(jar, output, cp,
                 name, group,
@@ -119,7 +124,9 @@ public class OSGiWrapper {
                 dynamicimportPackages,
                 desc,
                 destdir,
-                bundleClasspath);
+                bundleClasspath,
+                karafCommands,
+                fragmentHost);
         wrapper.log(wrapper + "\n");
         if (!wrapper.execute()) {
             System.err.printf("Error generating %s\n", name);
@@ -143,7 +150,9 @@ public class OSGiWrapper {
                        String dynamicimportPackages,
                        String bundleDescription,
                        String destdir,
-                       String bundleClasspath) {
+                       String bundleClasspath,
+                       String karafCommands,
+                       String fragmentHost) {
         this.inputJar = inputJar;
         this.classpath = Lists.newArrayList(classpath.split(":"));
         if (!this.classpath.contains(inputJar)) {
@@ -174,6 +183,9 @@ public class OSGiWrapper {
         this.destdir = destdir;
 
         this.bundleClasspath = bundleClasspath;
+        this.karafCommands = karafCommands;
+
+        this.fragmentHost = fragmentHost;
     }
 
     private void setProperties(Analyzer analyzer) {
@@ -189,6 +201,7 @@ public class OSGiWrapper {
         //analyzer.setProperty("-consumer-policy", "${range;[===,==+)}");
 
         analyzer.setProperty(Analyzer.DYNAMICIMPORT_PACKAGE, dynamicimportPackages);
+        analyzer.setProperty(Analyzer.DSANNOTATIONS_OPTIONS, "inherit");
 
         // TODO include version in export, but not in import
         analyzer.setProperty(Analyzer.EXPORT_PACKAGE, exportPackages);
@@ -207,6 +220,9 @@ public class OSGiWrapper {
             analyzer.setProperty(Analyzer.IMPORT_PACKAGE, importPackages +
                     ",org.glassfish.jersey.servlet,org.jvnet.mimepull\n");
         }
+        analyzer.setProperty("Karaf-Commands", karafCommands);
+
+        analyzer.setProperty(Analyzer.FRAGMENT_HOST, fragmentHost);
     }
 
     public boolean execute() {
@@ -230,14 +246,14 @@ public class OSGiWrapper {
             // Analyze the target JAR first
             analyzer.analyze();
 
-            // Scan the JAR for Felix SCR annotations and generate XML files
-            Map<String, String> properties = Maps.newHashMap();
-            // destdir hack
-            properties.put("destdir", destdir);
-            SCRDescriptorBndPlugin scrDescriptorBndPlugin = new SCRDescriptorBndPlugin();
-            scrDescriptorBndPlugin.setProperties(properties);
-            scrDescriptorBndPlugin.setReporter(analyzer);
-            scrDescriptorBndPlugin.analyzeJar(analyzer);
+            //// Scan the JAR for Felix SCR annotations and generate XML files
+            //Map<String, String> properties = Maps.newHashMap();
+            //// destdir hack
+            //properties.put("destdir", destdir);
+            //SCRDescriptorBndPlugin scrDescriptorBndPlugin = new SCRDescriptorBndPlugin();
+            //scrDescriptorBndPlugin.setProperties(properties);
+            //scrDescriptorBndPlugin.setReporter(analyzer);
+            //scrDescriptorBndPlugin.analyzeJar(analyzer);
 
             if (includeResources != null) {
                 doIncludeResources(analyzer);
@@ -383,7 +399,7 @@ public class OSGiWrapper {
         }
     }
 
-    private boolean addFileToJar(Jar jar, String destination, String sourceAbsPath) {
+    private boolean addFileToJar(Jar jar, String destination, String sourceAbsPath) throws IOException {
         if (includedResources.contains(sourceAbsPath)) {
             log("Skipping already included resource: %s\n", sourceAbsPath);
             return false;

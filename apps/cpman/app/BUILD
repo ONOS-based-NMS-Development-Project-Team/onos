@@ -11,6 +11,7 @@ TEST_DEPS = TEST_REST + [
 BUNDLES = [
     "//apps/cpman/api:onos-apps-cpman-api",
     ":onos-apps-cpman-app",
+    "@rrd4j//jar",
 ]
 
 EXCLUDED_BUNDLES = [
@@ -22,6 +23,7 @@ osgi_jar_with_tests(
     api_package = "org.onosproject.cpman.rest",
     api_title = "Control Plane Manager API",
     api_version = "1.0",
+    karaf_command_packages = ["org.onosproject.cpman.cli"],
     test_deps = TEST_DEPS,
     web_context = "/onos/cpman",
     deps = COMPILE_DEPS,

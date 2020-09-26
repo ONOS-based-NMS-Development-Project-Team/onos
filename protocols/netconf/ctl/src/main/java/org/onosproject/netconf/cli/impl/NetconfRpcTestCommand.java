@@ -15,9 +15,12 @@
  */
 package org.onosproject.netconf.cli.impl;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.net.DeviceIdCompleter;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.behaviour.ConfigSetter;
 import org.onosproject.net.driver.DriverHandler;
@@ -35,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 //Temporary Developer tool, NOT TO BE USED in production or as example for
 // future commands.
 //FIXME Remove dependency to ConfigSetter.
-
+@Service
 @Command(scope = "onos", name = "netconf-rpc-test",
         description = "Debug tool to send NETCONF RPC request")
 public class NetconfRpcTestCommand extends AbstractShellCommand {
@@ -46,12 +49,13 @@ public class NetconfRpcTestCommand extends AbstractShellCommand {
 
     @Argument(index = 1, name = "cfgFile", description = "File path to RPC XML",
             required = true, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     private String cfgFile = null;
 
     private DeviceId deviceId;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         DriverService service = get(DriverService.class);
         deviceId = DeviceId.deviceId(uri);
         DriverHandler h = service.createHandler(deviceId);

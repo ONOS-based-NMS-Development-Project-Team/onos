@@ -21,22 +21,22 @@ import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 
-import { LogService } from '../../../log.service';
+import {
+    FnService,
+    IconService,
+    LionService,
+    LogService,
+    UrlFnService,
+    WebSocketService,
+    TableFilterPipe,
+    ConfirmComponent,
+    FlashComponent,
+    IconComponent,
+    ThemeService, LoadingComponent,
+} from 'gui2-fw-lib';
+
 import { AppsComponent } from './apps.component';
 import { AppsDetailsComponent } from '../appsdetails/appsdetails.component';
-import { ConfirmComponent } from '../../../fw/layer/confirm/confirm.component';
-import { DialogService } from '../../../fw/layer/dialog.service';
-import { FlashComponent } from '../../../fw/layer/flash/flash.component';
-import { FnService } from '../../../fw/util/fn.service';
-import { IconComponent } from '../../../fw/svg/icon/icon.component';
-import { IconService } from '../../../fw/svg/icon.service';
-import { KeyService } from '../../../fw/util/key.service';
-import { LionService } from '../../../fw/util/lion.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { ThemeService } from '../../../fw/util/theme.service';
-import { TableFilterPipe } from '../../../fw/widget/tablefilter.pipe';
-import { UrlFnService } from '../../../fw/remote/urlfn.service';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
 import { of } from 'rxjs';
 import { } from 'jasmine';
 
@@ -47,22 +47,12 @@ class MockActivatedRoute extends ActivatedRoute {
     }
 }
 
-class MockDialogService { }
-
 class MockFnService { }
 
 class MockHttpClient {}
 
 class MockIconService {
     loadIconDef() { }
-}
-
-class MockKeyService { }
-
-class MockLoadingService {
-    startAnim() { }
-    stop() { }
-    waiting() { }
 }
 
 class MockThemeService { }
@@ -120,14 +110,13 @@ describe('AppsComponent', () => {
                 IconComponent,
                 AppsDetailsComponent,
                 TableFilterPipe,
-                FlashComponent
+                FlashComponent,
+                LoadingComponent
             ],
             providers: [
-                { provide: DialogService, useClass: MockDialogService },
                 { provide: FnService, useValue: fs },
                 { provide: HttpClient, useClass: MockHttpClient },
                 { provide: IconService, useClass: MockIconService },
-                { provide: KeyService, useClass: MockKeyService },
                 {
                     provide: LionService, useFactory: (() => {
                         return {
@@ -137,15 +126,13 @@ describe('AppsComponent', () => {
                         };
                     })
                 },
-                { provide: LoadingService, useClass: MockLoadingService },
                 { provide: LogService, useValue: logSpy },
                 { provide: ThemeService, useClass: MockThemeService },
                 { provide: UrlFnService, useClass: MockUrlFnService },
                 { provide: WebSocketService, useClass: MockWebSocketService },
                 { provide: 'Window', useValue: windowMock },
             ]
-        })
-            .compileComponents();
+        }).compileComponents();
         logServiceSpy = TestBed.get(LogService);
     }));
 

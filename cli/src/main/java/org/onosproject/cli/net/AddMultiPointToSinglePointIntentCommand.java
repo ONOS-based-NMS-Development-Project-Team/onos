@@ -15,8 +15,10 @@
  */
 package org.onosproject.cli.net;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.net.ConnectPoint;
 import org.onosproject.net.FilteredConnectPoint;
 import org.onosproject.net.flow.TrafficSelector;
@@ -33,6 +35,7 @@ import java.util.Set;
 /**
  * Installs connectivity intent between multiple ingress devices and a single egress device.
  */
+@Service
 @Command(scope = "onos", name = "add-multi-to-single-intent",
          description = "Installs connectivity intent between multiple ingress devices and a single egress device")
 public class AddMultiPointToSinglePointIntentCommand extends ConnectivityIntentCommand {
@@ -40,10 +43,11 @@ public class AddMultiPointToSinglePointIntentCommand extends ConnectivityIntentC
     @Argument(index = 0, name = "ingressDevices egressDevice",
               description = "ingressDevice/Port..ingressDevice/Port egressDevice/Port",
               required = true, multiValued = true)
+    @Completion(ConnectPointCompleter.class)
     String[] deviceStrings = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         IntentService service = get(IntentService.class);
 
         if (deviceStrings.length < 2) {

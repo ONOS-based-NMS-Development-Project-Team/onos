@@ -16,19 +16,17 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PortComponent } from './port/port.component';
-import { SvgModule } from '../../fw/svg/svg.module';
+import { Gui2FwLibModule } from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 import { FormsModule } from '@angular/forms';
-import { WidgetModule } from '../../fw/widget/widget.module';
-import { PortRoutingModule } from './port-routing.module';
 import { PortDetailsComponent } from './portdetails/portdetails.component';
+import {RouterModule} from '@angular/router';
 
 @NgModule({
     imports: [
         CommonModule,
-        SvgModule,
-        PortRoutingModule,
-        FormsModule,
-        WidgetModule
+        Gui2FwLibModule,
+        RouterModule.forChild([{path: '', component: PortComponent}]),
+        FormsModule
     ],
     declarations: [PortComponent, PortDetailsComponent]
 })

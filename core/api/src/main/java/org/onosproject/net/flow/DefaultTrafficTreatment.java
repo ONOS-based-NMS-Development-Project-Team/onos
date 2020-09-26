@@ -505,6 +505,16 @@ public final class DefaultTrafficTreatment implements TrafficTreatment {
         }
 
         @Override
+        public Builder setArpTpa(IpAddress addr) {
+            return add(Instructions.modArpTpa(addr));
+        }
+
+        @Override
+        public Builder setArpTha(MacAddress addr) {
+            return add(Instructions.modArpTha(addr));
+        }
+
+        @Override
         public Builder setArpOp(short op) {
             return add(Instructions.modL3ArpOp(op));
         }
@@ -512,6 +522,11 @@ public final class DefaultTrafficTreatment implements TrafficTreatment {
         @Override
         public Builder piTableAction(PiTableAction piTableAction) {
             return add(Instructions.piTableAction(piTableAction));
+        }
+
+        @Override
+        public TrafficTreatment.Builder setIpDscp(byte dscpValue) {
+            return add(Instructions.modIpDscp(dscpValue));
         }
 
         @Override

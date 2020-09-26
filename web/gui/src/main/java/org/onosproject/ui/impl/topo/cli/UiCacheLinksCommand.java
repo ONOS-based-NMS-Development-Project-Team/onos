@@ -16,18 +16,20 @@
 
 package org.onosproject.ui.impl.topo.cli;
 
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.ui.impl.topo.model.UiSharedTopologyModel;
 
 /**
  * CLI command to list the UiLinks stored in the ModelCache.
  */
+@Service
 @Command(scope = "onos", name = "ui-cache-links",
         description = "Lists UiLinks in the Model Cache")
 public class UiCacheLinksCommand extends AbstractUiCacheElementCommand {
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         UiSharedTopologyModel model = get(UiSharedTopologyModel.class);
         sorted(model.getDeviceLinks()).forEach(l -> print("%s", l));
     }

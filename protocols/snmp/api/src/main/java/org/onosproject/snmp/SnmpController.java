@@ -19,7 +19,7 @@ package org.onosproject.snmp;
 import com.btisystems.pronx.ems.core.snmp.ISnmpSession;
 import com.google.common.annotations.Beta;
 
-import org.onosproject.incubator.net.faultmanagement.alarm.DefaultAlarm;
+import org.onosproject.alarm.DefaultAlarm;
 import org.onosproject.net.DeviceId;
 
 import java.io.IOException;
@@ -58,15 +58,6 @@ public interface SnmpController {
      * @param deviceId device id of the device to be removed
      */
     void removeDevice(DeviceId deviceId);
-
-    /**
-     * Add a device with a specific DeviceId.
-     * @param deviceId deviceId of the device
-     * @param device   device to add to this controller
-     * @deprecated 1.10.0 moved to single parameter method with boolean return
-     */
-    @Deprecated
-    void addDevice(DeviceId deviceId, SnmpDevice device);
 
     /**
      * Add a snmp device.

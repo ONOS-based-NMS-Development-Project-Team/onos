@@ -15,11 +15,12 @@
  */
 package org.onosproject.mfwd.impl;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
+import org.onosproject.net.FilteredConnectPoint;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.onlab.packet.Ethernet;
 import org.onlab.packet.IPv4;
 import org.onlab.packet.Ip4Address;
@@ -68,16 +69,16 @@ public class McastForwarding {
 
     private final Logger log = getLogger(getClass());
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected PacketService packetService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     private IntentService intentService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected MulticastRouteService mcastRouteManager;
 
     protected McastIntentManager mcastIntentManager;
@@ -266,7 +267,10 @@ public class McastForwarding {
         private Key setIntent(McastRoute route) {
 
             ConnectPoint ingressPoint = mcastRouteManager.fetchSource(route);
-            Set<ConnectPoint> egressPoints = new HashSet<>(mcastRouteManager.fetchSinks(route));
+            Set<FilteredConnectPoint> filteredEgressPoints = new HashSet<>();
+            mcastRouteManager.fetchSinks(route).iterator()
+                .forEachRemaining(point -> filteredEgressPoints.add(new FilteredConnectPoint(point)));
+
 
             TrafficSelector.Builder selector = DefaultTrafficSelector.builder();
             TrafficTreatment treatment = DefaultTrafficTreatment.emptyTreatment();
@@ -284,11 +288,11 @@ public class McastForwarding {
                     .appId(appId)
                     .selector(selector.build())
                     .treatment(treatment)
-                    .ingressPoint(ingressPoint);
+                    .filteredIngressPoint(new FilteredConnectPoint(ingressPoint));
 
             // allowing intent to be pushed without egress points means we can drop packets.
-            if (!egressPoints.isEmpty()) {
-                builder.egressPoints(egressPoints);
+            if (!filteredEgressPoints.isEmpty()) {
+                builder.filteredEgressPoints(filteredEgressPoints);
             }
 
             SinglePointToMultiPointIntent intent = builder.build();

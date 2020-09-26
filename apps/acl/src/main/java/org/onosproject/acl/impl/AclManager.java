@@ -29,12 +29,6 @@ import org.onlab.packet.TpPort;
 import org.onosproject.acl.AclRule;
 import org.onosproject.acl.AclService;
 import org.onosproject.acl.AclStore;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onosproject.acl.RuleId;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
@@ -56,6 +50,11 @@ import org.onosproject.net.flow.instructions.Instructions;
 import org.onosproject.net.host.HostEvent;
 import org.onosproject.net.host.HostListener;
 import org.onosproject.net.host.HostService;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.HashSet;
@@ -67,20 +66,19 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Implementation of the ACL service.
  */
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = AclService.class)
 public class AclManager implements AclService {
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected FlowRuleService flowRuleService;
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected HostService hostService;
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected MastershipService mastershipService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected AclStore aclStore;
 
     private final Logger log = getLogger(getClass());
@@ -273,15 +271,28 @@ public class AclManager implements AclService {
             selectorBuilder.matchEthDst(rule.dstMac());
         }
 
-        selectorBuilder.matchEthType(Ethernet.TYPE_IPV4);
-        if (rule.srcIp() != null) {
-            selectorBuilder.matchIPSrc(rule.srcIp());
-            if (rule.dstIp() != null) {
+        if (rule.srcIp() != null || rule.dstIp() != null) {
+            selectorBuilder.matchEthType(Ethernet.TYPE_IPV4);
+            if (rule.srcIp() != null) {
+                selectorBuilder.matchIPSrc(rule.srcIp());
+                if (rule.dstIp() != null) {
+                    selectorBuilder.matchIPDst(rule.dstIp());
+                }
+            } else {
                 selectorBuilder.matchIPDst(rule.dstIp());
             }
         } else {
-            selectorBuilder.matchIPDst(rule.dstIp());
+            selectorBuilder.matchEthType(Ethernet.TYPE_IPV6);
+            if (rule.srcIp6() != null) {
+                selectorBuilder.matchIPv6Src(rule.srcIp6());
+                if (rule.dstIp6() != null) {
+                    selectorBuilder.matchIPv6Dst(rule.dstIp6());
+                }
+            } else {
+                selectorBuilder.matchIPv6Dst(rule.dstIp6());
+            }
         }
+
         if (rule.ipProto() != 0) {
             selectorBuilder.matchIPProtocol(Integer.valueOf(rule.ipProto()).byteValue());
         }

@@ -33,11 +33,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.sse.InboundSseEvent;
 
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.onosproject.drivers.server.Constants.PARAM_CTRL;
+import static org.onosproject.drivers.server.Constants.PARAM_CTRL_IP;
+import static org.onosproject.drivers.server.Constants.PARAM_CTRL_PORT;
+import static org.onosproject.drivers.server.Constants.PARAM_CTRL_TYPE;
 
 /**
  * Test class for REST SB controller.
@@ -54,14 +60,6 @@ public class RestSBControllerMock implements RestSBController {
     private DeviceId restDeviceId1;
     private RestSBDevice restDevice1;
     private static List<ControllerInfo> controllers;
-
-    /**
-     * Parameters to be exchanged with the server's agent.
-     */
-    private static final String PARAM_CTRL      = "controllers";
-    private static final String PARAM_CTRL_IP   = "ip";
-    private static final String PARAM_CTRL_PORT = "port";
-    private static final String PARAM_CTRL_TYPE = "type";
 
     public RestSBControllerMock() {
         restDeviceId1 = TestConfig.REST_DEV_ID1;
@@ -168,8 +166,25 @@ public class RestSBControllerMock implements RestSBController {
     }
 
     @Override
-     public <T> T post(DeviceId device, String request, InputStream payload,
-            MediaType mediaType, Class<T> responseClass) {
+    public <T> T post(DeviceId device, String request, InputStream payload,
+        MediaType mediaType, Class<T> responseClass) {
         return null;
-     }
+    }
+
+    @Override
+    public void startServerSentEvents(DeviceId deviceId, String eventsUrl) {
+        return;
+    }
+
+    @Override
+    public int getServerSentEvents(DeviceId deviceId, String request,
+                                   Consumer<InboundSseEvent> onEvent, Consumer<Throwable> onError) {
+        return 204;
+    }
+
+    @Override
+    public int cancelServerSentEvents(DeviceId deviceId) {
+        return 200;
+    }
+
 }

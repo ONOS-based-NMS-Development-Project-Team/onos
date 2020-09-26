@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 import {Directive, ElementRef, EventEmitter, Inject, Input, OnChanges, OnDestroy, OnInit, Output} from '@angular/core';
-import {FnService} from '../../fw/util/fn.service';
-import {LogService} from '../../log.service';
-import {MastService} from '../../fw/mast/mast.service';
-import {DetailsPanelBaseImpl} from '../../fw/widget/detailspanel.base';
-import {LoadingService} from '../../fw/layer/loading.service';
-import {IconService} from '../../fw/svg/icon.service';
-import {LionService} from '../../fw/util/lion.service';
-import {WebSocketService} from '../../fw/remote/websocket.service';
+import {
+    FnService,
+    LogService,
+    MastService,
+    DetailsPanelBaseImpl,
+    IconService,
+    LionService,
+    PanelService,
+    WebSocketService
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 import * as d3 from 'd3';
-import {PanelService} from '../../fw/layer/panel.service';
 import {HostListener} from '@angular/core';
 
 // internal state
@@ -70,10 +71,14 @@ function addDeviceRow(tbody, device) {
     });
 }
 
+
+/**
+ * This should not be a directive - this should be a component, like all of the other details views
+ * Change it when time allows
+ */
 @Directive({
     selector: '[onosClusterDetails]',
 })
-
 export class ClusterDetailsDirective extends DetailsPanelBaseImpl implements OnInit, OnDestroy, OnChanges {
     @Input() id: string;
     @Output() closeEvent = new EventEmitter<string>();
@@ -81,7 +86,6 @@ export class ClusterDetailsDirective extends DetailsPanelBaseImpl implements OnI
     lionFn; // Function
 
     constructor(protected fs: FnService,
-                protected ls: LoadingService,
                 protected is: IconService,
                 protected lion: LionService,
                 protected wss: WebSocketService,
@@ -90,7 +94,7 @@ export class ClusterDetailsDirective extends DetailsPanelBaseImpl implements OnI
                 protected ps: PanelService,
                 protected el: ElementRef,
                 @Inject('Window') private w: Window) {
-        super(fs, ls, log, wss, 'cluster');
+        super(fs, log, wss, 'cluster');
 
         if (this.lion.ubercache.length === 0) {
             this.lionFn = this.dummyLion;
@@ -234,7 +238,9 @@ export class ClusterDetailsDirective extends DetailsPanelBaseImpl implements OnI
     }
 
     addCloseBtn(div) {
-        this.is.loadEmbeddedIcon(div, 'close', 20);
+        // This whole cluster app needs to be changed over to the Angular 7 style
+        // It is the only one remaining that uses the d3 structure
+        // this.is.loadEmbeddedIcon(div, 'close', 20);
         div.on('click', this.closePanel);
     }
 
@@ -249,7 +255,9 @@ export class ClusterDetailsDirective extends DetailsPanelBaseImpl implements OnI
     populateTop(details) {
         const propLabels = this.getLionProps();
 
-        this.is.loadEmbeddedIcon(iconDiv, 'node', 40);
+        // This whole cluster app needs to be changed over to the Angular 7 style
+        // It is the only one remaining that uses the d3 structure
+        // this.is.loadEmbeddedIcon(iconDiv, 'node', 40);
         top.select('h2').text(details.id);
 
         const tbody = topTable.append('tbody');

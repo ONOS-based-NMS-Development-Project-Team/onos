@@ -15,9 +15,12 @@
  */
 package org.onosproject.cpman.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.NodeIdCompleter;
 import org.onosproject.cluster.NodeId;
 import org.onosproject.cpman.ControlLoadSnapshot;
 import org.onosproject.cpman.ControlMetricType;
@@ -36,6 +39,7 @@ import static org.onosproject.cpman.ControlResource.NETWORK_METRICS;
 /**
  * Lists all stats information of control plane metrics.
  */
+@Service
 @Command(scope = "onos", name = "cpman-stats-list",
         description = "Lists control metrics statistics")
 public class ControlMetricsStatsListCommand extends AbstractShellCommand {
@@ -46,19 +50,22 @@ public class ControlMetricsStatsListCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "node", description = "ONOS node identifier",
             required = true, multiValued = false)
+    @Completion(NodeIdCompleter.class)
     String node = null;
 
     @Argument(index = 1, name = "type",
             description = "Resource type (cpu|memory|disk|network|control_message)",
             required = true, multiValued = false)
+    @Completion(ControlResourceTypeCompleter.class)
     String type = null;
 
     @Argument(index = 2, name = "name", description = "Resource name (or Device Id)",
             required = false, multiValued = false)
+    @Completion(ResourceNameCompleter.class)
     String name = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         ControlPlaneMonitorService service = get(ControlPlaneMonitorService.class);
         NodeId nodeId = NodeId.nodeId(node);
         switch (type) {

@@ -16,7 +16,8 @@
 
 package org.onosproject.pim.cli;
 
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.util.Tools;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.pim.impl.PimInterface;
@@ -28,6 +29,7 @@ import java.util.Set;
 /**
  * Lists PIM neighbors.
  */
+@Service
 @Command(scope = "onos", name = "pim-neighbors",
         description = "Lists the PIM neighbors")
 public class PimNeighborsListCommand extends AbstractShellCommand {
@@ -36,7 +38,7 @@ public class PimNeighborsListCommand extends AbstractShellCommand {
     private static final String NEIGHBOR_FORMAT = "  neighbor=%s, uptime=%s, holdtime=%s, drPriority=%s, genId=%s";
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         PimInterfaceService interfaceService = get(PimInterfaceService.class);
 
         Set<PimInterface> interfaces = interfaceService.getPimInterfaces();

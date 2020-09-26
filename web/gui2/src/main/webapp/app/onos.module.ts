@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-present Open Networking Foundation
+ * Copyright 2018-present Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,46 +18,39 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 
-import { LayerModule } from './fw/layer/layer.module';
-import { MastModule } from './fw/mast/mast.module';
-import { NavModule } from './fw/nav/nav.module';
-import { SvgModule } from './fw/svg/svg.module';
-import { WidgetModule } from './fw/widget/widget.module';
 import { OnosRoutingModule } from './onos-routing.module';
-
+import { NavComponent } from './nav/nav.component';
 import { OnosComponent } from './onos.component';
-import { DetectBrowserDirective } from './detectbrowser.directive';
-
-import { ConsoleLoggerService } from './consolelogger.service';
-import { LogService } from './log.service';
+import {
+    Gui2FwLibModule,
+    ConsoleLoggerService,
+    LogService
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 import { OnosService } from './onos.service';
 
 /**
  * ONOS GUI -- Main Application Module
  */
 @NgModule({
-  declarations: [
-    OnosComponent,
-    DetectBrowserDirective
-  ],
-  imports: [
-    BrowserModule,
-    BrowserAnimationsModule,
-    HttpClientModule,
-    LayerModule,
-    MastModule,
-    NavModule,
-    SvgModule,
-    WidgetModule,
-    OnosRoutingModule
-  ],
-  providers: [
-    OnosService,
-    { provide: LogService, useClass: ConsoleLoggerService },
-    { provide: 'Window', useValue: window }
-  ],
-  bootstrap: [
-    OnosComponent,
-  ]
+    declarations: [
+        NavComponent,
+        OnosComponent
+    ],
+    imports: [
+        BrowserModule,
+        BrowserAnimationsModule,
+        HttpClientModule,
+        Gui2FwLibModule,
+        OnosRoutingModule
+    ],
+    providers: [
+        OnosService,
+        {provide: LogService, useClass: ConsoleLoggerService},
+        {provide: 'Window', useValue: window}
+    ],
+    bootstrap: [
+        OnosComponent,
+    ]
 })
-export class OnosModule { }
+export class OnosModule {
+}

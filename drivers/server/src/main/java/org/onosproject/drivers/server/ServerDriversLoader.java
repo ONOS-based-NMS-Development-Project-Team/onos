@@ -16,7 +16,7 @@
 
 package org.onosproject.drivers.server;
 
-import org.apache.felix.scr.annotations.Component;
+import org.osgi.service.component.annotations.Component;
 import org.onosproject.net.driver.AbstractDriverLoader;
 
 /**
@@ -24,7 +24,9 @@ import org.onosproject.net.driver.AbstractDriverLoader;
  */
 @Component(immediate = true)
 public class ServerDriversLoader extends AbstractDriverLoader {
+
     public ServerDriversLoader() {
         super("/server-drivers.xml");
     }
+
 }

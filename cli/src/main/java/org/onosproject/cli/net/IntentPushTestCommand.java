@@ -16,9 +16,12 @@
 package org.onosproject.cli.net;
 
 import com.google.common.collect.Lists;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
+import org.apache.karaf.shell.support.completers.NullCompleter;
 import org.onlab.packet.Ethernet;
 import org.onlab.packet.MacAddress;
 import org.onosproject.cli.AbstractShellCommand;
@@ -50,6 +53,7 @@ import static org.onosproject.net.PortNumber.portNumber;
 /**
  * Installs bulk point-to-point connectivity intents between given ingress/egress devices.
  */
+@Service
 @Command(scope = "onos", name = "push-test-intents",
          description = "Installs random intents to test throughput")
 public class IntentPushTestCommand extends AbstractShellCommand
@@ -58,16 +62,19 @@ public class IntentPushTestCommand extends AbstractShellCommand
     @Argument(index = 0, name = "ingressDevice",
               description = "Ingress Device/Port Description",
               required = true, multiValued = false)
+    @Completion(ConnectPointCompleter.class)
     String ingressDeviceString = null;
 
     @Argument(index = 1, name = "egressDevice",
               description = "Egress Device/Port Description",
               required = true, multiValued = false)
+    @Completion(ConnectPointCompleter.class)
     String egressDeviceString = null;
 
     @Argument(index = 2, name = "numberOfIntents",
             description = "Number of intents to install/withdraw",
             required = true, multiValued = false)
+    @Completion(NullCompleter.class)
     String numberOfIntents = null;
 
     @Argument(index = 3, name = "keyOffset",
@@ -95,7 +102,7 @@ public class IntentPushTestCommand extends AbstractShellCommand
     List<Key> keysForWithdraw = new ArrayList<>();
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         service = get(IntentService.class);
 
 

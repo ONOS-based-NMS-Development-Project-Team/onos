@@ -15,10 +15,12 @@
  */
 package org.onosproject.openstacknetworking.cli;
 
-import org.apache.karaf.shell.console.Completer;
-import org.apache.karaf.shell.console.completer.StringsCompleter;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.console.CommandLine;
+import org.apache.karaf.shell.api.console.Completer;
+import org.apache.karaf.shell.api.console.Session;
+import org.apache.karaf.shell.support.completers.StringsCompleter;
 import org.onlab.packet.VlanId;
-import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.openstacknetworking.api.ExternalPeerRouter;
 import org.onosproject.openstacknetworking.api.OpenstackNetworkService;
 
@@ -28,15 +30,18 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 
+import static org.onosproject.cli.AbstractShellCommand.get;
+
 /**
  * Vlan Id Completer.
  */
+@Service
 public class VlanIdCompleter implements Completer {
 
     @Override
-    public int complete(String buffer, int cursor, List<String> candidates) {
+    public int complete(Session session, CommandLine commandLine, List<String> candidates) {
         StringsCompleter delegate = new StringsCompleter();
-        OpenstackNetworkService osNetService = AbstractShellCommand.get(OpenstackNetworkService.class);
+        OpenstackNetworkService osNetService = get(OpenstackNetworkService.class);
         Set<VlanId> set = osNetService.externalPeerRouters().stream()
                 .map(ExternalPeerRouter::vlanId)
                 .collect(Collectors.toSet());
@@ -48,7 +53,7 @@ public class VlanIdCompleter implements Completer {
             strings.add(it.next().toString());
         }
 
-        return delegate.complete(buffer, cursor, candidates);
+        return delegate.complete(session, commandLine, candidates);
 
     }
 }

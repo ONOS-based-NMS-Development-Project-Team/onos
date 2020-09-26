@@ -17,9 +17,11 @@ package org.onosproject.provider.lldp.cli;
 
 import java.util.Optional;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.Option;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.cli.net.DeviceIdCompleter;
 import org.onosproject.cli.net.PortNumberCompleter;
@@ -34,23 +36,21 @@ import org.onosproject.provider.lldp.impl.LinkDiscoveryFromPort;
 /**
  *
  */
+@Service
 @Command(scope = "onos", name = "config-link-discovery",
          description = "Adds configuration to disable LLDP link discovery")
 public class ConfigLinkDiscoveryCommand extends AbstractShellCommand {
 
-    // OSGi workaround to introduce package dependency
-    DeviceIdCompleter deviceIdCompleter;
     @Argument(index = 0, name = "device",
             description = "DeviceID",
             required = true)
+    @Completion(DeviceIdCompleter.class)
     String device = null;
 
-
-    // OSGi workaround to introduce package dependency
-    PortNumberCompleter portNumberCompleter;
     @Argument(index = 1, name = "port",
             description = "Port number",
             required = false)
+    @Completion(PortNumberCompleter.class)
     String port = null;
 
     @Option(name = "--remove", aliases = "-r",
@@ -65,7 +65,7 @@ public class ConfigLinkDiscoveryCommand extends AbstractShellCommand {
 
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         DeviceService deviceService = get(DeviceService.class);
         NetworkConfigService netcfgService = get(NetworkConfigService.class);
 

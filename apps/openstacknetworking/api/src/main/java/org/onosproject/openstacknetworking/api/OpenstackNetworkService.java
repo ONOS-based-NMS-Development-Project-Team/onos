@@ -19,6 +19,7 @@ import org.onlab.packet.IpAddress;
 import org.onlab.packet.IpPrefix;
 import org.onlab.packet.MacAddress;
 import org.onosproject.event.ListenerService;
+import org.onosproject.openstacknetworking.api.OpenstackNetwork.Type;
 import org.openstack4j.model.network.ExternalGateway;
 import org.openstack4j.model.network.Network;
 import org.openstack4j.model.network.Port;
@@ -38,6 +39,14 @@ public interface OpenstackNetworkService
      * @return openstack network
      */
     Network network(String networkId);
+
+    /**
+     * Returns the network type with the supplied network ID.
+     *
+     * @param networkId network id
+     * @return openstack network type
+     */
+    Type networkType(String networkId);
 
     /**
      * Returns all networks registered in the service.
@@ -148,20 +157,18 @@ public interface OpenstackNetworkService
     IpPrefix ipPrefix(String portId);
 
     /**
-     * Returns network type with supplied network ID.
-     *
-     * @param netId openstack network id
-     * @return network type
-     */
-    String networkType(String netId);
-
-    /**
-     * Returns gateway ip address upplied port ID.
+     * Returns gateway ip address with supplied port ID.
      *
      * @param portId openstack port id
      * @return gateway ip address
      */
     String gatewayIp(String portId);
 
-
+    /**
+     * Returns network segment ID with supplied network ID.
+     *
+     * @param netId openstack network ID
+     * @return network segment ID
+     */
+    String segmentId(String netId);
 }

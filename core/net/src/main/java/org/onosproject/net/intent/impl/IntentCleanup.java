@@ -15,13 +15,6 @@
  */
 package org.onosproject.net.intent.impl;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.onosproject.cfg.ComponentConfigService;
 import org.onosproject.net.intent.IntentData;
 import org.onosproject.net.intent.IntentEvent;
@@ -31,6 +24,12 @@ import org.onosproject.net.intent.IntentStore;
 import org.onosproject.net.intent.Key;
 import org.onosproject.store.service.WallClockTimestamp;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.Dictionary;
@@ -43,6 +42,12 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.onlab.util.Tools.get;
 import static org.onlab.util.Tools.groupedThreads;
+import static org.onosproject.net.OsgiPropertyConstants.ICU_ENABLED;
+import static org.onosproject.net.OsgiPropertyConstants.ICU_ENABLED_DEFAULT;
+import static org.onosproject.net.OsgiPropertyConstants.ICU_PERIOD;
+import static org.onosproject.net.OsgiPropertyConstants.ICU_PERIOD_DEFAULT;
+import static org.onosproject.net.OsgiPropertyConstants.ICU_RETRY_THRESHOLD;
+import static org.onosproject.net.OsgiPropertyConstants.ICU_RETRY_THRESHOLD_DEFAULT;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -54,7 +59,14 @@ import static org.slf4j.LoggerFactory.getLogger;
  * notifications, which signify errors in processing, and retries.
  * </p>
  */
-@Component(immediate = true)
+@Component(
+    immediate = true,
+    property = {
+        ICU_ENABLED + ":Boolean=" + ICU_ENABLED_DEFAULT,
+        ICU_PERIOD + ":Integer=" + ICU_PERIOD_DEFAULT,
+        ICU_RETRY_THRESHOLD + ":Integer=" + ICU_RETRY_THRESHOLD_DEFAULT
+    }
+)
 public class IntentCleanup implements Runnable, IntentListener {
 
     private static final Logger log = getLogger(IntentCleanup.class);
@@ -62,30 +74,25 @@ public class IntentCleanup implements Runnable, IntentListener {
     // Logical timeout for stuck Intents in INSTALLING or WITHDRAWING. The unit is seconds
     private static final int INSTALLING_WITHDRAWING_PERIOD = 120;
 
-    private static final int DEFAULT_PERIOD = 5; //seconds
-    private static final int DEFAULT_THRESHOLD = 5; //tries
-
-    @Property(name = "enabled", boolValue = true,
-              label = "Enables/disables the intent cleanup component")
-    private boolean enabled = true;
-
-    @Property(name = "period", intValue = DEFAULT_PERIOD,
-              label = "Frequency in ms between cleanup runs")
-    protected int period = DEFAULT_PERIOD;
     private long periodMs;
     private long periodMsForStuck;
 
-    @Property(name = "retryThreshold", intValue = DEFAULT_THRESHOLD,
-            label = "Number of times to retry CORRUPT intent without delay")
-    protected int retryThreshold = DEFAULT_THRESHOLD;
+    /** Enables/disables the intent cleanup component. */
+    private boolean enabled = ICU_ENABLED_DEFAULT;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    /** Frequency in ms between cleanup runs. */
+    protected int period = ICU_PERIOD_DEFAULT;
+
+    /** Number of times to retry CORRUPT intent without delay. */
+    protected int retryThreshold = ICU_RETRY_THRESHOLD_DEFAULT;
+
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected IntentService service;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected IntentStore store;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService cfgService;
 
     private ExecutorService executor;
@@ -119,13 +126,13 @@ public class IntentCleanup implements Runnable, IntentListener {
         int newPeriod;
         boolean newEnabled;
         try {
-            String s = get(properties, "period");
+            String s = get(properties, ICU_PERIOD);
             newPeriod = isNullOrEmpty(s) ? period : Integer.parseInt(s.trim());
 
-            s = get(properties, "retryThreshold");
+            s = get(properties, ICU_RETRY_THRESHOLD);
             retryThreshold = isNullOrEmpty(s) ? retryThreshold : Integer.parseInt(s.trim());
 
-            s = get(properties, "enabled");
+            s = get(properties, ICU_ENABLED);
             newEnabled = isNullOrEmpty(s) ? enabled : Boolean.parseBoolean(s.trim());
         } catch (NumberFormatException e) {
             log.warn(e.getMessage());

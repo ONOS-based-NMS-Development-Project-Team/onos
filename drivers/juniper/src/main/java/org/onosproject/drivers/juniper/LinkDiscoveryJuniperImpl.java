@@ -25,9 +25,7 @@ import org.onosproject.net.DeviceId;
 import org.onosproject.net.Port;
 import org.onosproject.net.behaviour.LinkDiscovery;
 import org.onosproject.net.device.DeviceService;
-import org.onosproject.net.driver.AbstractHandlerBehaviour;
 import org.onosproject.net.link.LinkDescription;
-import org.onosproject.netconf.NetconfController;
 import org.onosproject.netconf.NetconfException;
 import org.onosproject.netconf.NetconfSession;
 import org.slf4j.Logger;
@@ -36,7 +34,6 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.onosproject.drivers.juniper.JuniperUtils.LinkAbstraction;
 import static org.onosproject.drivers.juniper.JuniperUtils.parseJuniperLldp;
 import static org.onosproject.drivers.juniper.JuniperUtils.requestBuilder;
@@ -51,7 +48,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Tested with MX240 junos 14.2
  */
 @Beta
-public class LinkDiscoveryJuniperImpl extends AbstractHandlerBehaviour
+public class LinkDiscoveryJuniperImpl extends JuniperAbstractHandlerBehaviour
         implements LinkDiscovery {
 
     private final Logger log = getLogger(getClass());
@@ -59,16 +56,13 @@ public class LinkDiscoveryJuniperImpl extends AbstractHandlerBehaviour
     @Override
     public Set<LinkDescription> getLinks() {
         DeviceId localDeviceId = this.handler().data().deviceId();
-        NetconfController controller =
-                checkNotNull(handler().get(NetconfController.class));
-        NetconfSession session =
-                controller.getDevicesMap().get(localDeviceId).getSession();
+        NetconfSession session = lookupNetconfSession(localDeviceId);
 
         String reply;
         try {
             reply = session.get(requestBuilder(REQ_LLDP_NBR_INFO));
         } catch (NetconfException e) {
-            log.warn("Failed to retrieve ports for device {}", localDeviceId);
+            log.warn("Failed to retrieve lldp-neighbors-information for device {}", localDeviceId);
             return ImmutableSet.of();
         }
         log.debug("Reply from device {} : {}", localDeviceId, reply);
@@ -83,13 +77,8 @@ public class LinkDiscoveryJuniperImpl extends AbstractHandlerBehaviour
 
             //find source port by local port name
             Optional<Port> localPort = deviceService.getPorts(localDeviceId).stream()
-                    .filter(port -> {
-                        if (linkAbs.localPortName.equals(
-                                port.annotations().value(PORT_NAME))) {
-                            return true;
-                        }
-                        return false;
-                    }).findAny();
+                    .filter(port -> linkAbs.localPortName.equals(
+                            port.annotations().value(PORT_NAME))).findAny();
             if (!localPort.isPresent()) {
                 log.warn("Port name {} does not exist in device {}",
                          linkAbs.localPortName, localDeviceId);
@@ -101,8 +90,8 @@ public class LinkDiscoveryJuniperImpl extends AbstractHandlerBehaviour
                     input -> input.chassisId().equals(linkAbs.remoteChassisId));
 
             if (!dev.isPresent()) {
-                log.warn("Device with chassis ID {} does not exist",
-                         linkAbs.remoteChassisId);
+                log.warn("Device with chassis ID {} does not exist. Referenced by {}/{}",
+                         linkAbs.remoteChassisId, localDeviceId, linkAbs);
                 continue;
             }
             Device remoteDevice = dev.get();
@@ -132,16 +121,22 @@ public class LinkDiscoveryJuniperImpl extends AbstractHandlerBehaviour
                         return false;
                     }).findAny();
             if (!remotePort.isPresent()) {
-                log.warn("Port Index and Port Id and Port description do not exist in device {}", remoteDevice.id());
+                log.warn("Port does not exist in remote device {}. Referenced by {}/{}",
+                        remoteDevice.id(), localDeviceId, linkAbs);
                 continue;
             }
 
-            JuniperUtils.createBiDirLinkDescription(localDeviceId,
-                                                    localPort.get(),
-                                                    remoteDevice.id(),
-                                                    remotePort.get(),
-                                                    descriptions);
+            if (!localPort.get().isEnabled() || !remotePort.get().isEnabled()) {
+                log.debug("Ports are disabled. Cannot create a link between {}/{} and {}/{}",
+                        localDeviceId, localPort.get(), remoteDevice.id(), remotePort.get());
+                continue;
+            }
 
+            JuniperUtils.createOneWayLinkDescription(localDeviceId,
+                                                     localPort.get(),
+                                                     remoteDevice.id(),
+                                                     remotePort.get(),
+                                                     descriptions);
         }
         return descriptions;
     }

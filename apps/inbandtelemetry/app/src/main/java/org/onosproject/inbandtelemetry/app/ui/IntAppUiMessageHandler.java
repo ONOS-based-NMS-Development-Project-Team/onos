@@ -20,13 +20,11 @@ import com.google.common.collect.ImmutableSet;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.onlab.packet.Ip4Address;
 import org.onlab.packet.Ip4Prefix;
-import org.onlab.packet.IpAddress;
-import org.onlab.packet.MacAddress;
 import org.onlab.packet.TpPort;
 import org.onosproject.inbandtelemetry.api.IntIntent;
 import org.onosproject.inbandtelemetry.api.IntIntentId;
+import org.onosproject.net.behaviour.inbandtelemetry.IntMetadataType;
 import org.onosproject.inbandtelemetry.api.IntService;
-import org.onosproject.inbandtelemetry.api.IntConfig;
 import org.onosproject.net.flow.DefaultTrafficSelector;
 import org.onosproject.net.flow.TrafficSelector;
 import org.onosproject.ui.RequestHandler;
@@ -36,12 +34,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 
+import static org.onosproject.inbandtelemetry.api.IntIntent.IntHeaderType.HOP_BY_HOP;
+
 public class IntAppUiMessageHandler extends UiMessageHandler {
 
     private static final String INT_INTENT_ADD_REQUEST = "intIntentAddRequest";
     private static final String INT_INTENT_DEL_REQUEST = "intIntentDelRequest";
-    private static final String INT_CONFIG_ADD_REQUEST = "intConfigAddRequest";
-//    private static final String INT_CONFIG_DEL_REQUEST = "intConfigDelRequest";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -51,44 +49,8 @@ public class IntAppUiMessageHandler extends UiMessageHandler {
     protected Collection<RequestHandler> createRequestHandlers() {
         return ImmutableSet.of(
                 new IntIntentAddRequestHandler(),
-                new IntIntentDelRequestHandler(),
-                new IntConfigAddRequestHandler()
-//                new intConfigDelRequestHandler()
+                new IntIntentDelRequestHandler()
         );
-    }
-
-    private final class IntConfigAddRequestHandler extends RequestHandler {
-        private IntConfigAddRequestHandler() {
-            super(INT_CONFIG_ADD_REQUEST);
-        }
-
-        @Override
-        public void process(ObjectNode payload) {
-            log.info("intConfigAddRequest: {}", payload);
-
-            intService = get(IntService.class);
-            IntConfig.Builder builder = IntConfig.builder();
-
-            if (payload.get("collectorIp") != null) {
-                builder.withCollectorIp(IpAddress.valueOf(payload.get("collectorIp").asText()));
-            } else {
-                builder.withCollectorIp(IpAddress.valueOf("127.0.0.1"));
-            }
-
-            if (payload.get("collectorPort") != null) {
-                builder.withCollectorPort(TpPort.tpPort(
-                        payload.get("collectorPort").asInt()));
-            } else {
-                builder.withCollectorPort(TpPort.tpPort(1234));
-            }
-
-            builder.enabled(true)
-                    .withSinkIp(IpAddress.valueOf("10.192.19.180"))
-                    .withSinkMac(MacAddress.NONE)
-                    .withCollectorNextHopMac(MacAddress.BROADCAST);
-
-            intService.setConfig(builder.build());
-        }
     }
 
     private final class IntIntentDelRequestHandler extends RequestHandler {
@@ -152,28 +114,25 @@ public class IntAppUiMessageHandler extends UiMessageHandler {
                     for (final JsonNode json : meta) {
                         switch (json.asText()) {
                             case "SWITCH_ID":
-                                builder.withMetadataType(IntIntent.IntMetadataType.SWITCH_ID);
+                                builder.withMetadataType(IntMetadataType.SWITCH_ID);
                                 break;
                             case "PORT_ID":
-                                builder.withMetadataType(IntIntent.IntMetadataType.L1_PORT_ID);
+                                builder.withMetadataType(IntMetadataType.L1_PORT_ID);
                                 break;
                             case "HOP_LATENCY":
-                                builder.withMetadataType(IntIntent.IntMetadataType.HOP_LATENCY);
+                                builder.withMetadataType(IntMetadataType.HOP_LATENCY);
                                 break;
                             case "QUEUE_OCCUPANCY":
-                                builder.withMetadataType(IntIntent.IntMetadataType.QUEUE_OCCUPANCY);
+                                builder.withMetadataType(IntMetadataType.QUEUE_OCCUPANCY);
                                 break;
                             case "INGRESS_TIMESTAMP":
-                                builder.withMetadataType(IntIntent.IntMetadataType.INGRESS_TIMESTAMP);
+                                builder.withMetadataType(IntMetadataType.INGRESS_TIMESTAMP);
                                 break;
                             case "EGRESS_TIMESTAMP":
-                                builder.withMetadataType(IntIntent.IntMetadataType.EGRESS_TIMESTAMP);
+                                builder.withMetadataType(IntMetadataType.EGRESS_TIMESTAMP);
                                 break;
-//                            case "QUEUE_CONGESTION":
-//                                builder.withMetadataType(IntIntent.IntMetadataType.QUEUE_CONGESTION);
-//                                break;
                             case "EGRESS_TX_UTIL":
-                                builder.withMetadataType(IntIntent.IntMetadataType.EGRESS_TX_UTIL);
+                                builder.withMetadataType(IntMetadataType.EGRESS_TX_UTIL);
                                 break;
                             default:
                                 break;
@@ -183,7 +142,7 @@ public class IntAppUiMessageHandler extends UiMessageHandler {
             }
 
             builder.withSelector(sBuilder.build())
-                    .withHeaderType(IntIntent.IntHeaderType.HOP_BY_HOP)
+                    .withHeaderType(HOP_BY_HOP)
                     .withReportType(IntIntent.IntReportType.TRACKED_FLOW)
                     .withTelemetryMode(IntIntent.TelemetryMode.INBAND_TELEMETRY);
             intService.installIntIntent(builder.build());

@@ -17,20 +17,13 @@
 package org.onosproject.faultmanagement.impl;
 
 import com.google.common.collect.ImmutableSet;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onosproject.faultmanagement.api.AlarmStore;
 import org.onosproject.faultmanagement.api.AlarmStoreDelegate;
-import org.onosproject.incubator.net.faultmanagement.alarm.Alarm;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmEntityId;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmEvent;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmId;
-import org.onosproject.incubator.net.faultmanagement.alarm.DefaultAlarm;
+import org.onosproject.alarm.Alarm;
+import org.onosproject.alarm.AlarmEntityId;
+import org.onosproject.alarm.AlarmEvent;
+import org.onosproject.alarm.AlarmId;
+import org.onosproject.alarm.DefaultAlarm;
 import org.onosproject.net.DeviceId;
 import org.onosproject.store.AbstractStore;
 import org.onosproject.store.serializers.KryoNamespaces;
@@ -39,6 +32,11 @@ import org.onosproject.store.service.MapEvent;
 import org.onosproject.store.service.MapEventListener;
 import org.onosproject.store.service.Serializer;
 import org.onosproject.store.service.StorageService;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.Collection;
@@ -52,8 +50,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Manages information of alarms using gossip protocol to distribute
  * information.
  */
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = AlarmStore.class)
 public class DistributedAlarmStore
         extends AbstractStore<AlarmEvent, AlarmStoreDelegate>
         implements AlarmStore {
@@ -62,7 +59,7 @@ public class DistributedAlarmStore
     private ConsistentMap<AlarmId, Alarm> alarms;
     private Map<AlarmId, Alarm> alarmsMap;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected StorageService storageService;
 
     private final MapEventListener<AlarmId, Alarm> listener = new InternalListener();
@@ -88,12 +85,6 @@ public class DistributedAlarmStore
     public void deactivate() {
         alarms.removeListener(listener);
         log.info("Stopped");
-    }
-
-    @Modified
-    public boolean modified() {
-        log.info("Modified");
-        return true;
     }
 
     @Override

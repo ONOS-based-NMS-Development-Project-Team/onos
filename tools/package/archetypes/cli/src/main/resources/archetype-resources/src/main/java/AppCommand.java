@@ -15,18 +15,20 @@
  */
 package ${package};
 
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 
 /**
- * Sample Apache Karaf CLI command
+ * Sample Apache Karaf CLI command.
  */
+@Service
 @Command(scope = "onos", name = "sample",
          description = "Sample Apache Karaf CLI command")
 public class AppCommand extends AbstractShellCommand {
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         print("Hello %s", "World");
     }
 

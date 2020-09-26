@@ -15,11 +15,7 @@
  */
 package org.onosproject.ovsdb.controller;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
+import com.google.common.util.concurrent.ListenableFuture;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.PortNumber;
 import org.onosproject.net.behaviour.ControllerInfo;
@@ -34,9 +30,13 @@ import org.onosproject.ovsdb.rfc.jsonrpc.OvsdbRpc;
 import org.onosproject.ovsdb.rfc.message.TableUpdates;
 import org.onosproject.ovsdb.rfc.notation.Row;
 import org.onosproject.ovsdb.rfc.schema.DatabaseSchema;
-
-import com.google.common.util.concurrent.ListenableFuture;
+import org.onosproject.ovsdb.rfc.table.Interface;
 import org.onosproject.ovsdb.rfc.table.OvsdbTable;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Represents to provider facing side of a node.
@@ -55,7 +55,7 @@ public interface OvsdbClientService extends OvsdbRpc {
      * selectSrcPort or packets containing selectVlan
      * to mirrorPort or to all ports that trunk mirrorVlan.
      *
-     * @param  bridgeName the name of the bridge
+     * @param bridgeName the name of the bridge
      * @param mirror the OVSDB mirror description
      * @return true if mirror creation is successful, false otherwise
      */
@@ -119,14 +119,14 @@ public interface OvsdbClientService extends OvsdbRpc {
     /**
      * Gets a qos of node.
      * @param qosId qos identifier
-     * @return null if no qos is find
+     * @return null if no qos is found
      */
     OvsdbQos getQos(QosId qosId);
 
     /**
      * Gets qoses of node.
      *
-     * @return set of qoses; empty if no qos is find
+     * @return set of qoses; empty if no qos is found
      */
     Set<OvsdbQos> getQoses();
 
@@ -165,14 +165,14 @@ public interface OvsdbClientService extends OvsdbRpc {
     /**
      * Gets a queue of node.
      * @param queueId the queue identifier
-     * @return null if no queue is find
+     * @return null if no queue is found
      */
     OvsdbQueue getQueue(QueueId queueId);
 
     /**
      * Gets queues of node.
      *
-     * @return set of queues; empty if no queue is find
+     * @return set of queues; empty if no queue is found
      */
     Set<OvsdbQueue> getQueues();
 
@@ -211,7 +211,7 @@ public interface OvsdbClientService extends OvsdbRpc {
     /**
      * Gets bridges of node.
      *
-     * @return set of bridges; empty if no bridge is find
+     * @return set of bridges; empty if no bridge is found
      */
     Set<OvsdbBridge> getBridges();
 
@@ -219,7 +219,7 @@ public interface OvsdbClientService extends OvsdbRpc {
      * Gets controllers of node.
      *
      * @param openflowDeviceId target device id
-     * @return set of controllers; empty if no controller is find
+     * @return set of controllers; empty if no controller is found
      */
     Set<ControllerInfo> getControllers(DeviceId openflowDeviceId);
 
@@ -262,9 +262,24 @@ public interface OvsdbClientService extends OvsdbRpc {
     /**
      * Gets ports of bridge.
      *
-     * @return set of ports; empty if no ports is find
+     * @return set of ports; empty if no ports is found
      */
     Set<OvsdbPort> getPorts();
+
+    /**
+     * Gets interfaces of bridge.
+     *
+     * @return set of interfaces; empty if no interface is found
+     */
+    Set<Interface> getInterfaces();
+
+    /**
+     * Gets the interface with given portName.
+     *
+     * @param intf interface name
+     * @return interface
+     */
+    Interface getInterface(String intf);
 
     /**
      * Checks if the node is still connected.
@@ -277,7 +292,7 @@ public interface OvsdbClientService extends OvsdbRpc {
      * Gets the Bridge uuid.
      *
      * @param bridgeName bridge name
-     * @return bridge uuid, empty if no uuid is find
+     * @return bridge uuid, empty if no uuid is found
      */
     String getBridgeUuid(String bridgeName);
 
@@ -286,7 +301,7 @@ public interface OvsdbClientService extends OvsdbRpc {
      *
      * @param portName   port name
      * @param bridgeUuid bridge uuid
-     * @return port uuid, empty if no uuid is find
+     * @return port uuid, empty if no uuid is found
      */
     String getPortUuid(String portName, String bridgeUuid);
 
@@ -321,7 +336,7 @@ public interface OvsdbClientService extends OvsdbRpc {
      * @param dbName    database name
      * @param tableName table name
      * @param uuid      row uuid
-     * @return row OVSDB row
+     * @return row, empty if no row is found
      */
     Row getRow(String dbName, String tableName, String uuid);
 
@@ -366,7 +381,7 @@ public interface OvsdbClientService extends OvsdbRpc {
      * Considered port as created if port's interface table also gets created,irrespective
      * of ofport value(has errors or not)
      */
-    public List<OvsdbPortName> getPorts(List<String> portNames, DeviceId bridgeId);
+    List<OvsdbPortName> getPorts(List<String> portNames, DeviceId bridgeId);
 
     /**
      * Gets error status for the given portNames.
@@ -382,20 +397,21 @@ public interface OvsdbClientService extends OvsdbRpc {
      *
      * @param dbName  db name
      * @param tblName table name
-     * @return first table entry
+     * @return firstRow, first row of the given table from given db if present
      */
-
-    public Optional<Object> getFirstRow(String dbName, OvsdbTable tblName);
+    Optional<Object> getFirstRow(String dbName, OvsdbTable tblName);
 
     /**
      * Gets device CPU usage in percentage.
-     * @return device memory usage.
+     *
+     * @return cpuStats, empty data as there is no generic way to fetch such stats
      */
     Optional<DeviceCpuStats> getDeviceCpuUsage();
 
     /**
      * Gets device memory usage in kilobytes.
-     * @return device memory usage.
+     *
+     * @return memoryStats, empty data as there is no generic way to fetch such stats
      */
     Optional<DeviceMemoryStats> getDeviceMemoryUsage();
 

@@ -27,8 +27,6 @@ import org.onosproject.cluster.ClusterEvent;
 import org.onosproject.cluster.ControllerNode;
 import org.onosproject.cluster.NodeId;
 import org.onosproject.core.CoreService;
-import org.onosproject.incubator.net.tunnel.OpticalTunnelEndPoint;
-import org.onosproject.incubator.net.tunnel.Tunnel;
 import org.onosproject.net.AnnotationKeys;
 import org.onosproject.net.Annotations;
 import org.onosproject.net.ConnectPoint;
@@ -36,7 +34,6 @@ import org.onosproject.net.DefaultEdgeLink;
 import org.onosproject.net.Device;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.EdgeLink;
-import org.onosproject.net.ElementId;
 import org.onosproject.net.Host;
 import org.onosproject.net.HostId;
 import org.onosproject.net.HostLocation;
@@ -53,24 +50,23 @@ import org.onosproject.net.provider.ProviderId;
 import org.onosproject.net.topology.Topology;
 import org.onosproject.ui.JsonUtils;
 import org.onosproject.ui.UiConnection;
-import org.onosproject.ui.UiMessageHandler;
+import org.onosproject.ui.impl.topo.TopoologyTrafficMessageHandlerAbstract;
 import org.onosproject.ui.impl.topo.util.ServicesBundle;
 import org.onosproject.ui.lion.LionBundle;
 import org.onosproject.ui.topo.PropertyPanel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.onosproject.net.AnnotationKeys.DRIVER;
+import static org.onosproject.net.AnnotationKeys.UI_TYPE;
 import static org.onosproject.net.PortNumber.portNumber;
 import static org.onosproject.net.config.basics.BasicElementConfig.LOC_TYPE_GEO;
 import static org.onosproject.net.config.basics.BasicElementConfig.LOC_TYPE_GRID;
@@ -81,7 +77,7 @@ import static org.onosproject.ui.topo.TopoUtils.compactLinkString;
 /**
  * Facility for creating messages bound for the topology viewer.
  */
-public abstract class TopologyViewMessageHandlerBase extends UiMessageHandler {
+public abstract class TopologyViewMessageHandlerBase extends TopoologyTrafficMessageHandlerAbstract {
 
     private static final String NO_GEO_VALUE = "0.0";
     private static final String DASH = "-";
@@ -145,7 +141,9 @@ public abstract class TopologyViewMessageHandlerBase extends UiMessageHandler {
         DEVICE_GLYPHS.put(Device.Type.SWITCH, "m_switch");
         DEVICE_GLYPHS.put(Device.Type.ROUTER, "m_router");
         DEVICE_GLYPHS.put(Device.Type.ROADM, "m_roadm");
+        DEVICE_GLYPHS.put(Device.Type.OLS, "m_roadm");
         DEVICE_GLYPHS.put(Device.Type.OTN, "m_otn");
+        DEVICE_GLYPHS.put(Device.Type.TERMINAL_DEVICE, "m_otn");
         DEVICE_GLYPHS.put(Device.Type.ROADM_OTN, "m_roadm_otn");
         DEVICE_GLYPHS.put(Device.Type.BALANCER, "m_balancer");
         DEVICE_GLYPHS.put(Device.Type.IPS, "m_ips");
@@ -441,7 +439,12 @@ public abstract class TopologyViewMessageHandlerBase extends UiMessageHandler {
     // Create models of the data to return, that overlays can adjust / augment
 
     private String lookupGlyph(Device device) {
-        return DEVICE_GLYPHS.get(device.type());
+        String uiType = device.annotations().value(UI_TYPE);
+        if (uiType != null && !uiType.equalsIgnoreCase("undefined")) {
+            return uiType;
+        } else {
+            return DEVICE_GLYPHS.get(device.type());
+        }
     }
 
 
@@ -461,7 +464,6 @@ public abstract class TopologyViewMessageHandlerBase extends UiMessageHandler {
                 .addProp(TOPOLOGY_SSCS, lion.getSafe(TOPOLOGY_SSCS), topology.clusterCount())
                 .addSeparator()
                 .addProp(INTENTS, lion.getSafe(INTENTS), services.intent().getIntentCount())
-                .addProp(TUNNELS, lion.getSafe(TUNNELS), services.tunnel().tunnelCount())
                 .addProp(FLOWS, lion.getSafe(FLOWS), services.flow().getFlowRuleCount());
     }
 
@@ -548,28 +550,9 @@ public abstract class TopologyViewMessageHandlerBase extends UiMessageHandler {
         return services.flow().getFlowRuleCount(deviceId);
     }
 
+    @Deprecated
     protected int getTunnelCount(DeviceId deviceId) {
-        int count = 0;
-        Collection<Tunnel> tunnels = services.tunnel().queryAllTunnels();
-        for (Tunnel tunnel : tunnels) {
-            //Only OpticalTunnelEndPoint has a device
-            if (!(tunnel.src() instanceof OpticalTunnelEndPoint) ||
-                    !(tunnel.dst() instanceof OpticalTunnelEndPoint)) {
-                continue;
-            }
-
-            Optional<ElementId> srcElementId = ((OpticalTunnelEndPoint) tunnel.src()).elementId();
-            Optional<ElementId> dstElementId = ((OpticalTunnelEndPoint) tunnel.dst()).elementId();
-            if (!srcElementId.isPresent() || !dstElementId.isPresent()) {
-                continue;
-            }
-            DeviceId srcDeviceId = (DeviceId) srcElementId.get();
-            DeviceId dstDeviceId = (DeviceId) dstElementId.get();
-            if (srcDeviceId.equals(deviceId) || dstDeviceId.equals(deviceId)) {
-                count++;
-            }
-        }
-        return count;
+        return 0;
     }
 
     private boolean useDefaultName(String annotName) {

@@ -15,14 +15,16 @@
  */
 package org.onosproject.election.cli;
 
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cluster.NodeId;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.cluster.LeadershipService;
 
 /**
  * CLI command to get the current leader for the Election test application.
  */
+@Service
 @Command(scope = "onos", name = "election-test-leader",
         description = "Get the current leader for the Election test application")
 public class ElectionTestLeaderCommand extends AbstractShellCommand {
@@ -31,7 +33,7 @@ public class ElectionTestLeaderCommand extends AbstractShellCommand {
     private static final String ELECTION_APP = "org.onosproject.election";
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         LeadershipService service = get(LeadershipService.class);
 
         //print the current leader

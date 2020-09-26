@@ -124,4 +124,7 @@ public final class OvsdbConstant {
 
     /** Memory column of Cpu_Memory_Data table. */
     public static final String DEVICE_MEMORY = "memory";
+
+    public static final boolean OVSDB_TLS_FLAG = false;
+
 }

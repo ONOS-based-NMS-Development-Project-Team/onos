@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.onosproject.drivers.server.devices.nic;
 
 import org.onlab.packet.MplsLabel;
@@ -20,6 +21,7 @@ import org.onlab.packet.MplsLabel;
 import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.onosproject.drivers.server.Constants.MSG_NIC_FLOW_FILTER_MPLS_NULL;
 
 /**
  * An MPLS Rx filter value.
@@ -30,9 +32,11 @@ public final class MplsRxFilterValue extends RxFilterValue {
 
     /**
      * Constructs an MPLS-based Rx filter.
+     *
+     * @param cpuId CPU ID of the server this tag will lead to
      */
-    public MplsRxFilterValue() {
-        super();
+    public MplsRxFilterValue(int cpuId) {
+        super(cpuId);
         this.mplsLabel = null;
     }
 
@@ -40,9 +44,10 @@ public final class MplsRxFilterValue extends RxFilterValue {
      * Constructs an MPLS-based Rx filter with specific label.
      *
      * @param mplsLabel an MPLS label to use as a filter
+     * @param cpuId CPU ID of the server this tag will lead to
      */
-    public MplsRxFilterValue(MplsLabel mplsLabel) {
-        super();
+    public MplsRxFilterValue(MplsLabel mplsLabel, int cpuId) {
+        super(cpuId);
         setValue(mplsLabel);
     }
 
@@ -52,7 +57,7 @@ public final class MplsRxFilterValue extends RxFilterValue {
      * @param other a source MplsRxFilterValue object
      */
     public MplsRxFilterValue(MplsRxFilterValue other) {
-        super();
+        super(other.cpuId);
         setValue(other.value());
     }
 
@@ -71,7 +76,7 @@ public final class MplsRxFilterValue extends RxFilterValue {
      * @param mplsLabel MPLS label value
      */
     public void setValue(MplsLabel mplsLabel) {
-        checkNotNull(mplsLabel, "MPLS label of Rx filter is NULL");
+        checkNotNull(mplsLabel, MSG_NIC_FLOW_FILTER_MPLS_NULL);
         this.mplsLabel = mplsLabel;
     }
 
@@ -97,7 +102,7 @@ public final class MplsRxFilterValue extends RxFilterValue {
 
     @Override
     public String toString() {
-        return  this.value().toString();
+        return this.value().toString();
     }
 
 }

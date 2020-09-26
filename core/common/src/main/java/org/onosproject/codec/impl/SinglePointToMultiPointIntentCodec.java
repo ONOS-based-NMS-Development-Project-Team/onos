@@ -15,14 +15,14 @@
  */
 package org.onosproject.codec.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.onosproject.codec.CodecContext;
 import org.onosproject.codec.JsonCodec;
 import org.onosproject.net.ConnectPoint;
+import org.onosproject.net.FilteredConnectPoint;
 import org.onosproject.net.intent.ConnectivityIntent;
 import org.onosproject.net.intent.SinglePointToMultiPointIntent;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -36,7 +36,6 @@ import static org.onlab.util.Tools.nullIsIllegal;
 public class SinglePointToMultiPointIntentCodec extends JsonCodec<SinglePointToMultiPointIntent> {
     private static final String INGRESS_POINT = "ingressPoint";
     private static final String EGRESS_POINT = "egressPoint";
-    private static final String CP_POINTS = "connectPoints";
 
     @Override
     public ObjectNode encode(SinglePointToMultiPointIntent intent, CodecContext context) {
@@ -51,8 +50,7 @@ public class SinglePointToMultiPointIntentCodec extends JsonCodec<SinglePointToM
         final ObjectNode ingress =
                 connectPointCodec.encode(intent.ingressPoint(), context);
 
-        final ObjectNode result2 = context.mapper().createObjectNode();
-        final ArrayNode jsonconnectPoints = result2.putArray(CP_POINTS);
+        final ArrayNode jsonconnectPoints = context.mapper().createArrayNode();
 
         if (intent.egressPoints() != null) {
             for (final ConnectPoint cp : intent.egressPoints()) {
@@ -76,24 +74,21 @@ public class SinglePointToMultiPointIntentCodec extends JsonCodec<SinglePointToM
                 INGRESS_POINT + IntentCodec.MISSING_MEMBER_MESSAGE);
         ConnectPoint ingress = context.codec(ConnectPoint.class)
                 .decode(ingressJson, context);
-        builder.ingressPoint(ingress);
+        builder.filteredIngressPoint(new FilteredConnectPoint(ingress));
 
-        ObjectNode egressJson = nullIsIllegal(get(json, EGRESS_POINT),
-                EGRESS_POINT + IntentCodec.MISSING_MEMBER_MESSAGE);
-        if (egressJson != null) {
-            final JsonCodec<ConnectPoint> connectPointCodec =
-                    context.codec(ConnectPoint.class);
-            JsonNode connectPointsJson = get(json, EGRESS_POINT).get(CP_POINTS);
+        ArrayNode egressJson = nullIsIllegal((ArrayNode) json.get(EGRESS_POINT),
+            EGRESS_POINT + IntentCodec.MISSING_MEMBER_MESSAGE);
 
-            Set<ConnectPoint> egressCp = new HashSet<ConnectPoint>();
-            if (connectPointsJson != null) {
-                for (int i = 0; i < connectPointsJson.size(); i++) {
-                    egressCp.add(connectPointCodec.decode(get(connectPointsJson, i),
-                            context));
-                }
-                builder.egressPoints(egressCp);
-            }
+        final JsonCodec<ConnectPoint> connectPointCodec =
+                context.codec(ConnectPoint.class);
+
+        Set<FilteredConnectPoint> egressCp = new HashSet<>();
+
+        for (int i = 0; i < egressJson.size(); i++) {
+            ConnectPoint cp = connectPointCodec.decode(get(egressJson, i), context);
+            egressCp.add(new FilteredConnectPoint(cp));
         }
+        builder.filteredEgressPoints(egressCp);
 
         return builder.build();
     }

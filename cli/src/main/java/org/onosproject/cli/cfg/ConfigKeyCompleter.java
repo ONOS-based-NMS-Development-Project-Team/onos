@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.karaf.shell.console.completer.ArgumentCompleter.ArgumentList;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractChoicesCompleter;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.config.Config;
@@ -36,23 +36,23 @@ import com.google.common.collect.ImmutableList;
  * Assumes 2 argument before the one being completed is SubjectClassKey
  * and argument right before the one being completed is SubjectKey.
  */
+@Service
 public class ConfigKeyCompleter extends AbstractChoicesCompleter {
 
     // FIXME ConfigKeyCompleter never gets called??
     @Override
     protected List<String> choices() {
         NetworkConfigRegistry service = AbstractShellCommand.get(NetworkConfigRegistry.class);
-        ArgumentList args = getArgumentList();
 
-        checkArgument(args.getCursorArgumentIndex() >= 2);
-        String subjectClassKey = args.getArguments()[args.getCursorArgumentIndex() - 2];
+        checkArgument(commandLine.getCursorArgumentIndex() >= 2);
+        String subjectClassKey = commandLine.getArguments()[commandLine.getCursorArgumentIndex() - 2];
 
         SubjectFactory<?> subjectFactory = service.getSubjectFactory(subjectClassKey);
         if (subjectFactory == null) {
             return ImmutableList.of();
         }
 
-        String subjectKey = args.getArguments()[args.getCursorArgumentIndex() - 1];
+        String subjectKey = commandLine.getArguments()[commandLine.getCursorArgumentIndex() - 1];
 
         Object subject = subjectFactory.createSubject(subjectKey);
         Set<? extends Config<Object>> configs = service.getConfigs(subject);

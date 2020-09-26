@@ -16,8 +16,9 @@
 
 package org.onosproject.routing.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.packet.IpAddress;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.core.ApplicationId;
@@ -30,6 +31,7 @@ import org.onosproject.routing.config.BgpConfig;
 /**
  * Command to add new BGP peer to existing internal speaker.
  */
+@Service
 @Command(scope = "onos", name = "bgp-peer-add",
         description = "Adds an external BGP router as peer to an existing BGP speaker")
 public class AddPeerCommand extends AbstractShellCommand {
@@ -54,7 +56,7 @@ public class AddPeerCommand extends AbstractShellCommand {
     private IpAddress peerAddress = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         peerAddress = IpAddress.valueOf(ip);
 
         NetworkConfigService configService = get(NetworkConfigService.class);

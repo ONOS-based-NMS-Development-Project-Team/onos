@@ -16,8 +16,9 @@
 
 package org.onosproject.nodemetrics.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.cluster.NodeId;
 import org.onosproject.nodemetrics.NodeCpuUsage;
@@ -29,6 +30,7 @@ import java.util.Objects;
 /**
  * Lists cpu usage across nodes.
  */
+@Service
 @Command(scope = "onos", name = "node-cpu",
         description = "Lists all node cpu utilization")
 public class ShowNodeCpuUsageCommand extends AbstractShellCommand {
@@ -40,7 +42,7 @@ public class ShowNodeCpuUsageCommand extends AbstractShellCommand {
             .get(NodeMetricsService.class);
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         if (nodeId != null) {
             NodeCpuUsage cpu = nodeService.cpu(NodeId.nodeId(nodeId));
             if (Objects.nonNull(cpu)) {

@@ -16,6 +16,7 @@
 package org.onosproject.inbandtelemetry.api;
 
 import com.google.common.annotations.Beta;
+import org.onosproject.net.behaviour.inbandtelemetry.IntDeviceConfig;
 import org.onosproject.net.DeviceId;
 
 import java.util.Map;
@@ -43,13 +44,13 @@ public interface IntService {
     }
 
     /**
-     * Starts the INT functionalities in all INT-capable devices.
+     * Starts the INT functionality in all INT-capable devices.
      * This will include populating tables to process INT packets.
      */
     void startInt();
 
     /**
-     * Starts the INT functionalities in specified set of INT transit devices.
+     * Starts the INT functionality in specified set of INT transit devices.
      * <p>
      * Note: this is an experimental API, which can be either changed or removed.
      *
@@ -76,14 +77,14 @@ public interface IntService {
      *
      * @param cfg configuration to set up
      */
-    void setConfig(IntConfig cfg);
+    void setConfig(IntDeviceConfig cfg);
 
     /**
      * Retrieves the INT configuration.
      *
      * @return configuration
      */
-    IntConfig getConfig();
+    IntDeviceConfig getConfig();
 
     /**
      * Installs an IntIntent to devices.

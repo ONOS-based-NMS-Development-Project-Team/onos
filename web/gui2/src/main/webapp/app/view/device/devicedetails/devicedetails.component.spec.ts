@@ -17,15 +17,18 @@ import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DeviceDetailsComponent } from './devicedetails.component';
 import { ActivatedRoute, Params } from '@angular/router';
 import { of } from 'rxjs/index';
-import { FnService } from '../../../fw/util/fn.service';
-import { LogService } from '../../../log.service';
+import {
+    FnService,
+    IconService,
+    LogService,
+    WebSocketService,
+    IconComponent
+} from 'gui2-fw-lib';
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { IconService } from '../../../fw/svg/icon.service';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { } from 'jasmine';
-import { IconComponent } from '../../../fw/svg/icon/icon.component';
 
 class MockActivatedRoute extends ActivatedRoute {
     constructor(params: Params) {
@@ -118,14 +121,14 @@ describe('DeviceDetailsComponent', () => {
         const devDe: DebugElement = fixture.debugElement;
         const divDe = devDe.query(By.css('div.top-content div.top-tables div.left'));
         const div: HTMLElement = divDe.nativeElement;
-        expect(div.textContent).toEqual('URI :Type :Master ID :Chassis ID :Vendor :');
+        expect(div.textContent).toEqual('URITypeMaster IDChassis IDVendor');
     });
 
     it('should have a dev.right inside a div.top-tables inside a div.top-content', () => {
         const devDe: DebugElement = fixture.debugElement;
         const divDe = devDe.query(By.css('div.top-content div.top-tables div.right'));
         const div: HTMLElement = divDe.nativeElement;
-        expect(div.textContent).toEqual('H/W Version :S/W Version :Protocol :Serial # :Pipeconf :');
+        expect(div.textContent).toEqual('H/W VersionS/W VersionProtocolSerial #Pipeconf');
     });
 
     it('should have a div.bottom inside a div.container', () => {

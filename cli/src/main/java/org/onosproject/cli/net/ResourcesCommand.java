@@ -25,9 +25,11 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import com.google.common.collect.Iterables;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onlab.packet.MplsLabel;
 import org.onlab.packet.VlanId;
 import org.onosproject.cli.AbstractShellCommand;
@@ -52,6 +54,7 @@ import com.google.common.collect.TreeRangeSet;
 /**
  * Lists registered resources.
  */
+@Service
 @Command(scope = "onos", name = "resources",
          description = "Lists registered resources")
 public class ResourcesCommand extends AbstractShellCommand {
@@ -73,17 +76,19 @@ public class ResourcesCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "deviceIdString", description = "Device ID",
               required = false, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     String deviceIdStr = null;
 
     @Argument(index = 1, name = "portNumberString", description = "PortNumber",
               required = false, multiValued = false)
+    @Completion(PortNumberCompleter.class)
     String portNumberStr = null;
 
 
     private ResourceQueryService resourceService;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         resourceService = get(ResourceQueryService.class);
 
         if (typeStrings != null) {
@@ -172,8 +177,16 @@ public class ResourcesCommand extends AbstractShellCommand {
         List<Resource> nonAggregatable = new ArrayList<>();
 
         for (Resource r : children) {
-            if (!isPrintTarget(r)) {
+            if (!isPrintTarget(r)) { // A
                 continue;
+            }
+
+            if (r instanceof DiscreteResource) {
+
+                if (resourceService.getRegisteredResources(((DiscreteResource) r).id()).isEmpty()) {
+                    // resource which has children should be printed
+                    continue;
+                }
             }
 
             if (r instanceof ContinuousResource) {
@@ -187,6 +200,7 @@ public class ResourcesCommand extends AbstractShellCommand {
                 nonAggregatable.add(r);
             }
         }
+
 
         // print aggregated (terminal)
         aggregatables.asMap().entrySet()
@@ -236,12 +250,7 @@ public class ResourcesCommand extends AbstractShellCommand {
 
         String resourceName = resource.simpleTypeName();
         if (resource instanceof DiscreteResource) {
-            // TODO This distributed store access incurs overhead.
-            //      This should be merged with the one in printResource()
-            if (!resourceService.getRegisteredResources(((DiscreteResource) resource).id()).isEmpty()) {
-                // resource which has children should be printed
-                return true;
-            }
+
             if (availablesOnly && !resourceService.isAvailable(resource)) {
                 // don't print unavailable discrete resource
                 return false;
@@ -250,7 +259,6 @@ public class ResourcesCommand extends AbstractShellCommand {
             log.warn("Unexpected resource class: {}", resource.getClass().getSimpleName());
             return false;
         }
-
         return typesToPrint.contains(resourceName);
     }
 }

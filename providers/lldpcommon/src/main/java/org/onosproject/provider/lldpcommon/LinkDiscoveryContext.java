@@ -76,9 +76,31 @@ public interface LinkDiscoveryContext {
     void touchLink(LinkKey key);
 
     /**
+     * Set the TTL to the link identified by the given key to indicate that it's active.
+     *
+     * @param key link key
+     * @param ttl ttl value(seconds)
+     */
+    void setTtl(LinkKey key, short ttl);
+
+    /**
      * Returns the cluster-wide unique identifier.
      *
      * @return the cluster identifier
      */
     String fingerprint();
+
+    /**
+     * Returns the cluster-wide MAC secret used to secure LLDP packets.
+     *
+     * @return the secret
+     */
+    String lldpSecret();
+
+    /**
+     * Returns the maximum delay in milliseconds between sending an LLDP packet and receiving it elsewhere.
+     *
+     * @return delay in ms
+     */
+    long maxDiscoveryDelay();
 }

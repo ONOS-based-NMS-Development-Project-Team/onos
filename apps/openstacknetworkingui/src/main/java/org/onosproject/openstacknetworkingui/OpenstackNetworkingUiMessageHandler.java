@@ -43,6 +43,7 @@ import org.onosproject.net.host.HostService;
 import org.onosproject.net.topology.PathService;
 import org.onosproject.openstacknetworking.api.InstancePort;
 import org.onosproject.openstacknetworking.api.InstancePortService;
+import org.onosproject.openstacknetworking.api.OpenstackNetwork.Type;
 import org.onosproject.openstacknetworking.api.OpenstackNetworkService;
 import org.onosproject.openstacknode.api.OpenstackNode;
 import org.onosproject.openstacknode.api.OpenstackNodeService;
@@ -74,6 +75,10 @@ import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.onlab.util.Tools.groupedThreads;
 import static org.onosproject.net.DefaultEdgeLink.createEdgeLink;
 import static org.onosproject.openstacknetworking.api.Constants.DEFAULT_GATEWAY_MAC_STR;
+import static org.onosproject.openstacknetworking.api.OpenstackNetwork.Type.GENEVE;
+import static org.onosproject.openstacknetworking.api.OpenstackNetwork.Type.GRE;
+import static org.onosproject.openstacknetworking.api.OpenstackNetwork.Type.VLAN;
+import static org.onosproject.openstacknetworking.api.OpenstackNetwork.Type.VXLAN;
 
 /**
  * OpenStack Networking UI message handler.
@@ -98,17 +103,18 @@ public class OpenstackNetworkingUiMessageHandler extends UiMessageHandler {
     private static final String FLOW_TRACE_RESULT = "flowTraceResult";
     private static final String SRC_DEVICE_ID = "srcDeviceId";
     private static final String DST_DEVICE_ID = "dstDeviceId";
+    private static final String UPLINK = "uplink";
     private static final String OVS_VERSION_2_8 = "2.8";
+    private static final String OVS_VERSION_2_7 = "2.7";
     private static final String OVS_VERSION_2_6 = "2.6";
-    private static final String FLAT = "FLAT";
-    private static final String VXLAN = "VXLAN";
-    private static final String VLAN = "VLAN";
+
     private static final String DL_DST = "dl_dst=";
     private static final String NW_DST = "nw_dst=";
-    private static final String DEFAULT_REQUEST_STRING = "sudo ovs-appctl ofproto/trace br-int ip,in_port=";
+    private static final String DEFAULT_REQUEST_STRING = "sudo ovs-appctl ofproto/trace br-int ip";
+    private static final String IN_PORT = "in_port=";
     private static final String NW_SRC = "nw_src=";
     private static final String COMMA = ",";
-
+    private static final String TUN_ID = "tun_id=";
 
     private static final long TIMEOUT_MS = 5000;
     private static final long WAIT_OUTPUT_STREAM_SECOND = 2;
@@ -168,7 +174,7 @@ public class OpenstackNetworkingUiMessageHandler extends UiMessageHandler {
             switch (mode) {
                 case MOUSE:
                     currentMode = Mode.MOUSE;
-                    eventExecutor.execute(() -> sendMouseData());
+                    eventExecutor.execute(OpenstackNetworkingUiMessageHandler.this::sendMouseData);
 
                     break;
 
@@ -190,12 +196,15 @@ public class OpenstackNetworkingUiMessageHandler extends UiMessageHandler {
             String dstIp = string(payload, DST_IP);
             String srcDeviceId = string(payload, SRC_DEVICE_ID);
             String dstDeviceId = string(payload, DST_DEVICE_ID);
-            log.info("Flow trace request called with src IP: {}, dst IP: {}, src device ID: {}, dst device Id: {}",
+            boolean uplink = bool(payload, UPLINK);
+            log.info("Flow trace request called with" +
+                            "src IP: {}, dst IP: {}, src device ID: {}, dst device Id: {}, uplink: ",
                     srcIp,
                     dstIp,
                     srcDeviceId,
-                    dstDeviceId);
-            eventExecutor.execute(() -> processFlowTraceRequest(srcIp, dstIp, srcDeviceId, dstDeviceId));
+                    dstDeviceId,
+                    uplink);
+            eventExecutor.execute(() -> processFlowTraceRequest(srcIp, dstIp, srcDeviceId, dstDeviceId, uplink));
         }
     }
 
@@ -211,7 +220,7 @@ public class OpenstackNetworkingUiMessageHandler extends UiMessageHandler {
             if (!Strings.isNullOrEmpty(id)) {
                 eventExecutor.execute(() -> updateForMode(id));
             } else {
-                eventExecutor.execute(() -> clearForMode());
+                eventExecutor.execute(OpenstackNetworkingUiMessageHandler.this::clearForMode);
             }
         }
     }
@@ -228,8 +237,6 @@ public class OpenstackNetworkingUiMessageHandler extends UiMessageHandler {
             clearForMode();
         }
     }
-
-    // === ------------
 
     private void clearState() {
         currentMode = Mode.IDLE;
@@ -290,14 +297,13 @@ public class OpenstackNetworkingUiMessageHandler extends UiMessageHandler {
     private void sendMouseData() {
         Highlights highlights = new Highlights();
 
-        if (elementOfNote != null && elementOfNote instanceof Device) {
+        if (elementOfNote instanceof Device) {
             DeviceId deviceId = (DeviceId) elementOfNote.id();
 
             List<OpenstackLink> edgeLinks = edgeLinks(deviceId);
 
-            edgeLinks.forEach(edgeLink -> {
-                highlights.add(edgeLink.highlight(OpenstackLink.RequestType.DEVICE_SELECTED));
-            });
+            edgeLinks.forEach(edgeLink ->
+                    highlights.add(edgeLink.highlight(OpenstackLink.RequestType.DEVICE_SELECTED)));
 
             hostService.getConnectedHosts(deviceId).forEach(host -> {
                 HostHighlight hostHighlight = new HostHighlight(host.id().toString());
@@ -307,7 +313,7 @@ public class OpenstackNetworkingUiMessageHandler extends UiMessageHandler {
 
             sendHighlights(highlights);
 
-        } else if (elementOfNote != null && elementOfNote instanceof Host) {
+        } else if (elementOfNote instanceof Host) {
 
             HostId hostId = HostId.hostId(elementOfNote.id().toString());
             if (!hostMadeFromOpenstack(hostId)) {
@@ -316,9 +322,8 @@ public class OpenstackNetworkingUiMessageHandler extends UiMessageHandler {
 
             List<OpenstackLink> openstackLinks = linksInSameNetwork(hostId);
 
-            openstackLinks.forEach(openstackLink -> {
-                highlights.add(openstackLink.highlight(OpenstackLink.RequestType.HOST_SELECTED));
-            });
+            openstackLinks.forEach(openstackLink ->
+                    highlights.add(openstackLink.highlight(OpenstackLink.RequestType.HOST_SELECTED)));
 
             hostHighlightsInSameNetwork(hostId).forEach(highlights::add);
 
@@ -328,8 +333,7 @@ public class OpenstackNetworkingUiMessageHandler extends UiMessageHandler {
     }
 
     private boolean hostMadeFromOpenstack(HostId hostId) {
-        return hostService.getHost(hostId).annotations()
-                .value(ANNOTATION_NETWORK_ID) == null ? false : true;
+        return hostService.getHost(hostId).annotations().value(ANNOTATION_NETWORK_ID) != null;
     }
 
     private String networkId(HostId hostId) {
@@ -360,7 +364,7 @@ public class OpenstackNetworkingUiMessageHandler extends UiMessageHandler {
 
         List<OpenstackLink> edgeLinks = Lists.newArrayList();
 
-        openstackLinkMap.biLinks().forEach(edgeLinks::add);
+        edgeLinks.addAll(openstackLinkMap.biLinks());
 
         return edgeLinks;
     }
@@ -384,7 +388,7 @@ public class OpenstackNetworkingUiMessageHandler extends UiMessageHandler {
 
         List<OpenstackLink> openstackLinks = Lists.newArrayList();
 
-        linkMap.biLinks().forEach(openstackLinks::add);
+        openstackLinks.addAll(linkMap.biLinks());
 
         return openstackLinks;
     }
@@ -398,7 +402,8 @@ public class OpenstackNetworkingUiMessageHandler extends UiMessageHandler {
         return NodeBadge.number(Status.INFO, n, "Openstack Node");
     }
 
-    private void processFlowTraceRequest(String srcIp, String dstIp, String srcDeviceId, String dstDeviceId) {
+    private void processFlowTraceRequest(String srcIp, String dstIp, String srcDeviceId, String dstDeviceId,
+                                         boolean uplink) {
         boolean traceSuccess = true;
 
         ObjectMapper mapper = new ObjectMapper();
@@ -409,6 +414,7 @@ public class OpenstackNetworkingUiMessageHandler extends UiMessageHandler {
 
         OpenstackNode srcOpenstackNode = osNodeService.node(DeviceId.deviceId(srcDeviceId));
         if (srcOpenstackNode == null) {
+            log.error("There's no openstack node information for device {}", srcDeviceId);
             return;
         }
 
@@ -418,65 +424,146 @@ public class OpenstackNetworkingUiMessageHandler extends UiMessageHandler {
             return;
         }
 
-        String traceResultForward = sendTraceRequestToNode(srcIp, dstIp, srcOpenstackNode);
-        if (traceResultForward == null) {
+        String traceResultString = sendTraceRequestToNode(srcIp, dstIp, srcOpenstackNode, uplink);
+
+        if (traceResultString == null) {
             return;
         }
 
-        log.debug("traceResultForward raw data: {}", traceResultForward);
+        log.debug("traceResultString raw data: {}", traceResultString);
 
-        ObjectNode traceResultForwardJson = null;
+        ObjectNode traceResultJson = null;
 
         Device srcDevice = deviceService.getDevice(srcOpenstackNode.intgBridge());
-        if (srcDevice.swVersion().startsWith(OVS_VERSION_2_8)) {
-            traceResultForwardJson = Ovs28FlowTraceResultParser.flowTraceResultInJson(
-                    traceResultForward.trim(), srcOpenstackNode.hostname());
+        if (srcDevice.swVersion().startsWith(OVS_VERSION_2_8) ||
+                srcDevice.swVersion().startsWith(OVS_VERSION_2_7)) {
+            traceResultJson = Ovs28FlowTraceResultParser.flowTraceResultInJson(
+                    traceResultString.trim(), srcOpenstackNode.hostname());
         } else {
             log.error("Currently OVS version {} is not supported",
                     deviceService.getDevice(srcOpenstackNode.intgBridge()));
         }
 
-        if (traceResultForwardJson == null) {
+        if (traceResultJson == null) {
             return;
         }
 
-        traceResultArray.add(traceResultForwardJson);
+        traceResultArray.add(traceResultJson);
 
-        log.debug("traceResultForward Json: {}", traceResultForwardJson);
+        log.debug("traceResultForward Json: {}", traceResultJson);
 
-        if (!traceResultForwardJson.get(IS_SUCCESS).asBoolean()) {
+        if (!traceResultJson.get(IS_SUCCESS).asBoolean()) {
             traceSuccess = false;
         }
 
-        //TODO implements trace result in backward
-
         traceResult.put(TRACE_SUCCESS, traceSuccess);
+
+        traceResult.put(SRC_IP, srcIp);
+        traceResult.put(DST_IP, dstIp);
+        traceResult.put(SRC_DEVICE_ID, srcDeviceId);
+        traceResult.put(DST_DEVICE_ID, dstDeviceId);
+        traceResult.put(UPLINK, uplink);
+
         log.debug("traceResult Json: {}", traceResult);
 
         sendMessagetoUi(FLOW_TRACE_RESULT, traceResult);
 
     }
 
-    private String sendTraceRequestToNode(String srcIp, String dstIp, OpenstackNode openstackNode) {
+    private String sendTraceRequestToNode(String srcIp, String dstIp,
+                                          OpenstackNode openstackNode, boolean uplink) {
+
+        Optional<InstancePort> instancePort = instancePortService.instancePorts().stream()
+                .filter(port -> port.ipAddress().getIp4Address().toString().equals(srcIp)
+                        && port.deviceId().equals(openstackNode.intgBridge()))
+                .findAny();
+
+        if (!instancePort.isPresent()) {
+            return null;
+        }
+
+        String requestString = traceRequestString(srcIp, dstIp,
+                instancePort.get(), osNetService, uplink);
+
+        return sendTraceRequestToNode(requestString, openstackNode);
+    }
+
+    private String traceRequestString(String srcIp,
+                                      String dstIp,
+                                      InstancePort srcInstancePort,
+                                      OpenstackNetworkService osNetService,
+                                      boolean uplink) {
+
+        StringBuilder requestStringBuilder = new StringBuilder(DEFAULT_REQUEST_STRING);
+
+        if (uplink) {
+
+            requestStringBuilder.append(COMMA)
+                    .append(IN_PORT)
+                    .append(srcInstancePort.portNumber().toString())
+                    .append(COMMA)
+                    .append(NW_SRC)
+                    .append(srcIp)
+                    .append(COMMA);
+
+            Type netType = osNetService.networkType(srcInstancePort.networkId());
+
+            if (netType == VXLAN || netType == VLAN || netType == GRE || netType == GENEVE) {
+                if (srcIp.equals(dstIp)) {
+                    dstIp = osNetService.gatewayIp(srcInstancePort.portId());
+                    requestStringBuilder.append(DL_DST)
+                            .append(DEFAULT_GATEWAY_MAC_STR).append(COMMA);
+                } else if (!osNetService.ipPrefix(srcInstancePort.portId()).contains(IpAddress.valueOf(dstIp))) {
+                    requestStringBuilder.append(DL_DST)
+                            .append(DEFAULT_GATEWAY_MAC_STR)
+                            .append(COMMA);
+                }
+            } else {
+                if (srcIp.equals(dstIp)) {
+                    dstIp = osNetService.gatewayIp(srcInstancePort.portId());
+                }
+            }
+
+            requestStringBuilder.append(NW_DST)
+                    .append(dstIp)
+                    .append("\n");
+        } else {
+            requestStringBuilder.append(COMMA)
+                    .append(NW_SRC)
+                    .append(dstIp)
+                    .append(COMMA);
+
+            if (osNetService.networkType(srcInstancePort.networkId()).equals(VXLAN) ||
+                    osNetService.networkType(srcInstancePort.networkId()).equals(VLAN)) {
+                requestStringBuilder.append(TUN_ID)
+                        .append(osNetService.segmentId(srcInstancePort.networkId()))
+                        .append(COMMA);
+            }
+            requestStringBuilder.append(NW_DST)
+                    .append(srcIp)
+                    .append("\n");
+
+        }
+
+        return requestStringBuilder.toString();
+    }
+
+    private String sendTraceRequestToNode(String requestString,
+                                                OpenstackNode node) {
         String traceResult = null;
-        OpenstackSshAuth sshAuth = openstackNode.sshAuthInfo();
+        OpenstackSshAuth sshAuth = node.sshAuthInfo();
 
         try (SshClient client = SshClient.setUpDefaultClient()) {
             client.start();
 
             try (ClientSession session = client
-                    .connect(sshAuth.id(), openstackNode.managementIp().getIp4Address().toString(), SSH_PORT)
+                    .connect(sshAuth.id(), node.managementIp().getIp4Address().toString(), SSH_PORT)
                     .verify(TIMEOUT_MS, TimeUnit.SECONDS).getSession()) {
                 session.addPasswordIdentity(sshAuth.password());
                 session.auth().verify(TIMEOUT_MS, TimeUnit.SECONDS);
 
 
                 try (ClientChannel channel = session.createChannel(ClientChannel.CHANNEL_SHELL)) {
-
-                    String requestString = traceRequestString(srcIp, dstIp, openstackNode);
-                    if (requestString == null) {
-                        return null;
-                    }
 
                     log.debug("requestString: {}", requestString);
                     final InputStream inputStream =
@@ -522,41 +609,5 @@ public class OpenstackNetworkingUiMessageHandler extends UiMessageHandler {
         }
 
         return traceResult;
-    }
-
-    private String traceRequestString(String srcIp, String dstIp, OpenstackNode openstackNode) {
-
-        Optional<InstancePort> instancePort = instancePortService.instancePorts().stream()
-                .filter(port -> port.ipAddress().getIp4Address().toString().equals(srcIp)
-                        && port.deviceId().equals(openstackNode.intgBridge()))
-                .findAny();
-
-        if (!instancePort.isPresent()) {
-            return null;
-        }
-
-        String requestString = DEFAULT_REQUEST_STRING
-                + instancePort.get().portNumber().toString()
-                + COMMA
-                + NW_SRC
-                + srcIp
-                + COMMA;
-
-        if (osNetService.networkType(instancePort.get().networkId()).equals(VXLAN)) {
-            if (srcIp.equals(dstIp)) {
-                dstIp = osNetService.gatewayIp(instancePort.get().portId());
-                requestString = requestString + DL_DST + DEFAULT_GATEWAY_MAC_STR + COMMA;
-            } else if (!osNetService.ipPrefix(instancePort.get().portId()).contains(IpAddress.valueOf(dstIp))) {
-                requestString = requestString + DL_DST + DEFAULT_GATEWAY_MAC_STR + COMMA;
-            }
-        } else if (osNetService.networkType(instancePort.get().networkId()).equals(FLAT)) {
-            if (srcIp.equals(dstIp)) {
-                dstIp = osNetService.gatewayIp(instancePort.get().portId());
-            }
-        }
-
-        requestString = requestString + NW_DST + dstIp + "\n";
-
-        return requestString;
     }
 }

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { LogService } from '../../../log.service';
-import { FnService } from '../../../fw/util/fn.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { DialogService } from '../../../fw/layer/dialog.service';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
-import { TableResponse, TableBaseImpl, SortDir } from '../../../fw/widget/table.base';
+import {
+    FnService,
+    LogService,
+    WebSocketService,
+    SortDir, TableBaseImpl, TableResponse
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 
 const RESUBMITINTENT = 'resubmitIntent';
 const REMOVEINTENT = 'removeIntent';
@@ -62,7 +62,7 @@ export enum IntentAction {
 @Component({
     selector: 'onos-intent',
     templateUrl: './intent.component.html',
-    styleUrls: ['./intent.component.css', './intent-theme.css', '../../../fw/widget/table.css', '../../../fw/widget/table.theme.css']
+    styleUrls: ['./intent.component.css', './intent-theme.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.theme.css']
 })
 export class IntentComponent extends TableBaseImpl implements OnInit, OnDestroy {
 
@@ -87,11 +87,9 @@ export class IntentComponent extends TableBaseImpl implements OnInit, OnDestroy 
     constructor(
         protected log: LogService,
         protected fs: FnService,
-        private ds: DialogService,
-        protected ls: LoadingService,
         protected wss: WebSocketService,
     ) {
-        super(fs, ls, log, wss, 'intent', 'key');
+        super(fs, log, wss, 'intent', 'key');
         this.responseCallback = this.intentResponseCb;
         this.parentSelCb = this.rowSelection;
         this.brief = true;
@@ -131,6 +129,7 @@ export class IntentComponent extends TableBaseImpl implements OnInit, OnDestroy 
         this.intentData.appId = splittedRowAppId[0].trim();
         this.intentData.appName = splittedRowAppId[1].trim();
         this.intentData.key = this.selId;
+        this.intentData.type = selRow.type;
     }
 
     briefToggle() {
@@ -152,20 +151,6 @@ export class IntentComponent extends TableBaseImpl implements OnInit, OnDestroy 
 
         }
         return this.withdrwanIntent;
-    }
-
-    /**
-     * TO-DO intent view related function need to implement once
-     * topology page will be available
-    */
-    showIntent() {
-    }
-
-    /**
-     * TO-DO intent view related function need to implement once
-     * topology page will be available
-    */
-    canShowIntent() {
     }
 
     /**

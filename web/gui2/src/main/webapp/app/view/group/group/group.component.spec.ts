@@ -16,22 +16,21 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { GroupComponent } from './group.component';
-import { LogService } from '../../../log.service';
-import { ConsoleLoggerService } from '../../../consolelogger.service';
-import { IconComponent } from '../../../fw/svg/icon/icon.component';
-import { DialogService } from '../../../fw/layer/dialog.service';
-import { FnService } from '../../../fw/util/fn.service';
-import { IconService } from '../../../fw/svg/icon.service';
-import { KeyService } from '../../../fw/util/key.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { ThemeService } from '../../../fw/util/theme.service';
-import { UrlFnService } from '../../../fw/remote/urlfn.service';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
+import {
+    ConsoleLoggerService,
+    FnService,
+    IconService,
+    IconComponent,
+    LogService,
+    TableFilterPipe,
+    ThemeService,
+    UrlFnService,
+    WebSocketService, LoadingComponent
+} from 'gui2-fw-lib';
 import { ActivatedRoute, Params } from '@angular/router';
 import { of } from 'rxjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FormsModule } from '@angular/forms';
-import { TableFilterPipe } from '../../../fw/widget/tablefilter.pipe';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
@@ -43,20 +42,8 @@ class MockActivatedRoute extends ActivatedRoute {
     }
 }
 
-class MockDialogService { }
-
-class MockFnService { }
-
 class MockIconService {
     loadIconDef() { }
-}
-
-class MockKeyService { }
-
-class MockLoadingService {
-    startAnim() { }
-    stop() { }
-    waiting() { }
 }
 
 class MockThemeService { }
@@ -109,13 +96,15 @@ describe('GroupComponent', () => {
 
         TestBed.configureTestingModule({
             imports: [BrowserAnimationsModule, FormsModule, RouterTestingModule],
-            declarations: [GroupComponent, IconComponent, TableFilterPipe],
+            declarations: [
+                GroupComponent,
+                IconComponent,
+                TableFilterPipe,
+                LoadingComponent
+            ],
             providers: [
-                { provide: DialogService, useClass: MockDialogService },
                 { provide: FnService, useValue: fs },
                 { provide: IconService, useClass: MockIconService },
-                { provide: KeyService, useClass: MockKeyService },
-                { provide: LoadingService, useClass: MockLoadingService },
                 { provide: LogService, useValue: log },
                 { provide: ThemeService, useClass: MockThemeService },
                 { provide: UrlFnService, useClass: MockUrlFnService },

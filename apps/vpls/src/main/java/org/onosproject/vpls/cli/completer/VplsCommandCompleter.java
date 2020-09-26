@@ -16,7 +16,7 @@
 package org.onosproject.vpls.cli.completer;
 
 import com.google.common.collect.Lists;
-import org.apache.karaf.shell.console.completer.ArgumentCompleter;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractChoicesCompleter;
 import org.onosproject.vpls.cli.VplsCommandEnum;
 
@@ -26,15 +26,16 @@ import java.util.List;
 /**
  * VPLS command completer.
  */
+@Service
 public class VplsCommandCompleter extends AbstractChoicesCompleter {
 
     @Override
     public List<String> choices() {
-        ArgumentCompleter.ArgumentList argumentList = getArgumentList();
-        if (argumentList == null) {
+        if (commandLine.getArguments() == null) {
             return Collections.emptyList();
         }
-        List<String> argList = Lists.newArrayList(argumentList.getArguments());
+        List<String> argList = Lists.newArrayList();
+
         String argOne = null;
         if (argList.size() > 1) {
             argOne = argList.get(1);

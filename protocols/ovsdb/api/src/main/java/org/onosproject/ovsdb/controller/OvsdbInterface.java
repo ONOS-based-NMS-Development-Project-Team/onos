@@ -15,18 +15,21 @@
  */
 package org.onosproject.ovsdb.controller;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.onosproject.ovsdb.controller.OvsdbConstant.*;
+import com.google.common.collect.Maps;
+import org.onosproject.net.DefaultAnnotations;
+import org.onosproject.net.behaviour.PatchDescription;
+import org.onosproject.net.behaviour.TunnelDescription;
+import org.onosproject.ovsdb.rfc.table.Interface.InterfaceColumn;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import com.google.common.collect.Maps;
-import org.onosproject.net.DefaultAnnotations;
-import org.onosproject.net.behaviour.PatchDescription;
-import org.onosproject.net.behaviour.TunnelDescription;
+import static com.google.common.base.MoreObjects.toStringHelper;
+import static org.onosproject.ovsdb.controller.OvsdbConstant.PATCH_PEER;
+import static org.onosproject.ovsdb.controller.OvsdbConstant.TUNNEL_KEY;
+import static org.onosproject.ovsdb.controller.OvsdbConstant.TUNNEL_LOCAL_IP;
+import static org.onosproject.ovsdb.controller.OvsdbConstant.TUNNEL_REMOTE_IP;
 
 /**
  * The class representing an OVSDB interface.
@@ -52,6 +55,10 @@ public final class OvsdbInterface {
          */
         GRE,
         /**
+         * An Ethernet over draft-ietf-nvo3-geneve-08 Generic Network Virtualization Encapsulation tunnel.
+         */
+        GENEVE,
+        /**
          * An Ethernet tunnel over the experimental, UDP-based VXLAN protocol.
          */
         VXLAN,
@@ -68,17 +75,21 @@ public final class OvsdbInterface {
     private final String name;
     private final Type type;
     private final Optional<Long> mtu;
+    private final Map<InterfaceColumn, Map<String, String>> data;
 
     /* Adds more configs */
 
     /* Fields start with "options:" prefix defined in the OVSDB */
     private final Map<String, String> options;
 
-    private OvsdbInterface(String name, Type type, Optional<Long> mtu, Map<String, String> options) {
+    private OvsdbInterface(String name, Type type, Optional<Long> mtu,
+                           Map<String, String> options, Map<InterfaceColumn,
+                            Map<String, String>> data) {
         this.name = name;
-        this.type = checkNotNull(type, "the type of interface can not be null");
+        this.type = type;
         this.mtu = mtu;
         this.options = Maps.newHashMap(options);
+        this.data = data;
     }
 
     /**
@@ -126,6 +137,15 @@ public final class OvsdbInterface {
         return options;
     }
 
+    /**
+     * Returns the data of the interface.
+     *
+     * @return interface data
+     */
+    public Map<InterfaceColumn, Map<String, String>> data() {
+        return data;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(name);
@@ -150,6 +170,7 @@ public final class OvsdbInterface {
                 .add("type", type)
                 .add("mtu", mtu)
                 .add("options", options)
+                .add("data", data)
                 .toString();
     }
 
@@ -190,6 +211,7 @@ public final class OvsdbInterface {
         private Type type;
         private Optional<Long> mtu = Optional.empty();
         private Map<String, String> options = Maps.newHashMap();
+        private Map<InterfaceColumn, Map<String, String>> data = Maps.newHashMap();
 
         private Builder() {
         }
@@ -239,7 +261,7 @@ public final class OvsdbInterface {
          * @return ovsdb interface
          */
         public OvsdbInterface build() {
-            return new OvsdbInterface(name, type, mtu, options);
+            return new OvsdbInterface(name, type, mtu, options, data);
         }
 
         /**
@@ -283,6 +305,17 @@ public final class OvsdbInterface {
          */
         public Builder options(Map<String, String> options) {
             this.options = Maps.newHashMap(options);
+            return this;
+        }
+
+        /**
+         * Returns OVSDB interface builder with given data.
+         *
+         * @param data map of data
+         * @return ovsdb interface builder
+         */
+        public Builder data(Map<InterfaceColumn, Map<String, String>> data) {
+            this.data = data;
             return this;
         }
     }

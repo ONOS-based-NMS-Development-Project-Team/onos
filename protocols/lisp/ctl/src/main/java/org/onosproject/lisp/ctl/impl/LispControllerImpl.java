@@ -16,14 +16,6 @@
 package org.onosproject.lisp.ctl.impl;
 
 import com.google.common.collect.Maps;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onlab.util.Tools;
 import org.onosproject.cfg.ComponentConfigService;
 import org.onosproject.core.CoreService;
@@ -39,6 +31,12 @@ import org.onosproject.lisp.msg.protocols.LispInfoReply;
 import org.onosproject.lisp.msg.protocols.LispInfoRequest;
 import org.onosproject.lisp.msg.protocols.LispMessage;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.Dictionary;
@@ -53,43 +51,37 @@ import static java.util.stream.Collectors.toConcurrentMap;
 import static org.onlab.util.Tools.get;
 import static org.onlab.util.Tools.getIntegerProperty;
 import static org.onlab.util.Tools.groupedThreads;
+import static org.onosproject.lisp.ctl.impl.OsgiPropertyConstants.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * LISP controller initiation class.
  */
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = LispController.class,
+        property = {
+                LISP_AUTH_KEY + "=" + LISP_AUTH_KEY_DEFAULT,
+                LISP_AUTH_KEY_ID + ":Integer=" + LISP_AUTH_KEY_ID_DEFAULT,
+                ENABLE_SMR + ":Boolean=" + ENABLE_SMR_DEFAULT,
+        })
 public class LispControllerImpl implements LispController {
 
     private static final String APP_ID = "org.onosproject.lisp-base";
 
     private static final Logger log = getLogger(LispControllerImpl.class);
 
-    private static final String DEFAULT_LISP_AUTH_KEY = "onos";
-    private static final short DEFAULT_LISP_AUTH_KEY_ID = 1;
-
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService cfgService;
 
-    @Property(name = "lispAuthKey", value = DEFAULT_LISP_AUTH_KEY,
-            label = "Authentication key which is used to calculate authentication " +
-                    "data for LISP control message; default value is onos")
-    private String lispAuthKey = DEFAULT_LISP_AUTH_KEY;
+    /** Authentication key which is used to calculate authentication data. */
+    private String lispAuthKey = LISP_AUTH_KEY_DEFAULT;
 
-    @Property(name = "lispAuthKeyId", intValue = DEFAULT_LISP_AUTH_KEY_ID,
-            label = "Authentication key id which denotes the authentication method " +
-                    "that ONOS uses to calculate the authentication data; " +
-                    "1 denotes HMAC SHA1 encryption, 2 denotes HMAC SHA256 encryption; " +
-                    "default value is 1")
-    private int lispAuthKeyId = DEFAULT_LISP_AUTH_KEY_ID;
+    /** Authentication key id which denotes the authentication method used to calculate the authentication data. */
+    private int lispAuthKeyId = LISP_AUTH_KEY_ID_DEFAULT;
 
-    @Property(name = "enableSmr", boolValue = false,
-            label = "Enable to send SMR(Solicit Map Request) by map server; " +
-                    "By default SMR is not activated")
+    /** Enable to send SMR(Solicit Map Request) by map server; by default SMR is not activated. */
     private boolean enableSmr = false;
 
     ExecutorService executorMessages =
@@ -148,8 +140,8 @@ public class LispControllerImpl implements LispController {
      * @param properties a set of properties that contained in component context
      */
     private void initAuthConfig(Dictionary<?, ?> properties) {
-        authConfig.updateLispAuthKey(get(properties, "lispAuthKey"));
-        authConfig.updateLispAuthKeyId(getIntegerProperty(properties, "lispAuthKeyId"));
+        authConfig.updateLispAuthKey(get(properties, LISP_AUTH_KEY));
+        authConfig.updateLispAuthKeyId(getIntegerProperty(properties, LISP_AUTH_KEY_ID));
     }
 
     /**
@@ -160,14 +152,14 @@ public class LispControllerImpl implements LispController {
     private void readComponentConfiguration(ComponentContext context) {
         Dictionary<?, ?> properties = context.getProperties();
 
-        String lispAuthKeyStr = Tools.get(properties, "lispAuthKey");
-        lispAuthKey = lispAuthKeyStr != null ? lispAuthKeyStr : DEFAULT_LISP_AUTH_KEY;
+        String lispAuthKeyStr = Tools.get(properties, LISP_AUTH_KEY);
+        lispAuthKey = lispAuthKeyStr != null ? lispAuthKeyStr : LISP_AUTH_KEY_DEFAULT;
         authConfig.updateLispAuthKey(lispAuthKey);
         log.info("Configured. LISP authentication key is {}", lispAuthKey);
 
-        Integer lispAuthMethodInt = Tools.getIntegerProperty(properties, "lispAuthKeyId");
+        Integer lispAuthMethodInt = Tools.getIntegerProperty(properties, LISP_AUTH_KEY_ID);
         if (lispAuthMethodInt == null) {
-            lispAuthKeyId = DEFAULT_LISP_AUTH_KEY_ID;
+            lispAuthKeyId = LISP_AUTH_KEY_ID_DEFAULT;
             log.info("LISP authentication method is not configured, default value is {}", lispAuthKeyId);
         } else {
             lispAuthKeyId = lispAuthMethodInt;
@@ -175,14 +167,14 @@ public class LispControllerImpl implements LispController {
         }
         authConfig.updateLispAuthKeyId(lispAuthKeyId);
 
-        Boolean enableSmr = Tools.isPropertyEnabled(properties, "enableSmr");
+        Boolean enableSmr = Tools.isPropertyEnabled(properties, ENABLE_SMR);
         if (enableSmr == null) {
             log.info("Enable SMR is not configured, " +
-                    "using current value of {}", this.enableSmr);
+                             "using current value of {}", this.enableSmr);
         } else {
             this.enableSmr = enableSmr;
             log.info("Configured. Sending SMR through map server is {}",
-                    this.enableSmr ? "enabled" : "disabled");
+                     this.enableSmr ? "enabled" : "disabled");
         }
     }
 
@@ -194,9 +186,9 @@ public class LispControllerImpl implements LispController {
     @Override
     public Iterable<LispRouter> getSubscribedRouters() {
         return connectedRouters.entrySet()
-                                .stream()
-                                .filter(e -> e.getValue().isSubscribed())
-                                .collect(toConcurrentMap(Map.Entry::getKey,
+                .stream()
+                .filter(e -> e.getValue().isSubscribed())
+                .collect(toConcurrentMap(Map.Entry::getKey,
                                          Map.Entry::getValue)).values();
     }
 
@@ -272,7 +264,7 @@ public class LispControllerImpl implements LispController {
 
             if (connectedRouters.get(routerId) != null) {
                 log.warn("Trying to add connectedRouter but found a previous " +
-                          "value for routerId: {}", routerId);
+                                 "value for routerId: {}", routerId);
                 return false;
             } else {
                 log.info("Added router {}", routerId);
@@ -289,7 +281,7 @@ public class LispControllerImpl implements LispController {
 
             if (connectedRouters.get(routerId) == null) {
                 log.error("Trying to remove router {} from connectedRouter " +
-                          "list but no element was found", routerId);
+                                  "list but no element was found", routerId);
             } else {
                 log.info("Removed router {}", routerId);
                 connectedRouters.remove(routerId);
@@ -356,7 +348,7 @@ public class LispControllerImpl implements LispController {
         private final boolean isIncoming;
 
         LispMessageHandler(LispRouterId routerId,
-                                  LispMessage message, boolean isIncoming) {
+                           LispMessage message, boolean isIncoming) {
             this.routerId = routerId;
             this.message = message;
             this.isIncoming = isIncoming;
@@ -378,10 +370,10 @@ public class LispControllerImpl implements LispController {
      * LISP incoming message handler.
      */
     protected final class LispIncomingMessageHandler
-                    extends LispMessageHandler implements Runnable {
+            extends LispMessageHandler implements Runnable {
 
         LispIncomingMessageHandler(LispRouterId routerId,
-                                          LispMessage message) {
+                                   LispMessage message) {
             super(routerId, message, true);
         }
     }
@@ -390,10 +382,10 @@ public class LispControllerImpl implements LispController {
      * LISP outgoing message handler.
      */
     protected final class LispOutgoingMessageHandler
-                    extends LispMessageHandler implements Runnable {
+            extends LispMessageHandler implements Runnable {
 
         LispOutgoingMessageHandler(LispRouterId routerId,
-                                          LispMessage message) {
+                                   LispMessage message) {
             super(routerId, message, false);
         }
     }

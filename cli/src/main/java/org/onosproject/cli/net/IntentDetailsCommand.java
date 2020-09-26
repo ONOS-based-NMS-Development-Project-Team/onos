@@ -18,10 +18,13 @@ package org.onosproject.cli.net;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onlab.util.Tools;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.net.completer.IntentIdCompleter;
 import org.onosproject.net.Link;
 import org.onosproject.net.LinkKey;
 import org.onosproject.net.intent.Intent;
@@ -32,19 +35,21 @@ import org.onosproject.net.intent.IntentService;
 /**
  * Displays details about an Intent in the system.
  */
+@Service
 @Command(scope = "onos", name = "intent-details",
          description = "Displays intent details")
 public class IntentDetailsCommand extends AbstractShellCommand {
 
     @Option(name = "--id",
             description = "Filter intent by specific Id", multiValued = true)
+    @Completion(IntentIdCompleter.class)
     private List<String> idsStr;
 
     private Set<IntentId> ids = null;
 
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         detailIntents(idsStr);
     }
 

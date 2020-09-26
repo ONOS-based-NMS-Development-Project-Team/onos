@@ -29,8 +29,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.TreeMultimap;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.metrics.MetricsService;
 import org.onlab.util.Tools;
 
@@ -43,6 +45,7 @@ import static java.lang.String.format;
 /**
  * Prints metrics in the system.
  */
+@Service
 @Command(scope = "onos", name = "metrics",
          description = "Prints metrics in the system")
 public class MetricsListCommand extends AbstractShellCommand {
@@ -68,10 +71,11 @@ public class MetricsListCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "metricName", description = "Name of Metric",
             required = false, multiValued = false)
+    @Completion(MetricNameCompleter.class)
     String metricName = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         MetricsService metricsService = get(MetricsService.class);
 
         MetricFilter filter = metricName != null ? (name, metric) -> name.equals(metricName) : MetricFilter.ALL;

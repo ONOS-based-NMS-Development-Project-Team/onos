@@ -54,7 +54,16 @@ public class ComponentConfigAdapter implements ComponentConfigService {
     }
 
     @Override
+    public void preSetProperty(String componentName, String name, String value, boolean override) {
+    }
+
+    @Override
     public void unsetProperty(String componentName, String name) {
 
+    }
+
+    @Override
+    public ConfigProperty getProperty(String componentName, String attribute) {
+        return null;
     }
 }

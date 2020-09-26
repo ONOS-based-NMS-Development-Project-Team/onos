@@ -16,14 +16,6 @@
 package org.onosproject.provider.host.impl;
 
 import com.google.common.collect.Sets;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onlab.packet.ARP;
 import org.onlab.packet.BasePacket;
 import org.onlab.packet.DHCP;
@@ -50,10 +42,17 @@ import org.onlab.packet.ndp.NeighborAdvertisement;
 import org.onlab.packet.ndp.NeighborSolicitation;
 import org.onlab.packet.ndp.RouterAdvertisement;
 import org.onlab.packet.ndp.RouterSolicitation;
+import org.onlab.util.PredictableExecutor;
 import org.onlab.util.Tools;
 import org.onosproject.cfg.ComponentConfigService;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
+import org.onosproject.net.ConnectPoint;
+import org.onosproject.net.Device;
+import org.onosproject.net.DeviceId;
+import org.onosproject.net.Host;
+import org.onosproject.net.HostId;
+import org.onosproject.net.HostLocation;
 import org.onosproject.net.config.ConfigFactory;
 import org.onosproject.net.config.NetworkConfigEvent;
 import org.onosproject.net.config.NetworkConfigListener;
@@ -62,13 +61,6 @@ import org.onosproject.net.config.NetworkConfigService;
 import org.onosproject.net.config.basics.BasicHostConfig;
 import org.onosproject.net.config.basics.HostLearningConfig;
 import org.onosproject.net.config.basics.SubjectFactories;
-import org.onosproject.net.intf.InterfaceService;
-import org.onosproject.net.ConnectPoint;
-import org.onosproject.net.Device;
-import org.onosproject.net.DeviceId;
-import org.onosproject.net.Host;
-import org.onosproject.net.HostId;
-import org.onosproject.net.HostLocation;
 import org.onosproject.net.device.DeviceEvent;
 import org.onosproject.net.device.DeviceListener;
 import org.onosproject.net.device.DeviceService;
@@ -82,6 +74,7 @@ import org.onosproject.net.host.HostProvider;
 import org.onosproject.net.host.HostProviderRegistry;
 import org.onosproject.net.host.HostProviderService;
 import org.onosproject.net.host.HostService;
+import org.onosproject.net.intf.InterfaceService;
 import org.onosproject.net.packet.DefaultOutboundPacket;
 import org.onosproject.net.packet.OutboundPacket;
 import org.onosproject.net.packet.PacketContext;
@@ -93,54 +86,70 @@ import org.onosproject.net.provider.ProviderId;
 import org.onosproject.net.topology.Topology;
 import org.onosproject.net.topology.TopologyService;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 import java.util.Dictionary;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
-import java.util.Set;
 
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static org.onlab.util.Tools.groupedThreads;
+import static org.onosproject.provider.host.impl.OsgiPropertyConstants.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Provider which uses an OpenFlow controller to detect network end-station
  * hosts.
  */
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = HostProvider.class,
+        property = {
+                HOST_REMOVAL_ENABLED + ":Boolean=" + HOST_REMOVAL_ENABLED_DEFAULT,
+                REQUEST_ARP + ":Boolean=" + REQUEST_ARP_DEFAULT,
+                REQUEST_NDP + ":Boolean=" + REQUEST_NDP_DEFAULT,
+                REQUEST_NDP_RS_RA + ":Boolean=" + REQUEST_NDP_RS_RA_DEFAULT,
+                USE_DHCP + ":Boolean=" + USE_DHCP_DEFAULT,
+                USE_DHCP6 + ":Boolean=" + USE_DHCP6_DEFAULT,
+                REQUEST_INTERCEPTS_ENABLED + ":Boolean=" + REQUEST_INTERCEPTS_ENABLED_DEFAULT,
+                MULTIHOMING_ENABLED + ":Boolean=" + MULTIHOMING_ENABLED_DEFAULT,
+        })
 public class HostLocationProvider extends AbstractProvider implements HostProvider {
     private final Logger log = getLogger(getClass());
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected HostProviderRegistry providerRegistry;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected PacketService packetService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected TopologyService topologyService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected HostService hostService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DeviceService deviceService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService cfgService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected NetworkConfigRegistry registry;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected InterfaceService interfaceService;
 
     private final InternalHostProvider processor = new InternalHostProvider();
@@ -149,43 +158,39 @@ public class HostLocationProvider extends AbstractProvider implements HostProvid
 
     private ApplicationId appId;
 
-    @Property(name = "hostRemovalEnabled", boolValue = true,
-            label = "Enable host removal on port/device down events")
+    /** Enable host removal on port/device down events. */
     private boolean hostRemovalEnabled = true;
 
-    @Property(name = "requestArp", boolValue = true,
-            label = "Request ARP packets for neighbor discovery by the " +
-                    "Host Location Provider; default is true")
+    /** Request ARP packets for neighbor discovery by the Host Location Provider; default is true. */
     private boolean requestArp = true;
 
-    @Property(name = "requestIpv6ND", boolValue = false,
-            label = "Requests IPv6 Neighbor Discovery by the " +
-                    "Host Location Provider; default is false")
+    /** Requests IPv6 NDP Neighbor Solicitation and Advertisement by the Host Location Provider; default is false. */
     private boolean requestIpv6ND = false;
 
-    @Property(name = "useDhcp", boolValue = false,
-            label = "Use DHCP to update IP address of the host; default is false")
+    /** Requests IPv6 NDP Router Solicitation and Advertisement by the Host Location Provider; default is false. */
+    private boolean requestIpv6NdpRsRa = false;
+
+    /** Use DHCP to update IP address of the host; default is false. */
     private boolean useDhcp = false;
 
-    @Property(name = "useDhcp6", boolValue = false,
-            label = "Use DHCPv6 to update IP address of the host; default is false")
+    /** Use DHCPv6 to update IP address of the host; default is false. */
     private boolean useDhcp6 = false;
 
-    @Property(name = "requestInterceptsEnabled", boolValue = true,
-            label = "Enable requesting packet intercepts")
+    /** Enable requesting packet intercepts. */
     private boolean requestInterceptsEnabled = true;
 
-    @Property(name = "multihomingEnabled", boolValue = false,
-            label = "Allow hosts to be multihomed")
+    /** Allow hosts to be multihomed. */
     private boolean multihomingEnabled = false;
 
     private HostProviderService providerService;
 
     ExecutorService deviceEventHandler;
     private ExecutorService probeEventHandler;
-    private ExecutorService packetHandler;
+    // Packet workers - 0 will leverage available processors
+    private static final int DEFAULT_THREADS = 0;
+    private PredictableExecutor packetWorkers;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected NetworkConfigService netcfgService;
 
     private ConfigFactory<ConnectPoint, HostLearningConfig> hostLearningConfig =
@@ -213,8 +218,8 @@ public class HostLocationProvider extends AbstractProvider implements HostProvid
                 "device-event-handler", log));
         probeEventHandler = newSingleThreadScheduledExecutor(groupedThreads("onos/host-loc-provider",
                 "probe-event-handler", log));
-        packetHandler = newSingleThreadScheduledExecutor(groupedThreads("onos/host-loc-provider",
-                "packet-handler", log));
+        packetWorkers = new PredictableExecutor(DEFAULT_THREADS, groupedThreads("onos/host-loc-provider",
+                                                                                 "packet-worker-%d", log));
         providerService = providerRegistry.register(this);
         packetService.addProcessor(processor, PacketProcessor.advisor(1));
         deviceService.addListener(deviceListener);
@@ -236,7 +241,7 @@ public class HostLocationProvider extends AbstractProvider implements HostProvid
         deviceService.removeListener(deviceListener);
         deviceEventHandler.shutdown();
         probeEventHandler.shutdown();
-        packetHandler.shutdown();
+        packetWorkers.shutdown();
         providerService = null;
         registry.unregisterConfigFactory(hostLearningConfig);
         netcfgService.removeListener(cfgListener);
@@ -259,32 +264,40 @@ public class HostLocationProvider extends AbstractProvider implements HostProvid
      */
     private void requestIntercepts() {
         // Use ARP
-        TrafficSelector arpSelector = DefaultTrafficSelector.builder()
-                .matchEthType(Ethernet.TYPE_ARP)
-                .build();
+        TrafficSelector.Builder selector = DefaultTrafficSelector.builder()
+                .matchEthType(Ethernet.TYPE_ARP);
         if (requestArp) {
-            packetService.requestPackets(arpSelector, PacketPriority.CONTROL, appId);
+            packetService.requestPackets(selector.build(), PacketPriority.CONTROL, appId);
         } else {
-            packetService.cancelPackets(arpSelector, PacketPriority.CONTROL, appId);
+            packetService.cancelPackets(selector.build(), PacketPriority.CONTROL, appId);
         }
 
-        // Use IPv6 Neighbor Discovery
-        TrafficSelector ipv6NsSelector = DefaultTrafficSelector.builder()
-                .matchEthType(Ethernet.TYPE_IPV6)
-                .matchIPProtocol(IPv6.PROTOCOL_ICMP6)
-                .matchIcmpv6Type(ICMP6.NEIGHBOR_SOLICITATION)
-                .build();
-        TrafficSelector ipv6NaSelector = DefaultTrafficSelector.builder()
-                .matchEthType(Ethernet.TYPE_IPV6)
-                .matchIPProtocol(IPv6.PROTOCOL_ICMP6)
-                .matchIcmpv6Type(ICMP6.NEIGHBOR_ADVERTISEMENT)
-                .build();
+        // Use IPv6 NDP Neighbor Solicitation and Advertisement
+        selector.matchEthType(Ethernet.TYPE_IPV6)
+                .matchIPProtocol(IPv6.PROTOCOL_ICMP6);
         if (requestIpv6ND) {
-            packetService.requestPackets(ipv6NsSelector, PacketPriority.CONTROL, appId);
-            packetService.requestPackets(ipv6NaSelector, PacketPriority.CONTROL, appId);
+            selector.matchIcmpv6Type(ICMP6.NEIGHBOR_SOLICITATION);
+            packetService.requestPackets(selector.build(), PacketPriority.CONTROL, appId);
+            selector.matchIcmpv6Type(ICMP6.NEIGHBOR_ADVERTISEMENT);
+            packetService.requestPackets(selector.build(), PacketPriority.CONTROL, appId);
         } else {
-            packetService.cancelPackets(ipv6NsSelector, PacketPriority.CONTROL, appId);
-            packetService.cancelPackets(ipv6NaSelector, PacketPriority.CONTROL, appId);
+            selector.matchIcmpv6Type(ICMP6.NEIGHBOR_SOLICITATION);
+            packetService.cancelPackets(selector.build(), PacketPriority.CONTROL, appId);
+            selector.matchIcmpv6Type(ICMP6.NEIGHBOR_ADVERTISEMENT);
+            packetService.cancelPackets(selector.build(), PacketPriority.CONTROL, appId);
+        }
+
+        // Use IPv6 NDP Router Solicitation and Advertisement
+        if (requestIpv6NdpRsRa) {
+            selector.matchIcmpv6Type(ICMP6.ROUTER_SOLICITATION);
+            packetService.requestPackets(selector.build(), PacketPriority.CONTROL, appId);
+            selector.matchIcmpv6Type(ICMP6.ROUTER_ADVERTISEMENT);
+            packetService.requestPackets(selector.build(), PacketPriority.CONTROL, appId);
+        } else {
+            selector.matchIcmpv6Type(ICMP6.ROUTER_SOLICITATION);
+            packetService.cancelPackets(selector.build(), PacketPriority.CONTROL, appId);
+            selector.matchIcmpv6Type(ICMP6.ROUTER_ADVERTISEMENT);
+            packetService.cancelPackets(selector.build(), PacketPriority.CONTROL, appId);
         }
     }
 
@@ -316,7 +329,7 @@ public class HostLocationProvider extends AbstractProvider implements HostProvid
         Dictionary<?, ?> properties = context.getProperties();
         Boolean flag;
 
-        flag = Tools.isPropertyEnabled(properties, "hostRemovalEnabled");
+        flag = Tools.isPropertyEnabled(properties, HOST_REMOVAL_ENABLED);
         if (flag == null) {
             log.info("Host removal on port/device down events is not configured, " +
                      "using current value of {}", hostRemovalEnabled);
@@ -326,7 +339,7 @@ public class HostLocationProvider extends AbstractProvider implements HostProvid
                      hostRemovalEnabled ? "enabled" : "disabled");
         }
 
-        flag = Tools.isPropertyEnabled(properties, "requestArp");
+        flag = Tools.isPropertyEnabled(properties, REQUEST_ARP);
         if (flag == null) {
             log.info("Using ARP is not configured, " +
                      "using current value of {}", requestArp);
@@ -336,17 +349,27 @@ public class HostLocationProvider extends AbstractProvider implements HostProvid
                      requestArp ? "enabled" : "disabled");
         }
 
-        flag = Tools.isPropertyEnabled(properties, "requestIpv6ND");
+        flag = Tools.isPropertyEnabled(properties, REQUEST_NDP);
         if (flag == null) {
             log.info("Using IPv6 Neighbor Discovery is not configured, " +
                              "using current value of {}", requestIpv6ND);
         } else {
             requestIpv6ND = flag;
-            log.info("Configured. Using IPv6 Neighbor Discovery is {}",
+            log.info("Configured. Using IPv6 NDP Neighbor Solicitation and Advertisement is {}",
                      requestIpv6ND ? "enabled" : "disabled");
         }
 
-        flag = Tools.isPropertyEnabled(properties, "useDhcp");
+        flag = Tools.isPropertyEnabled(properties, REQUEST_NDP_RS_RA);
+        if (flag == null) {
+            log.info("Using IPv6 Neighbor Discovery is not configured, " +
+                    "using current value of {}", requestIpv6NdpRsRa);
+        } else {
+            requestIpv6NdpRsRa = flag;
+            log.info("Configured. Using IPv6 NDP Router Solicitation and Advertisement is {}",
+                    requestIpv6NdpRsRa ? "enabled" : "disabled");
+        }
+
+        flag = Tools.isPropertyEnabled(properties, USE_DHCP);
         if (flag == null) {
             log.info("Using DHCP is not configured, " +
                      "using current value of {}", useDhcp);
@@ -356,7 +379,17 @@ public class HostLocationProvider extends AbstractProvider implements HostProvid
                      useDhcp ? "enabled" : "disabled");
         }
 
-        flag = Tools.isPropertyEnabled(properties, "requestInterceptsEnabled");
+        flag = Tools.isPropertyEnabled(properties, USE_DHCP6);
+        if (flag == null) {
+            log.info("Using DHCP6 is not configured, " +
+                             "using current value of {}", useDhcp6);
+        } else {
+            useDhcp6 = flag;
+            log.info("Configured. Using DHCP6 is {}",
+                     useDhcp6 ? "enabled" : "disabled");
+        }
+
+        flag = Tools.isPropertyEnabled(properties, REQUEST_INTERCEPTS_ENABLED);
         if (flag == null) {
             log.info("Request intercepts is not configured, " +
                      "using current value of {}", requestInterceptsEnabled);
@@ -366,7 +399,7 @@ public class HostLocationProvider extends AbstractProvider implements HostProvid
                      requestInterceptsEnabled ? "enabled" : "disabled");
         }
 
-        flag = Tools.isPropertyEnabled(properties, "multihomingEnabled");
+        flag = Tools.isPropertyEnabled(properties, MULTIHOMING_ENABLED);
         if (flag == null) {
             log.info("Multihoming is not configured, " +
                     "using current value of {}", multihomingEnabled);
@@ -495,18 +528,22 @@ public class HostLocationProvider extends AbstractProvider implements HostProvid
 
         @Override
         public void process(PacketContext context) {
-            packetHandler.execute(() -> processPacketInternal(context));
-        }
-
-        private void processPacketInternal(PacketContext context) {
+            // Verify valid context
             if (context == null) {
                 return;
             }
-
+            // Verify valid Ethernet packet
             Ethernet eth = context.inPacket().parsed();
             if (eth == null) {
                 return;
             }
+            // Dispatch to a worker thread
+            HostId hostId = HostId.hostId(eth.getSourceMAC(), VlanId.vlanId(eth.getVlanID()));
+            packetWorkers.execute(() -> processPacketInternal(context), hostId.hashCode());
+        }
+
+        private void processPacketInternal(PacketContext context) {
+            Ethernet eth = context.inPacket().parsed();
 
             MacAddress srcMac = eth.getSourceMAC();
             if (srcMac.isBroadcast() || srcMac.isMulticast()) {
@@ -602,8 +639,12 @@ public class HostLocationProvider extends AbstractProvider implements HostProvid
                     // Neighbor Discovery Protocol
                     pkt = pkt.getPayload();
                     if (pkt != null) {
-                        // RouterSolicitation, RouterAdvertisement
-                        if (pkt instanceof RouterAdvertisement || pkt instanceof RouterSolicitation) {
+                        if ((pkt instanceof RouterAdvertisement || pkt instanceof RouterSolicitation)) {
+                            if (ip.isZero()) {
+                                return;
+                            }
+                            // RouterSolicitation, RouterAdvertisement
+                            createOrUpdateHost(hid, srcMac, vlan, innerVlan, outerTpid, hloc, ip);
                             return;
                         }
                         if (pkt instanceof NeighborSolicitation || pkt instanceof NeighborAdvertisement) {

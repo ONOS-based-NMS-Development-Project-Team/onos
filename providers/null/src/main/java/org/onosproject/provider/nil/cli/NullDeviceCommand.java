@@ -15,9 +15,13 @@
  */
 package org.onosproject.provider.nil.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.UpDownCompleter;
+import org.onosproject.cli.net.DeviceIdCompleter;
 import org.onosproject.net.DeviceId;
 import org.onosproject.provider.nil.NullProviders;
 
@@ -27,21 +31,24 @@ import static org.onosproject.cli.UpDownCompleter.UP;
 /**
  * Downs or repairs a simulated device.
  */
+@Service
 @Command(scope = "onos", name = "null-device",
         description = "Downs or repairs a simulated device")
 public class NullDeviceCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "id", description = "Device identifier",
             required = true, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     String id = null;
 
     @Argument(index = 1, name = "cmd", description = "up/down",
             required = true, multiValued = false)
+    @Completion(UpDownCompleter.class)
     String cmd = null;
 
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         NullProviders service = get(NullProviders.class);
         DeviceId deviceId = DeviceId.deviceId(id);
 

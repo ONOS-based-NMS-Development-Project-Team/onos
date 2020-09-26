@@ -17,8 +17,10 @@ package org.onosproject.cli.net;
 
 import java.util.List;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.net.HostId;
 import org.onosproject.net.flow.TrafficSelector;
 import org.onosproject.net.flow.TrafficTreatment;
@@ -29,20 +31,23 @@ import org.onosproject.net.intent.IntentService;
 /**
  * Installs host-to-host connectivity intent.
  */
+@Service
 @Command(scope = "onos", name = "add-host-intent",
          description = "Installs host-to-host connectivity intent")
 public class AddHostToHostIntentCommand extends ConnectivityIntentCommand {
 
     @Argument(index = 0, name = "one", description = "One host ID",
               required = true, multiValued = false)
+    @Completion(HostIdCompleter.class)
     String one = null;
 
     @Argument(index = 1, name = "two", description = "Another host ID",
               required = true, multiValued = false)
+    @Completion(HostIdCompleter.class)
     String two = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         IntentService service = get(IntentService.class);
 
         HostId oneId = HostId.hostId(one);

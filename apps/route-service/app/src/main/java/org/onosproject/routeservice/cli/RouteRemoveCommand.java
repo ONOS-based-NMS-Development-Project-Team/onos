@@ -16,8 +16,9 @@
 
 package org.onosproject.routeservice.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.packet.IpAddress;
 import org.onlab.packet.IpPrefix;
 import org.onosproject.cli.AbstractShellCommand;
@@ -29,6 +30,7 @@ import java.util.Collections;
 /**
  * Command to remove a route from the routing table.
  */
+@Service
 @Command(scope = "onos", name = "route-remove",
         description = "Removes a route from the route table")
 public class RouteRemoveCommand extends AbstractShellCommand {
@@ -41,14 +43,25 @@ public class RouteRemoveCommand extends AbstractShellCommand {
             required = true)
     String nextHopString = null;
 
+    @Argument(index = 2, name = "source", description = "Source type of the route",
+            required = false)
+    String source = null;
+
     @Override
-    protected void execute() {
+    protected void doExecute() {
         RouteAdminService service = AbstractShellCommand.get(RouteAdminService.class);
 
         IpPrefix prefix = IpPrefix.valueOf(prefixString);
         IpAddress nextHop = IpAddress.valueOf(nextHopString);
 
-        service.withdraw(Collections.singleton(new Route(Route.Source.STATIC, prefix, nextHop)));
+        // Routes through cli without mentioning source then it is created as STATIC,
+        // otherwise routes are created with corresponding source.
+
+        Route route = source == null ?
+                new Route(Route.Source.STATIC, prefix, nextHop) :
+                new Route(Route.Source.valueOf(source), prefix, nextHop);
+
+        service.withdraw(Collections.singleton(route));
     }
 
 }

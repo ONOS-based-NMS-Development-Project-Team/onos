@@ -15,10 +15,13 @@
  */
 package org.onosproject.cli.net;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.packet.IpAddress;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.PlaceholderCompleter;
 import org.onosproject.net.ConnectPoint;
 import org.onosproject.net.mcast.McastRoute;
 import org.onosproject.net.mcast.MulticastRouteService;
@@ -26,6 +29,7 @@ import org.onosproject.net.mcast.MulticastRouteService;
 /**
  * Installs a source, multicast group flow.
  */
+@Service
 @Command(scope = "onos", name = "mcast-join",
          description = "Installs a source, multicast group flow")
 public class McastJoinCommand extends AbstractShellCommand {
@@ -37,16 +41,19 @@ public class McastJoinCommand extends AbstractShellCommand {
     @Argument(index = 0, name = "sAddr",
               description = "IP Address of the multicast source. '*' can be used for any source (*, G) entry",
               required = true, multiValued = false)
+    @Completion(PlaceholderCompleter.class)
     String sAddr = null;
 
     @Argument(index = 1, name = "gAddr",
               description = "IP Address of the multicast group",
               required = true, multiValued = false)
+    @Completion(McastGroupCompleter.class)
     String gAddr = null;
 
     @Argument(index = 2, name = "ingressPort",
             description = "Ingress port of:XXXXXXXXXX/XX",
             required = false, multiValued = false)
+    @Completion(ConnectPointCompleter.class)
     String ingressPort = null;
 
     @Argument(index = 3, name = "ports",
@@ -55,7 +62,7 @@ public class McastJoinCommand extends AbstractShellCommand {
     String[] ports = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         MulticastRouteService mcastRouteManager = get(MulticastRouteService.class);
 
         McastRoute mRoute = new McastRoute(IpAddress.valueOf(sAddr),

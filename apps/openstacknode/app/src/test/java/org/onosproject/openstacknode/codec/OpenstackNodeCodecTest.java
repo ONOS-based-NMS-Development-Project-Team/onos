@@ -29,18 +29,28 @@ import org.onosproject.codec.impl.CodecManager;
 import org.onosproject.core.CoreService;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.behaviour.ControllerInfo;
+import org.onosproject.openstacknode.api.DefaultOpenstackAuth;
+import org.onosproject.openstacknode.api.DefaultOpenstackNode;
+import org.onosproject.openstacknode.api.DpdkConfig;
+import org.onosproject.openstacknode.api.DpdkInterface;
+import org.onosproject.openstacknode.api.KeystoneConfig;
+import org.onosproject.openstacknode.api.NeutronConfig;
 import org.onosproject.openstacknode.api.NodeState;
 import org.onosproject.openstacknode.api.OpenstackAuth;
 import org.onosproject.openstacknode.api.OpenstackNode;
 import org.onosproject.openstacknode.api.OpenstackPhyInterface;
 import org.onosproject.openstacknode.api.OpenstackSshAuth;
-import org.onosproject.openstacknode.api.DefaultOpenstackAuth;
-import org.onosproject.openstacknode.api.DefaultOpenstackNode;
-import org.onosproject.openstacknode.impl.DefaultOpenstackPhyInterface;
-import org.onosproject.openstacknode.impl.DefaultOpenstackSshAuth;
+import org.onosproject.openstacknode.api.DefaultDpdkConfig;
+import org.onosproject.openstacknode.api.DefaultDpdkInterface;
+import org.onosproject.openstacknode.api.DefaultKeystoneConfig;
+import org.onosproject.openstacknode.api.DefaultNeutronConfig;
+import org.onosproject.openstacknode.api.DefaultOpenstackPhyInterface;
+import org.onosproject.openstacknode.api.DefaultOpenstackSshAuth;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,6 +60,7 @@ import static org.easymock.EasyMock.replay;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.onosproject.net.NetTestTools.APP_ID;
 import static org.onosproject.openstacknode.codec.OpenstackNodeJsonMatcher.matchesOpenstackNode;
 
@@ -58,11 +69,16 @@ import static org.onosproject.openstacknode.codec.OpenstackNodeJsonMatcher.match
  */
 public class OpenstackNodeCodecTest {
     MockCodecContext context;
+
     JsonCodec<OpenstackNode> openstackNodeCodec;
     JsonCodec<OpenstackPhyInterface> openstackPhyIntfJsonCodec;
     JsonCodec<ControllerInfo> openstackControllerJsonCodec;
     JsonCodec<OpenstackAuth> openstackAuthJsonCodec;
     JsonCodec<OpenstackSshAuth> openstackSshAuthJsonCodec;
+    JsonCodec<DpdkConfig> dpdkConfigJsonCodec;
+    JsonCodec<DpdkInterface> dpdkInterfaceJsonCodec;
+    JsonCodec<KeystoneConfig> keystoneConfigJsonCodec;
+    JsonCodec<NeutronConfig> neutronConfigJsonCodec;
 
     final CoreService mockCoreService = createMock(CoreService.class);
     private static final String REST_APP_ID = "org.onosproject.rest";
@@ -75,12 +91,20 @@ public class OpenstackNodeCodecTest {
         openstackControllerJsonCodec = new OpenstackControllerCodec();
         openstackAuthJsonCodec = new OpenstackAuthCodec();
         openstackSshAuthJsonCodec = new OpenstackSshAuthCodec();
+        dpdkConfigJsonCodec = new DpdkConfigCodec();
+        dpdkInterfaceJsonCodec = new DpdkInterfaceCodec();
+        keystoneConfigJsonCodec = new KeystoneConfigCodec();
+        neutronConfigJsonCodec = new NeutronConfigCodec();
 
         assertThat(openstackNodeCodec, notNullValue());
         assertThat(openstackPhyIntfJsonCodec, notNullValue());
         assertThat(openstackControllerJsonCodec, notNullValue());
         assertThat(openstackAuthJsonCodec, notNullValue());
         assertThat(openstackSshAuthJsonCodec, notNullValue());
+        assertThat(dpdkConfigJsonCodec, notNullValue());
+        assertThat(dpdkInterfaceJsonCodec, notNullValue());
+        assertThat(keystoneConfigJsonCodec, notNullValue());
+        assertThat(neutronConfigJsonCodec, notNullValue());
 
         expect(mockCoreService.registerApplication(REST_APP_ID))
                 .andReturn(APP_ID).anyTimes();
@@ -119,7 +143,7 @@ public class OpenstackNodeCodecTest {
                                 .state(NodeState.INIT)
                                 .managementIp(IpAddress.valueOf("10.10.10.1"))
                                 .intgBridge(DeviceId.deviceId("br-int"))
-                                .vlanIntf("vxlan")
+                                .vlanIntf("vlan")
                                 .dataIp(IpAddress.valueOf("20.20.20.2"))
                                 .phyIntfs(ImmutableList.of(phyIntf1, phyIntf2))
                                 .controllers(ImmutableList.of(controller1, controller2))
@@ -133,7 +157,7 @@ public class OpenstackNodeCodecTest {
     /**
      * Tests the openstack compute node decoding.
      *
-     * @throws IOException
+     * @throws IOException io exception
      */
     @Test
     public void testOpenstackComputeNodeDecode() throws IOException {
@@ -149,6 +173,8 @@ public class OpenstackNodeCodecTest {
         assertThat(node.controllers().size(), is(2));
         assertThat(node.sshAuthInfo().id(), is("sdn"));
         assertThat(node.sshAuthInfo().password(), is("sdn"));
+        assertThat(node.datapathType(), is(DpdkConfig.DatapathType.NORMAL));
+
 
         node.phyIntfs().forEach(intf -> {
             if (intf.network().equals("mgmtnetwork")) {
@@ -170,13 +196,71 @@ public class OpenstackNodeCodecTest {
     }
 
     /**
+     * Tests the openstack compute node encoding with dpdk config.
+     */
+    @Test
+    public void testOpenstackDpdkComputeNodeEncode() {
+        DpdkInterface dpdkInterface1 = DefaultDpdkInterface.builder()
+                .deviceName("br-int")
+                .intf("dpdk0")
+                .mtu(Long.valueOf(1600))
+                .pciAddress("0000:85:00.0")
+                .type(DpdkInterface.Type.DPDK)
+                .build();
+
+        DpdkInterface dpdkInterface2 = DefaultDpdkInterface.builder()
+                .deviceName("br-tun")
+                .intf("dpdk1")
+                .pciAddress("0000:85:00.1")
+                .type(DpdkInterface.Type.DPDK)
+                .build();
+
+        Collection<DpdkInterface> dpdkInterfaceCollection = new ArrayList<>();
+        dpdkInterfaceCollection.add(dpdkInterface1);
+        dpdkInterfaceCollection.add(dpdkInterface2);
+
+
+        DpdkConfig dpdkConfig = DefaultDpdkConfig.builder()
+                .datapathType(DpdkConfig.DatapathType.NETDEV)
+                .dpdkIntfs(dpdkInterfaceCollection)
+                .build();
+
+        OpenstackNode node = DefaultOpenstackNode.builder()
+                .hostname("compute")
+                .type(OpenstackNode.NodeType.COMPUTE)
+                .state(NodeState.INIT)
+                .managementIp(IpAddress.valueOf("10.10.10.1"))
+                .intgBridge(DeviceId.deviceId("br-int"))
+                .vlanIntf("vlan")
+                .dataIp(IpAddress.valueOf("20.20.20.2"))
+                .dpdkConfig(dpdkConfig)
+                .build();
+
+        ObjectNode nodeJson = openstackNodeCodec.encode(node, context);
+        assertThat(nodeJson, matchesOpenstackNode(node));
+    }
+
+    /**
+     * Tests the openstack compute node decoding with dpdk config.
+     *
+     * @throws IOException io exception
+     */
+    @Test
+    public void testOpenstackDpdkComputeNodeDecode() throws IOException {
+        OpenstackNode node = getOpenstackNode("OpenstackDpdkComputeNode.json");
+
+        assertEquals(node.datapathType(), DpdkConfig.DatapathType.NETDEV);
+        assertEquals(node.socketDir(), "/var/lib/libvirt/qemu");
+        assertEquals(node.dpdkConfig().dpdkIntfs().size(), 2);
+    }
+
+    /**
      * Tests the openstack controller node encoding.
      */
     @Test
     public void testOpenstackControllerNodeEncode() {
         OpenstackAuth auth = DefaultOpenstackAuth.builder()
                 .version("v2.0")
-                .port(35357)
                 .protocol(OpenstackAuth.Protocol.HTTP)
                 .project("admin")
                 .username("admin")
@@ -184,13 +268,27 @@ public class OpenstackNodeCodecTest {
                 .perspective(OpenstackAuth.Perspective.PUBLIC)
                 .build();
 
+        String endpoint = "172.16.130.10:35357/v2.0";
+
+        KeystoneConfig keystoneConfig = DefaultKeystoneConfig.builder()
+                                            .endpoint(endpoint)
+                                            .authentication(auth)
+                                            .build();
+
+        NeutronConfig neutronConfig = DefaultNeutronConfig.builder()
+                                            .useMetadataProxy(true)
+                                            .metadataProxySecret("onos")
+                                            .novaMetadataIp("172.16.130.10")
+                                            .novaMetadataPort(8775)
+                                            .build();
+
         OpenstackNode node = DefaultOpenstackNode.builder()
                 .hostname("controller")
                 .type(OpenstackNode.NodeType.CONTROLLER)
                 .state(NodeState.INIT)
                 .managementIp(IpAddress.valueOf("172.16.130.10"))
-                .endPoint("keystone-end-point-url")
-                .authentication(auth)
+                .keystoneConfig(keystoneConfig)
+                .neutronConfig(neutronConfig)
                 .build();
 
         ObjectNode nodeJson = openstackNodeCodec.encode(node, context);
@@ -207,17 +305,51 @@ public class OpenstackNodeCodecTest {
         assertThat(node.hostname(), is("controller"));
         assertThat(node.type().name(), is("CONTROLLER"));
         assertThat(node.managementIp().toString(), is("172.16.130.10"));
-        assertThat(node.endPoint(), is("keystone-end-point-url"));
 
-        OpenstackAuth auth = node.authentication();
+        KeystoneConfig keystoneConfig = node.keystoneConfig();
+        OpenstackAuth auth = keystoneConfig.authentication();
+        String endpoint = keystoneConfig.endpoint();
 
         assertThat(auth.version(), is("v2.0"));
-        assertThat(auth.port(), is(35357));
         assertThat(auth.protocol(), is(OpenstackAuth.Protocol.HTTP));
         assertThat(auth.username(), is("admin"));
         assertThat(auth.password(), is("nova"));
         assertThat(auth.project(), is("admin"));
         assertThat(auth.perspective(), is(OpenstackAuth.Perspective.PUBLIC));
+
+        assertThat(endpoint, is("172.16.130.10:35357/v2.0"));
+
+        NeutronConfig neutronConfig = node.neutronConfig();
+
+        assertThat(neutronConfig.useMetadataProxy(), is(true));
+        assertThat(neutronConfig.metadataProxySecret(), is("onos"));
+        assertThat(neutronConfig.novaMetadataIp(), is("172.16.130.10"));
+        assertThat(neutronConfig.novaMetadataPort(), is(8775));
+    }
+
+    /**
+     * Tests the openstack obsolete controller node decoding.
+     */
+    @Test
+    public void testOpenstackObsoleteControllerNodeDecode() throws IOException {
+        OpenstackNode node = getOpenstackNode("OpenstackObsoleteControllerNode.json");
+
+        assertThat(node.hostname(), is("controller"));
+        assertThat(node.type().name(), is("CONTROLLER"));
+        assertThat(node.managementIp().toString(), is("172.16.130.10"));
+
+        KeystoneConfig keystoneConfig = node.keystoneConfig();
+        OpenstackAuth auth = keystoneConfig.authentication();
+        String endpoint = keystoneConfig.endpoint();
+
+        assertThat(auth.version(), is("v2.0"));
+        assertThat(auth.protocol(), is(OpenstackAuth.Protocol.HTTP));
+        assertThat(auth.username(), is("admin"));
+        assertThat(auth.password(), is("nova"));
+        assertThat(auth.project(), is("admin"));
+        assertThat(auth.perspective(), is(OpenstackAuth.Perspective.PUBLIC));
+
+        assertThat(endpoint, is("172.16.130.10:35357/v2.0"));
     }
 
     /**
@@ -270,6 +402,18 @@ public class OpenstackNodeCodecTest {
             }
             if (entityClass == OpenstackSshAuth.class) {
                 return (JsonCodec<T>) openstackSshAuthJsonCodec;
+            }
+            if (entityClass == DpdkConfig.class) {
+                return (JsonCodec<T>) dpdkConfigJsonCodec;
+            }
+            if (entityClass == DpdkInterface.class) {
+                return (JsonCodec<T>) dpdkInterfaceJsonCodec;
+            }
+            if (entityClass == KeystoneConfig.class) {
+                return (JsonCodec<T>) keystoneConfigJsonCodec;
+            }
+            if (entityClass == NeutronConfig.class) {
+                return (JsonCodec<T>) neutronConfigJsonCodec;
             }
             return manager.getCodec(entityClass);
         }

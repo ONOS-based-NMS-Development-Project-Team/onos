@@ -16,12 +16,10 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AppsRoutingModule } from './apps-routing.module';
+import { RouterModule } from '@angular/router';
 import { AppsComponent } from './apps/apps.component';
 import { AppsDetailsComponent } from './appsdetails/appsdetails.component';
-import { LayerModule } from '../../fw/layer/layer.module';
-import { SvgModule } from '../../fw/svg/svg.module';
-import { WidgetModule } from '../../fw/widget/widget.module';
+import { Gui2FwLibModule } from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 
 /**
  * ONOS GUI -- Apps View Module
@@ -33,11 +31,9 @@ import { WidgetModule } from '../../fw/widget/widget.module';
 @NgModule({
     imports: [
         CommonModule,
-        AppsRoutingModule,
-        SvgModule,
-        WidgetModule,
-        FormsModule,
-        LayerModule
+        Gui2FwLibModule,
+        RouterModule.forChild([{path: '', component: AppsComponent}]),
+        FormsModule
     ],
     declarations: [
         AppsComponent,

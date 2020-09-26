@@ -15,8 +15,11 @@
  */
 package org.onosproject.cfm.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.onosproject.cfm.cli.completer.CfmMepIdCompleter;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.incubator.net.l2monitoring.cfm.MepEntry;
 import org.onosproject.incubator.net.l2monitoring.cfm.identifier.MaIdShort;
@@ -35,12 +38,14 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Lists a particular Maintenance Domain.
  */
+@Service
 @Command(scope = "onos", name = "cfm-mep-list",
         description = "Lists a filtered set of MEPs or all if no parameters specified.")
 public class CfmMepListCommand extends AbstractShellCommand {
     private final Logger log = getLogger(getClass());
     @Argument(name = "md",
             description = "Maintenance Domain name and type (in brackets) - will use all MDs if not specified")
+    @Completion(CfmMepIdCompleter.class)
     private String mdStr = null;
     @Argument(index = 1, name = "ma",
             description = "Maintenance Association name and type (in brackets) - requires MD")
@@ -50,7 +55,7 @@ public class CfmMepListCommand extends AbstractShellCommand {
     private String mepStr = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         CfmMepService mepService = get(CfmMepService.class);
         CfmMdService mdService = get(CfmMdService.class);
 

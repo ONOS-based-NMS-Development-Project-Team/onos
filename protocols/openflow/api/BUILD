@@ -1,9 +1,7 @@
-COMPILE_DEPS = CORE_DEPS + NETTY + [
-    "//incubator/store:onos-incubator-store",
-    "//incubator/api:onos-incubator-api",
+COMPILE_DEPS = CORE_DEPS + NETTY + JACKSON + [
     "//core/common:onos-core-common",
     "@openflowj//jar",
-    "@netty_transport//jar",
+    "@io_netty_netty_transport//jar",
 ]
 
 TEST_DEPS = TEST + [

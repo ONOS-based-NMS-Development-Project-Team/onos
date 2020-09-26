@@ -1,5 +1,4 @@
 COMPILE_DEPS = CORE_DEPS + JACKSON + CLI + [
-    "//incubator/api:onos-incubator-api",
     "//apps/routing-api:onos-apps-routing-api",
     "//apps/route-service/api:onos-apps-route-service-api",
     "//apps/intentsync:onos-apps-intentsync",
@@ -17,6 +16,10 @@ TEST_DEPS = TEST_ADAPTERS + [
 ]
 
 osgi_jar_with_tests(
+    karaf_command_packages = [
+        "org.onosproject.sdnip.cli",
+        "org.onosproject.sdnip.cli.completer",
+    ],
     test_deps = TEST_DEPS,
     deps = COMPILE_DEPS,
 )

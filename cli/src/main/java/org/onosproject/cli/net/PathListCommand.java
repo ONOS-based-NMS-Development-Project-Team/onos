@@ -18,9 +18,11 @@ package org.onosproject.cli.net;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.DisjointPath;
@@ -37,6 +39,7 @@ import static org.onosproject.net.DeviceId.deviceId;
  * Lists all shortest-paths paths between the specified source and
  * destination devices.
  */
+@Service
 @Command(scope = "onos", name = "paths",
          description = "Lists all shortest-paths paths between the specified source and destination devices")
 public class PathListCommand extends TopologyCommand {
@@ -45,17 +48,19 @@ public class PathListCommand extends TopologyCommand {
 
     @Argument(index = 0, name = "src", description = "Source device ID",
               required = true, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     String src = null;
 
     @Argument(index = 1, name = "dst", description = "Destination device ID",
               required = true, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     String dst = null;
 
     @Option(name = "--disjoint", description = "Show disjoint Paths")
     boolean disjoint = false;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         init();
         DeviceService deviceService = get(DeviceService.class);
         DeviceId srcDid = deviceId(src);

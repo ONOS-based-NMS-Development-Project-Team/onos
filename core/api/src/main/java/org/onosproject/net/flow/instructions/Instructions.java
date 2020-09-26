@@ -321,6 +321,28 @@ public final class Instructions {
     }
 
     /**
+     * Creates a L3 ARP IP src modification.
+     *
+     * @param addr the ip address to modify to
+     * @return a L3 modification
+     */
+    public static L3ModificationInstruction modArpTpa(IpAddress addr) {
+        checkNotNull(addr, "Dst l3 ARP IP address cannot be null");
+        return new ModArpIPInstruction(L3SubType.ARP_TPA, addr);
+    }
+
+    /**
+     * Creates a l3 ARP Ether src modification.
+     *
+     * @param addr the mac address to modify to
+     * @return a l3 modification
+     */
+    public static L3ModificationInstruction modArpTha(MacAddress addr) {
+        checkNotNull(addr, "Dst l3 ARP address cannot be null");
+        return new ModArpEthInstruction(L3SubType.ARP_THA, addr);
+    }
+
+    /**
      * Creates a l3 ARP operation modification.
      *
      * @param op the ARP operation to modify to
@@ -482,6 +504,16 @@ public final class Instructions {
     public static PiInstruction piTableAction(PiTableAction piTableAction) {
         checkNotNull(piTableAction, "PiTableAction instruction cannot be null");
         return new PiInstruction(piTableAction);
+    }
+
+    /**
+     * Creates an IP DSCP modification.
+     *
+     * @param ipDscp the DSCP value to modify to
+     * @return a L3 modification
+     */
+    public static Instruction modIpDscp(byte ipDscp) {
+        return new L3ModificationInstruction.ModDscpInstruction(L3SubType.IP_DSCP, ipDscp);
     }
 
     /**

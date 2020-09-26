@@ -16,11 +16,11 @@
 
 package org.onosproject.routeservice.impl;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.routeservice.Route;
 import org.onosproject.routeservice.RouteAdminService;
@@ -30,7 +30,10 @@ import org.onosproject.net.config.NetworkConfigEvent;
 import org.onosproject.net.config.NetworkConfigListener;
 import org.onosproject.net.config.NetworkConfigRegistry;
 import org.onosproject.net.config.basics.SubjectFactories;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -40,10 +43,12 @@ import java.util.stream.Collectors;
 @Component(immediate = true)
 public class ConfigurationRouteSource {
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    private static final Logger log = LoggerFactory.getLogger(ConfigurationRouteSource.class);
+
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected NetworkConfigRegistry netcfgRegistry;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected RouteAdminService routeService;
 
     private final ConfigFactory<ApplicationId, RouteConfig> routeConfigFactory =
@@ -62,6 +67,17 @@ public class ConfigurationRouteSource {
     protected void activate() {
         netcfgRegistry.addListener(netcfgListener);
         netcfgRegistry.registerConfigFactory(routeConfigFactory);
+
+        // Read initial routes in netcfg
+        netcfgRegistry.getSubjects(ApplicationId.class, RouteConfig.class).forEach(subject -> {
+            Optional.ofNullable(netcfgRegistry.getConfig(subject, RouteConfig.class))
+                    .map(RouteConfig::getRoutes)
+                    .ifPresent(routes -> {
+                        log.info("Load initial routes from netcfg: {}", routes);
+                        routeService.update(routes);
+                    });
+        });
+
     }
 
     @Deactivate

@@ -15,10 +15,13 @@
  */
 package org.onosproject.mcast.cli;
 
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.Option;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.packet.IpAddress;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.net.HostIdCompleter;
 import org.onosproject.mcast.api.McastRoute;
 import org.onosproject.mcast.api.MulticastRouteService;
 import org.onosproject.net.HostId;
@@ -26,6 +29,7 @@ import org.onosproject.net.HostId;
 /**
  * Deletes a multicast route.
  */
+@Service
 @Command(scope = "onos", name = "mcast-sink-delete",
         description = "Delete a sink from multicast route flow. If no sin is specified removes the whole route.")
 public class McastSinkDeleteCommand extends AbstractShellCommand {
@@ -48,15 +52,17 @@ public class McastSinkDeleteCommand extends AbstractShellCommand {
             description = "IP Address of the multicast group",
             valueToShowInHelp = "224.0.0.0",
             required = true, multiValued = false)
+    @Completion(McastGroupCompleter.class)
     String gAddr = null;
 
     @Option(name = "-s", aliases = "--sinks",
             description = "Host sink format: MAC/VLAN",
             valueToShowInHelp = "00:00:00:00:00:00/None")
+    @Completion(HostIdCompleter.class)
     String host = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         MulticastRouteService mcastRouteManager = get(MulticastRouteService.class);
         // Clear all routes
         if ("*".equals(sAddr) && "*".equals(gAddr)) {

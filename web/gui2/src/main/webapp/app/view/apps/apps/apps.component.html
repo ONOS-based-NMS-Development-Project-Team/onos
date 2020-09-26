@@ -14,9 +14,10 @@
 ~ limitations under the License.
 -->
 <div id="ov-app" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+    <onos-flash id="appMsgFlash" message="{{ alertMsg }}" dwell="5000" warning="true" (closed)="alertMsg = ''"></onos-flash>
+    <onos-loading [theme]="'light'" [running]="loadingIconShown"></onos-loading>
+    <onos-confirm title="{{ lionFn('dlg_confirm_action') }}" message="{{ confirmMsg }}" warning="{{ strongWarning }}" (chosen)="dOk($event)"></onos-confirm>
     <div class="tabular-header">
-        <onos-flash id="appMsgFlash" message="{{ alertMsg }}" dwell="5000" warning="true" (closed)="alertMsg = ''"></onos-flash>
-        <onos-confirm message="{{ confirmMsg }}" warning="{{ strongWarning }}" (chosen)="dOk($event)"></onos-confirm>
         <h2>
             {{lionFn('title_apps')}}
             ({{ tableData.length }}
@@ -114,11 +115,11 @@
                     (click)="selectCallback($event, app)"
                     [ngClass]="{selected: app.id === selId, 'data-change': isChanged(app.id)}">
                     <td class="table-icon">
-                        <onos-icon iconId="{{app._iconid_state}}"></onos-icon>
+                        <onos-icon [classes]="getStateAsClass(app.state)" [iconId]="app._iconid_state"></onos-icon>
                     </td>
                     <td class="table-icon">
                         <!-- The path below gets the app icon from the old GUI path -->
-                        <img src="../../ui/rs/applications/{{app.icon}}/icon"
+                        <img src="rs/applications/{{app.icon}}/icon"
                                                 height="24px" width="24px" />
                     </td>
                     <td>{{ app.title }}</td>

@@ -15,15 +15,11 @@
  */
 package org.onosproject.openstacknetworking.impl;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onlab.util.KryoNamespace;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
+import org.onosproject.openstacknetworking.api.InstancePort;
+import org.onosproject.openstacknetworking.api.InstancePortAdminService;
 import org.onosproject.openstacknetworking.api.OpenstackNetworkEvent;
 import org.onosproject.openstacknetworking.api.OpenstackNetworkEvent.Type;
 import org.onosproject.openstacknetworking.api.PreCommitPortService;
@@ -31,6 +27,11 @@ import org.onosproject.store.serializers.KryoNamespaces;
 import org.onosproject.store.service.ConsistentMap;
 import org.onosproject.store.service.Serializer;
 import org.onosproject.store.service.StorageService;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -40,13 +41,13 @@ import java.util.Objects;
 import java.util.Set;
 
 import static org.onosproject.openstacknetworking.api.Constants.OPENSTACK_NETWORKING_APP_ID;
+import static org.onosproject.openstacknetworking.api.InstancePort.State.REMOVE_PENDING;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Implementation of pre-commit service.
  */
-@Service
-@Component(immediate = true)
+@Component(immediate = true, service = PreCommitPortService.class)
 public class PreCommitPortManager implements PreCommitPortService {
 
     protected final Logger log = getLogger(getClass());
@@ -56,10 +57,10 @@ public class PreCommitPortManager implements PreCommitPortService {
             .register(OpenstackNetworkEvent.Type.class)
             .build();
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected StorageService storageService;
 
     private ConsistentMap<String, Map<Type, Set<String>>> store;
@@ -106,7 +107,8 @@ public class PreCommitPortManager implements PreCommitPortService {
     }
 
     @Override
-    public void unsubscribePreCommit(String portId, Type eventType, String className) {
+    public void unsubscribePreCommit(String portId, Type eventType,
+                                     InstancePortAdminService service, String className) {
 
         store.computeIfPresent(portId, (k, v) -> {
 
@@ -121,6 +123,15 @@ public class PreCommitPortManager implements PreCommitPortService {
 
             return v;
         });
+
+        if (subscriberCountByEventType(portId, eventType) == 0) {
+
+            InstancePort instPort = service.instancePort(portId);
+
+            if (instPort != null && instPort.state() == REMOVE_PENDING) {
+                service.removeInstancePort(portId);
+            }
+        }
     }
 
     @Override

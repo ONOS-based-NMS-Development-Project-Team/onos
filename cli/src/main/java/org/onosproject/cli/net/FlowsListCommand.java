@@ -19,11 +19,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onlab.util.StringFilter;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.PlaceholderCompleter;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
 import org.onosproject.net.Device;
@@ -39,7 +42,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +56,7 @@ import static com.google.common.collect.Lists.newArrayList;
 /**
  * Lists all currently-known flows.
  */
+@Service
 @Command(scope = "onos", name = "flows",
          description = "Lists all currently-known flows.")
 public class FlowsListCommand extends AbstractShellCommand {
@@ -64,21 +67,24 @@ public class FlowsListCommand extends AbstractShellCommand {
 
     private static final String LONG_FORMAT = "    id=%s, state=%s, bytes=%s, "
             + "packets=%s, duration=%s, liveType=%s, priority=%s, tableId=%s, appId=%s, "
-            + "payLoad=%s, selector=%s, treatment=%s";
+            + "selector=%s, treatment=%s";
 
     private static final String SHORT_FORMAT = "    %s, bytes=%s, packets=%s, "
             + "table=%s, priority=%s, selector=%s, treatment=%s";
 
     @Argument(index = 0, name = "state", description = "Flow Rule state",
             required = false, multiValued = false)
+    @Completion(FlowRuleStatusCompleter.class)
     String state = null;
 
     @Argument(index = 1, name = "uri", description = "Device ID",
               required = false, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     String uri = null;
 
     @Argument(index = 2, name = "table", description = "Table ID",
             required = false, multiValued = false)
+    @Completion(PlaceholderCompleter.class)
     String table = null;
 
     @Option(name = "-s", aliases = "--short",
@@ -111,7 +117,7 @@ public class FlowsListCommand extends AbstractShellCommand {
     private StringFilter contentFilter;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         CoreService coreService = get(CoreService.class);
         DeviceService deviceService = get(DeviceService.class);
         FlowRuleService service = get(FlowRuleService.class);
@@ -120,12 +126,15 @@ public class FlowsListCommand extends AbstractShellCommand {
         compilePredicate();
 
         if (countOnly && !suppressCoreOutput && filter.isEmpty() && remove == null) {
-            if (uri == null) {
+            if (state == null && uri == null) {
                 deviceService.getDevices().forEach(device -> printCount(device, service));
+            } else if (uri == null) {
+                deviceService.getDevices()
+                        .forEach(device -> printCount(device, FlowEntryState.valueOf(state.toUpperCase()), service));
             } else {
                 Device device = deviceService.getDevice(DeviceId.deviceId(uri));
                 if (device != null) {
-                    printCount(device, service);
+                    printCount(device, FlowEntryState.valueOf(state.toUpperCase()), service);
                 }
             }
             return;
@@ -294,6 +303,10 @@ public class FlowsListCommand extends AbstractShellCommand {
         print("deviceId=%s, flowRuleCount=%d", device.id(), flowRuleService.getFlowRuleCount(device.id()));
     }
 
+    private void printCount(Device device, FlowEntryState state, FlowRuleService flowRuleService) {
+        print("deviceId=%s, flowRuleCount=%d", device.id(), flowRuleService.getFlowRuleCount(device.id(), state));
+    }
+
     /**
      * Prints flows.
      *
@@ -320,7 +333,6 @@ public class FlowsListCommand extends AbstractShellCommand {
                 print(LONG_FORMAT, Long.toHexString(f.id().value()), f.state(),
                         f.bytes(), f.packets(), f.life(), f.liveType(), f.priority(), f.table(),
                         appId != null ? appId.name() : "<none>",
-                        f.payLoad() == null ? null : Arrays.toString(f.payLoad().payLoad()),
                         f.selector().criteria(), f.treatment());
             }
         }

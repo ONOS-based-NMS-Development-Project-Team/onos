@@ -16,12 +16,6 @@
 package org.onosproject.openstacknetworking.impl;
 
 import com.google.common.base.Strings;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onosproject.core.CoreService;
 import org.onosproject.event.ListenerRegistry;
 import org.onosproject.openstacknetworking.api.Constants;
@@ -34,6 +28,11 @@ import org.onosproject.openstacknetworking.api.OpenstackSecurityGroupStoreDelega
 import org.openstack4j.model.network.SecurityGroup;
 import org.openstack4j.model.network.SecurityGroupRule;
 import org.openstack4j.openstack.networking.domain.NeutronSecurityGroup;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -48,8 +47,10 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Provides implementation of administering and interfacing OpenStack security
  * groups.
  */
-@Service
-@Component(immediate = true)
+@Component(
+    immediate = true,
+    service = { OpenstackSecurityGroupAdminService.class, OpenstackSecurityGroupService.class }
+)
 public class OpenstackSecurityGroupManager
         extends ListenerRegistry<OpenstackSecurityGroupEvent, OpenstackSecurityGroupListener>
         implements OpenstackSecurityGroupAdminService, OpenstackSecurityGroupService {
@@ -62,22 +63,27 @@ public class OpenstackSecurityGroupManager
     private static final String MSG_CREATED = "created";
     private static final String MSG_REMOVED = "removed";
 
-    private static final String ERR_NULL_SG = "OpenStack security group cannot be null";
-    private static final String ERR_NULL_SG_ID = "OpenStack security group ID cannot be null";
-    private static final String ERR_NULL_SG_RULE = "OpenStack security group rule cannot be null";
-    private static final String ERR_NULL_SG_RULE_ID = "OpenStack security group rule ID cannot be null";
+    private static final String ERR_NULL_SG =
+                                "OpenStack security group cannot be null";
+    private static final String ERR_NULL_SG_ID =
+                                "OpenStack security group ID cannot be null";
+    private static final String ERR_NULL_SG_RULE =
+                                "OpenStack security group rule cannot be null";
+    private static final String ERR_NULL_SG_RULE_ID =
+                                "OpenStack security group rule ID cannot be null";
     private static final String ERR_NOT_FOUND = "not found";
     private static final String ERR_DUPLICATE = "already exist";
 
     private boolean useSecurityGroup = false;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected OpenstackSecurityGroupStore osSecurityGroupStore;
 
-    private final OpenstackSecurityGroupStoreDelegate delegate = new InternalSecurityGroupStoreDelegate();
+    private final OpenstackSecurityGroupStoreDelegate
+                            delegate = new InternalSecurityGroupStoreDelegate();
 
     @Activate
     protected void activate() {
@@ -126,10 +132,12 @@ public class OpenstackSecurityGroupManager
         synchronized (this) {
             SecurityGroup sg = securityGroup(sgRule.getSecurityGroupId());
             if (sg == null) {
-                final String error = String.format(MSG_SG, sgRule.getSecurityGroupId(), ERR_NOT_FOUND);
+                final String error = String.format(MSG_SG,
+                        sgRule.getSecurityGroupId(), ERR_NOT_FOUND);
                 throw new IllegalStateException(error);
             }
-            if (sg.getRules().stream().anyMatch(rule -> Objects.equals(rule.getId(), sgRule.getId()))) {
+            if (sg.getRules().stream().anyMatch(rule ->
+                                Objects.equals(rule.getId(), sgRule.getId()))) {
                 final String error = String.format(MSG_SG_RULE,
                         sgRule.getSecurityGroupId(), ERR_DUPLICATE);
                 throw new IllegalStateException(error);
@@ -158,11 +166,13 @@ public class OpenstackSecurityGroupManager
 
             SecurityGroup sg = securityGroup(sgRule.getSecurityGroupId());
             if (sg == null) {
-                final String error = String.format(MSG_SG, sgRule.getSecurityGroupId(), ERR_NOT_FOUND);
+                final String error = String.format(MSG_SG,
+                                        sgRule.getSecurityGroupId(), ERR_NOT_FOUND);
                 throw new IllegalStateException(error);
             }
 
-            if (sg.getRules().stream().noneMatch(rule -> Objects.equals(rule.getId(), sgRule.getId()))) {
+            if (sg.getRules().stream().noneMatch(rule ->
+                                Objects.equals(rule.getId(), sgRule.getId()))) {
                 final String error = String.format(MSG_SG_RULE,
                         sgRule.getSecurityGroupId(), ERR_NOT_FOUND);
                 throw new IllegalStateException(error);
@@ -211,7 +221,8 @@ public class OpenstackSecurityGroupManager
                 .findFirst().orElse(null);
     }
 
-    private class InternalSecurityGroupStoreDelegate implements OpenstackSecurityGroupStoreDelegate {
+    private class InternalSecurityGroupStoreDelegate
+                                implements OpenstackSecurityGroupStoreDelegate {
 
         @Override
         public void notify(OpenstackSecurityGroupEvent event) {

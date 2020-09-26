@@ -15,9 +15,11 @@
  */
 package org.onosproject.netconf.cli.impl;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.Option;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.cli.net.DeviceIdCompleter;
 import org.onosproject.net.DeviceId;
@@ -28,6 +30,7 @@ import org.onosproject.netconf.NetconfException;
 /**
  * Debug command to start subscription on specified device.
  */
+@Service
 @Command(scope = "onos", name = "netconf-subscription-test",
          description = "Debug command to start subscription on specified device")
 public class NetconfSubscriptionTestCommand extends AbstractShellCommand {
@@ -37,6 +40,7 @@ public class NetconfSubscriptionTestCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "deviceId", description = "Device ID",
             required = true, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     String uri = null;
 
     @Option(name = "--end",
@@ -46,7 +50,7 @@ public class NetconfSubscriptionTestCommand extends AbstractShellCommand {
 
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         NetconfController controller = get(NetconfController.class);
         DeviceId did = DeviceId.deviceId(uri);
 

@@ -15,8 +15,10 @@
  */
 package org.onosproject.cli.net;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.core.CoreService;
 import org.onosproject.net.DeviceId;
@@ -33,12 +35,14 @@ import java.util.Collections;
 /**
  * Remove existing meter from device.
  */
+@Service
 @Command(scope = "onos", name = "meter-remove",
         description = "Removes a meter from a device (currently for testing)")
 public class MeterRemoveCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "uri", description = "Device ID",
             required = true, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     private String uri = null;
 
     @Argument(index = 1, name = "meterId", description = "Meter ID hexadecimal value",
@@ -48,7 +52,7 @@ public class MeterRemoveCommand extends AbstractShellCommand {
     private final String appId = "org.onosproject.cli.meterCmd";
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         MeterService service = get(MeterService.class);
         CoreService coreService = get(CoreService.class);
 

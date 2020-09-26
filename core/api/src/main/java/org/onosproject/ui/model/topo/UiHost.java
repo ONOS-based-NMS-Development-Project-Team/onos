@@ -52,6 +52,7 @@ public class UiHost extends UiNode {
         checkNotNull(host, HOST_CANNOT_BE_NULL);
         this.topology = topology;
         this.hostId = host.id();
+        this.regionId = RegionId.regionId(UiRegion.NULL_NAME);
     }
 
     @Override
@@ -60,6 +61,7 @@ public class UiHost extends UiNode {
                 .add("id", id())
                 .add("dev", locDevice)
                 .add("port", locPort)
+                .add("Region", regionId)
                 .toString();
     }
 
@@ -70,6 +72,16 @@ public class UiHost extends UiNode {
      */
     public HostId id() {
         return hostId;
+    }
+
+    /**
+     * Returns the identifier of the region to which this device belongs.
+     * This will be null if the device does not belong to any region.
+     *
+     * @return region ID
+     */
+    public RegionId regionId() {
+        return regionId;
     }
 
     /**

@@ -18,6 +18,7 @@ package org.onosproject.net.host;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import org.onlab.packet.EthType;
@@ -31,7 +32,6 @@ import org.onlab.packet.VlanId;
 import com.google.common.collect.ImmutableSet;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
-import com.google.common.base.Objects;
 
 /**
  * Default implementation of an immutable host description.
@@ -42,6 +42,7 @@ public class DefaultHostDescription extends AbstractDescription
     private final MacAddress mac;
     private final VlanId vlan;
     private final Set<HostLocation> locations;
+    private final Set<HostLocation> auxLocations;
     private final Set<IpAddress> ip;
     private final VlanId innerVlan;
     private final EthType tpid;
@@ -157,14 +158,57 @@ public class DefaultHostDescription extends AbstractDescription
     public DefaultHostDescription(MacAddress mac, VlanId vlan, Set<HostLocation> locations,
                                   Set<IpAddress> ip, VlanId innerVlan, EthType tpid,
                                   boolean configured, SparseAnnotations... annotations) {
+        this(mac, vlan, locations, null, ip, innerVlan, tpid, configured, annotations);
+    }
+
+    /**
+     * Creates a host description using the supplied information.
+     *
+     * @param mac          host MAC address
+     * @param vlan         host VLAN identifier
+     * @param locations    host locations
+     * @param auxLocations  set of auxiliary locations, or null if unspecified
+     * @param ip           host IP address
+     * @param innerVlan    host inner VLAN identifier
+     * @param tpid         outer TPID of a host
+     * @param configured   true if configured via NetworkConfiguration
+     * @param annotations  optional key/value annotations map
+     */
+    public DefaultHostDescription(MacAddress mac, VlanId vlan,
+                                  Set<HostLocation> locations, Set<HostLocation> auxLocations,
+                                  Set<IpAddress> ip, VlanId innerVlan, EthType tpid,
+                                  boolean configured, SparseAnnotations... annotations) {
         super(annotations);
         this.mac = mac;
         this.vlan = vlan;
         this.locations = new HashSet<>(locations);
+        this.auxLocations = (auxLocations != null) ? new HashSet<>(auxLocations) : null;
         this.ip = new HashSet<>(ip);
         this.innerVlan = innerVlan;
         this.tpid = tpid;
         this.configured = configured;
+    }
+
+    /**
+     * Creates a host description using the supplied information.
+     * @param base HostDescription to basic information
+     * @param annotations Annotations to use.
+     */
+    public DefaultHostDescription(HostDescription base, SparseAnnotations annotations) {
+        this(base.hwAddress(), base.vlan(), base.locations(), base.ipAddress(), base.innerVlan(), base.tpid(),
+                base.configured(), annotations);
+    }
+
+    /**
+     * Creates a host description using the supplied information.
+     *
+     * @param base base
+     * @param annotations annotations
+     * @return host description
+     */
+    public static DefaultHostDescription copyReplacingAnnotation(HostDescription base,
+                                                                 SparseAnnotations annotations) {
+        return new DefaultHostDescription(base, annotations);
     }
 
     @Override
@@ -187,6 +231,11 @@ public class DefaultHostDescription extends AbstractDescription
     @Override
     public Set<HostLocation> locations() {
         return locations;
+    }
+
+    @Override
+    public Set<HostLocation> auxLocations() {
+        return auxLocations;
     }
 
     @Override
@@ -215,6 +264,7 @@ public class DefaultHostDescription extends AbstractDescription
                 .add("mac", mac)
                 .add("vlan", vlan)
                 .add("locations", locations)
+                .add("auxLocations", auxLocations)
                 .add("ipAddress", ip)
                 .add("configured", configured)
                 .add("innerVlanId", innerVlan)
@@ -224,7 +274,7 @@ public class DefaultHostDescription extends AbstractDescription
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(super.hashCode(), mac, vlan, locations, ip);
+        return Objects.hash(super.hashCode(), mac, vlan, locations, auxLocations, ip);
     }
 
     @Override
@@ -234,12 +284,13 @@ public class DefaultHostDescription extends AbstractDescription
                 return false;
             }
             DefaultHostDescription that = (DefaultHostDescription) object;
-            return Objects.equal(this.mac, that.mac)
-                    && Objects.equal(this.vlan, that.vlan)
-                    && Objects.equal(this.locations, that.locations)
-                    && Objects.equal(this.ip, that.ip)
-                    && Objects.equal(this.innerVlan, that.innerVlan)
-                    && Objects.equal(this.tpid, that.tpid);
+            return Objects.equals(this.mac, that.mac)
+                    && Objects.equals(this.vlan, that.vlan)
+                    && Objects.equals(this.locations, that.locations)
+                    && Objects.equals(this.auxLocations, that.auxLocations)
+                    && Objects.equals(this.ip, that.ip)
+                    && Objects.equals(this.innerVlan, that.innerVlan)
+                    && Objects.equals(this.tpid, that.tpid);
         }
         return false;
     }

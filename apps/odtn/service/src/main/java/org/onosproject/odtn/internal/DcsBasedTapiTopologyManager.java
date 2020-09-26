@@ -16,35 +16,34 @@
 
 package org.onosproject.odtn.internal;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onosproject.config.DynamicConfigService;
-
 import org.onosproject.net.ConnectPoint;
 import org.onosproject.net.Device;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.Link;
 import org.onosproject.net.Port;
-
 import org.onosproject.odtn.TapiResolver;
 import org.onosproject.odtn.TapiTopologyManager;
-import org.onosproject.odtn.utils.tapi.TapiLinkHandler;
+import org.onosproject.odtn.utils.tapi.TapiConnectivityContextHandler;
 import org.onosproject.odtn.utils.tapi.TapiCepHandler;
-import org.onosproject.odtn.utils.tapi.TapiNepRef;
-import org.onosproject.odtn.utils.tapi.TapiNodeRef;
 import org.onosproject.odtn.utils.tapi.TapiContextHandler;
+import org.onosproject.odtn.utils.tapi.TapiLinkHandler;
 import org.onosproject.odtn.utils.tapi.TapiNepHandler;
+import org.onosproject.odtn.utils.tapi.TapiNepRef;
 import org.onosproject.odtn.utils.tapi.TapiNodeHandler;
+import org.onosproject.odtn.utils.tapi.TapiNodeRef;
 import org.onosproject.odtn.utils.tapi.TapiSipHandler;
+import org.onosproject.odtn.utils.tapi.TapiTopologyContextHandler;
 import org.onosproject.odtn.utils.tapi.TapiTopologyHandler;
-import org.onosproject.yang.gen.v1.tapicommon.rev20180307.tapicommon.DefaultContext;
-import org.onosproject.yang.gen.v1.tapicommon.rev20180307.tapicommon.Uuid;
-import org.onosproject.yang.gen.v1.tapitopology.rev20180307.tapitopology.topologycontext.DefaultTopology;
+import org.onosproject.yang.gen.v1.tapicommon.rev20181210.tapicommon.DefaultContext;
+import org.onosproject.yang.gen.v1.tapicommon.rev20181210.tapicommon.Uuid;
+import org.onosproject.yang.gen.v1.tapitopology.rev20181210.tapitopology.topologycontext.DefaultTopology;
 import org.onosproject.yang.model.ModelConverter;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import static org.slf4j.LoggerFactory.getLogger;
@@ -52,19 +51,18 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * OSGi Component for ODTN TAPI topology manager application.
  */
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = TapiTopologyManager.class)
 public class DcsBasedTapiTopologyManager implements TapiTopologyManager {
 
     private final Logger log = getLogger(getClass());
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DynamicConfigService dcs;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ModelConverter modelConverter;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected TapiResolver tapiResolver;
 
     private DefaultContext context;
@@ -74,6 +72,7 @@ public class DcsBasedTapiTopologyManager implements TapiTopologyManager {
     public void activate() {
         initDcsTapiContext();
         initDcsTapiTopology();
+        initDcsTapiConnectivityContext();
         log.info("Started");
     }
 
@@ -84,7 +83,7 @@ public class DcsBasedTapiTopologyManager implements TapiTopologyManager {
 
     @Override
     public void addDevice(Device device) {
-        log.info("Add device: {}", device);
+        log.debug("Add device: {}", device);
         DeviceId deviceId = device.id();
         if (tapiResolver.hasNodeRef(deviceId)) {
             return;
@@ -96,12 +95,13 @@ public class DcsBasedTapiTopologyManager implements TapiTopologyManager {
 
     @Override
     public void removeDevice(Device device) {
-        log.info("Remove device: {}", device);
+        //TODO Implement
+        log.warn("NOT-IMPLEMENTED, Remove device: {}", device);
     }
 
     @Override
     public void addLink(Link link) {
-        log.info("Add link: {}", link);
+        log.debug("Add link: {}", link);
 
         // TODO: existence check
 
@@ -117,12 +117,13 @@ public class DcsBasedTapiTopologyManager implements TapiTopologyManager {
 
     @Override
     public void removeLink(Link link) {
-        log.info("Remove link: {}", link);
+        //TODO Implement
+        log.warn("NOT-IMPLEMENTED, Remove link: {}", link);
     }
 
     @Override
     public void addPort(Port port) {
-        log.info("Add port: {}", port);
+        log.debug("Add port: {}", port);
 
         ConnectPoint cp = new ConnectPoint(port.element().id(), port.number());
         if (tapiResolver.hasNepRef(cp)) {
@@ -158,7 +159,8 @@ public class DcsBasedTapiTopologyManager implements TapiTopologyManager {
 
     @Override
     public void removePort(Port port) {
-        log.info("Remove port: {}", port);
+        //TODO implement
+        log.warn("NOT-IMPLEMENTED, Remove port: {}", port);
     }
 
     /**
@@ -171,13 +173,26 @@ public class DcsBasedTapiTopologyManager implements TapiTopologyManager {
     }
 
     /**
-     * Add Tapi Topology to Dcs store.
+     * Add Tapi TopologyContext and Topology to Dcs store.
      *
      * Assumed there is only one topology for ODTN Phase 1.0
      */
     private void initDcsTapiTopology() {
+        TapiTopologyContextHandler topologyContextHandler = TapiTopologyContextHandler.create();
+        topologyContextHandler.add();
         TapiTopologyHandler topologyHandler = TapiTopologyHandler.create();
-        topology = topologyHandler.getModelObject();
         topologyHandler.add();
+        topology = topologyHandler.getModelObject();
     }
+
+    /**
+     * Add Tapi ConnectivityContext to Dcs store.
+     *
+     * Assumed there is only one topology for ODTN Phase 1.0
+     */
+    private void initDcsTapiConnectivityContext() {
+        TapiConnectivityContextHandler connectivityContextHandler = TapiConnectivityContextHandler.create();
+        connectivityContextHandler.add();
+    }
+
 }

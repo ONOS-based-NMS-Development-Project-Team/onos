@@ -15,10 +15,13 @@
  */
 package org.onosproject.mcast.cli;
 
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.Option;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.packet.IpAddress;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.net.HostIdCompleter;
 import org.onosproject.mcast.api.McastRoute;
 import org.onosproject.mcast.api.MulticastRouteService;
 import org.onosproject.net.HostId;
@@ -26,6 +29,7 @@ import org.onosproject.net.HostId;
 /**
  * Installs a source, multicast group flow.
  */
+@Service
 @Command(scope = "onos", name = "mcast-host-join",
         description = "Installs a source, multicast group flow")
 public class McastHostJoinCommand extends AbstractShellCommand {
@@ -44,12 +48,14 @@ public class McastHostJoinCommand extends AbstractShellCommand {
             description = "IP Address of the multicast group",
             valueToShowInHelp = "224.0.0.0",
             required = true, multiValued = false)
+    @Completion(McastGroupCompleter.class)
     String gAddr = null;
 
     @Option(name = "-srcs", aliases = "--sources",
             description = "Host sink format: MAC/VLAN",
             valueToShowInHelp = "00:00:00:00:00:00/None",
             multiValued = true)
+    @Completion(HostIdCompleter.class)
     String[] sources = null;
 
     @Option(name = "-sinks",
@@ -57,10 +63,11 @@ public class McastHostJoinCommand extends AbstractShellCommand {
             description = "Host sink format: MAC/VLAN",
             valueToShowInHelp = "00:00:00:00:00:00/None",
             multiValued = true)
+    @Completion(HostIdCompleter.class)
     String[] sinks = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         MulticastRouteService mcastRouteManager = get(MulticastRouteService.class);
 
         IpAddress sAddrIp = null;

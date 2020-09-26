@@ -15,18 +15,11 @@
  */
 package org.onosproject.faultmanagement.impl;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.onosproject.cfg.ComponentConfigService;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmConsumer;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmProvider;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmProviderRegistry;
-import org.onosproject.incubator.net.faultmanagement.alarm.AlarmProviderService;
+import org.onosproject.alarm.AlarmConsumer;
+import org.onosproject.alarm.AlarmProvider;
+import org.onosproject.alarm.AlarmProviderRegistry;
+import org.onosproject.alarm.AlarmProviderService;
 import org.onosproject.mastership.MastershipEvent;
 import org.onosproject.mastership.MastershipListener;
 import org.onosproject.mastership.MastershipService;
@@ -38,6 +31,12 @@ import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.provider.AbstractProvider;
 import org.onosproject.net.provider.ProviderId;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.Dictionary;
@@ -51,27 +50,37 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 import static org.onlab.util.Tools.get;
 import static org.onlab.util.Tools.groupedThreads;
+import static org.onosproject.faultmanagement.impl.OsgiPropertyConstants.CLEAR_FREQUENCY_SECONDS;
+import static org.onosproject.faultmanagement.impl.OsgiPropertyConstants.CLEAR_FREQUENCY_SECONDS_DEFAULT;
+import static org.onosproject.faultmanagement.impl.OsgiPropertyConstants.POLL_FREQUENCY_SECONDS;
+import static org.onosproject.faultmanagement.impl.OsgiPropertyConstants.POLL_FREQUENCY_SECONDS_DEFAULT;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Alarm provider capable of polling the environment using the device driver
  * {@link AlarmConsumer} behaviour.
  */
-@Component(immediate = true)
+@Component(
+    immediate = true,
+    property = {
+        POLL_FREQUENCY_SECONDS + "=" + POLL_FREQUENCY_SECONDS_DEFAULT,
+        CLEAR_FREQUENCY_SECONDS + "=" + CLEAR_FREQUENCY_SECONDS_DEFAULT
+    }
+)
 public class PollingAlarmProvider extends AbstractProvider implements AlarmProvider {
 
     private final Logger log = getLogger(getClass());
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DeviceService deviceService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected MastershipService mastershipService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected AlarmProviderRegistry providerRegistry;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService cfgService;
 
     protected AlarmProviderService providerService;
@@ -88,16 +97,11 @@ public class PollingAlarmProvider extends AbstractProvider implements AlarmProvi
 
     private static final int CORE_POOL_SIZE = 10;
 
-    private static final int DEFAULT_POLL_FREQUENCY_SECONDS = 60;
-    @Property(name = "alarmPollFrequencySeconds", intValue = DEFAULT_POLL_FREQUENCY_SECONDS,
-            label = "Frequency (in seconds) for polling alarm from devices")
-    protected int alarmPollFrequencySeconds = DEFAULT_POLL_FREQUENCY_SECONDS;
+    /** Frequency (in seconds) for polling alarm from devices. */
+    protected int alarmPollFrequencySeconds = POLL_FREQUENCY_SECONDS_DEFAULT;
 
-    // TODO implement purging of old alarms.
-    private static final int DEFAULT_CLEAR_FREQUENCY_SECONDS = 500;
-    @Property(name = "clearedAlarmPurgeSeconds", intValue = DEFAULT_CLEAR_FREQUENCY_SECONDS,
-            label = "Frequency (in seconds) for deleting cleared alarms")
-    private int clearedAlarmPurgeFrequencySeconds = DEFAULT_CLEAR_FREQUENCY_SECONDS;
+    /** Frequency (in seconds) for deleting cleared alarms. */
+    private int clearedAlarmPurgeFrequencySeconds = CLEAR_FREQUENCY_SECONDS_DEFAULT;
 
     public PollingAlarmProvider() {
         super(new ProviderId("default", "org.onosproject.core"));
@@ -120,7 +124,7 @@ public class PollingAlarmProvider extends AbstractProvider implements AlarmProvi
         mastershipService.addListener(mastershipListener);
 
         if (context == null) {
-            alarmPollFrequencySeconds = DEFAULT_POLL_FREQUENCY_SECONDS;
+            alarmPollFrequencySeconds = POLL_FREQUENCY_SECONDS_DEFAULT;
             log.info("No component configuration");
         } else {
             Dictionary<?, ?> properties = context.getProperties();
@@ -168,10 +172,10 @@ public class PollingAlarmProvider extends AbstractProvider implements AlarmProvi
     private int getNewPollFrequency(Dictionary<?, ?> properties, int pollFrequency) {
         int newPollFrequency;
         try {
-            String s = get(properties, "pollFrequency");
+            String s = get(properties, POLL_FREQUENCY_SECONDS);
             newPollFrequency = isNullOrEmpty(s) ? pollFrequency : Integer.parseInt(s.trim());
         } catch (NumberFormatException | ClassCastException e) {
-            newPollFrequency = DEFAULT_POLL_FREQUENCY_SECONDS;
+            newPollFrequency = POLL_FREQUENCY_SECONDS_DEFAULT;
         }
         return newPollFrequency;
     }

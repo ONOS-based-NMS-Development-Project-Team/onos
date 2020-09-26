@@ -15,8 +15,10 @@
  */
 package org.onosproject.cli.net;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.packet.IpAddress;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.ConnectPoint;
@@ -32,6 +34,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 /**
  * Displays the source, multicast group flows entries.
  */
+@Service
 @Command(scope = "onos", name = "mcast-show", description = "Displays the source, multicast group flows")
 public class McastShowCommand extends AbstractShellCommand {
 
@@ -40,10 +43,11 @@ public class McastShowCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "mcastIp", description = "mcast Ip",
             required = false, multiValued = false)
+    @Completion(McastGroupCompleter.class)
     String mcastIp;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         // Get the service
         MulticastRouteService mcastService = get(MulticastRouteService.class);
         // Get the routes

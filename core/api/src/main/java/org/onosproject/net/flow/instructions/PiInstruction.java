@@ -19,8 +19,8 @@ package org.onosproject.net.flow.instructions;
 
 import com.google.common.annotations.Beta;
 import com.google.common.base.Objects;
-import org.onosproject.net.pi.runtime.PiActionGroupId;
-import org.onosproject.net.pi.runtime.PiActionGroupMemberId;
+import org.onosproject.net.pi.runtime.PiActionProfileGroupId;
+import org.onosproject.net.pi.runtime.PiActionProfileMemberId;
 import org.onosproject.net.pi.runtime.PiTableAction;
 
 /**
@@ -74,10 +74,10 @@ public final class PiInstruction implements Instruction {
     @Override
     public String toString() {
         switch (tableAction.type()) {
-            case ACTION_GROUP_ID:
-                return "GROUP:" + ((PiActionGroupId) tableAction).id().toString();
-            case GROUP_MEMBER_ID:
-                return "GROUP_MEMBER:" + ((PiActionGroupMemberId) tableAction).id().toString();
+            case ACTION_PROFILE_GROUP_ID:
+                return "GROUP:0x" + Integer.toHexString(((PiActionProfileGroupId) tableAction).id());
+            case ACTION_PROFILE_MEMBER_ID:
+                return "GROUP_MEMBER:0x" + Integer.toHexString(((PiActionProfileMemberId) tableAction).id());
             default:
                 return tableAction.toString();
         }

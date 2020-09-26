@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { SortDir, TableBaseImpl, TableResponse } from '../../../fw/widget/table.base';
-import { FnService } from '../../../fw/util/fn.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { LogService } from '../../../log.service';
+import {
+    FnService,
+    LogService,
+    PrefsService,
+    WebSocketService,
+    SortDir, TableBaseImpl, TableResponse
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 import { ActivatedRoute } from '@angular/router';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
-import { PrefsService } from '../../../fw/util/prefs.service';
 
 /**
  * Model of the response from WebSocket
@@ -60,7 +61,7 @@ const defaultPortPrefsState = {
 @Component({
     selector: 'onos-port',
     templateUrl: './port.component.html',
-    styleUrls: ['./port.component.css', '../../../fw/widget/table.css', '../../../fw/widget/table.theme.css']
+    styleUrls: ['./port.component.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.theme.css']
 })
 export class PortComponent extends TableBaseImpl implements OnInit, OnDestroy {
     devId: string;
@@ -80,13 +81,12 @@ export class PortComponent extends TableBaseImpl implements OnInit, OnDestroy {
     toggleNZTip = 'Toggle non zero port statistics';
 
     constructor(protected fs: FnService,
-        protected ls: LoadingService,
         protected log: LogService,
         protected ar: ActivatedRoute,
         protected wss: WebSocketService,
         protected prefs: PrefsService,
     ) {
-        super(fs, ls, log, wss, 'port');
+        super(fs, log, wss, 'port');
         this.ar.queryParams.subscribe(params => {
             this.devId = params['devId'];
 

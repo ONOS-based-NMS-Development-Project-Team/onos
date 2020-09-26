@@ -19,9 +19,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.config.Config;
 import org.onosproject.net.config.NetworkConfigService;
@@ -33,6 +35,7 @@ import static org.onlab.util.Tools.nullIsIllegal;
 /**
  * Manages network configuration.
  */
+@Service
 @Command(scope = "onos", name = "netcfg",
         description = "Manages network configuration")
 public class NetworkConfigCommand extends AbstractShellCommand {
@@ -41,14 +44,17 @@ public class NetworkConfigCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "subjectClassKey", description = "Subject class key",
             required = false, multiValued = false)
+    @Completion(SubjectClassKeyCompleter.class)
     String subjectClassKey = null;
 
     @Argument(index = 1, name = "subjectKey", description = "Subject key",
             required = false, multiValued = false)
+    @Completion(SubjectKeyCompleter.class)
     String subjectKey = null;
 
     @Argument(index = 2, name = "configKey", description = "Config key",
             required = false, multiValued = false)
+    @Completion(ConfigKeyCompleter.class)
     String configKey = null;
 
     @Option(name = "--remove",
@@ -60,7 +66,7 @@ public class NetworkConfigCommand extends AbstractShellCommand {
     private NetworkConfigService service;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         service = get(NetworkConfigService.class);
         JsonNode root = mapper.createObjectNode();
         if (isNullOrEmpty(subjectClassKey)) {

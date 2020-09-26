@@ -15,20 +15,11 @@
  */
 package org.onosproject.provider.netcfglinks;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.onlab.packet.Ethernet;
 import org.onlab.packet.ONOSLLDP;
+import org.onosproject.cluster.ClusterMetadata;
+import org.onosproject.cluster.ClusterMetadataEvent;
+import org.onosproject.cluster.ClusterMetadataEventListener;
 import org.onosproject.cluster.ClusterMetadataService;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
@@ -51,9 +42,9 @@ import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.flow.DefaultTrafficSelector;
 import org.onosproject.net.flow.TrafficSelector;
 import org.onosproject.net.link.DefaultLinkDescription;
-import org.onosproject.net.link.ProbedLinkProvider;
 import org.onosproject.net.link.LinkProviderRegistry;
 import org.onosproject.net.link.LinkProviderService;
+import org.onosproject.net.link.ProbedLinkProvider;
 import org.onosproject.net.packet.InboundPacket;
 import org.onosproject.net.packet.PacketContext;
 import org.onosproject.net.packet.PacketPriority;
@@ -61,51 +52,71 @@ import org.onosproject.net.packet.PacketProcessor;
 import org.onosproject.net.packet.PacketService;
 import org.onosproject.net.provider.AbstractProvider;
 import org.onosproject.net.provider.ProviderId;
-import org.onosproject.provider.lldpcommon.LinkDiscoveryContext;
 import org.onosproject.provider.lldpcommon.LinkDiscovery;
+import org.onosproject.provider.lldpcommon.LinkDiscoveryContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.onlab.packet.Ethernet.TYPE_BSN;
 import static org.onlab.packet.Ethernet.TYPE_LLDP;
 import static org.onosproject.net.PortNumber.portNumber;
+import static org.onosproject.provider.netcfglinks.OsgiPropertyConstants.DISCOVERY_DELAY_DEFAULT;
+import static org.onosproject.provider.netcfglinks.OsgiPropertyConstants.PROP_DISCOVERY_DELAY;
+import static org.onosproject.provider.netcfglinks.OsgiPropertyConstants.PROP_PROBE_RATE;
+import static org.onosproject.provider.netcfglinks.OsgiPropertyConstants.PROBE_RATE_DEFAULT;
 
 /**
  * Provider to pre-discover links and devices based on a specified network
  * config.
  */
 
-@Component(immediate = true)
+@Component(immediate = true,
+        property = {
+            PROP_PROBE_RATE + ":Integer=" + PROBE_RATE_DEFAULT,
+            PROP_DISCOVERY_DELAY + ":Integer=" + DISCOVERY_DELAY_DEFAULT,
+        })
 public class NetworkConfigLinksProvider
         extends AbstractProvider
         implements ProbedLinkProvider {
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected LinkProviderRegistry providerRegistry;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DeviceService deviceService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected PacketService packetService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected MastershipService masterService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected NetworkConfigRegistry netCfgService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    protected ClusterMetadataService metadataService;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
+    protected ClusterMetadataService clusterMetadataService;
 
-    private static final String PROP_PROBE_RATE = "probeRate";
-    private static final int DEFAULT_PROBE_RATE = 3000;
-    @Property(name = PROP_PROBE_RATE, intValue = DEFAULT_PROBE_RATE,
-            label = "LLDP and BDDP probe rate specified in millis")
-    private int probeRate = DEFAULT_PROBE_RATE;
+    /** LLDP and BDDP probe rate specified in millis. */
+    private int probeRate = PROBE_RATE_DEFAULT;
+
+    /** Number of millis beyond which an LLDP packet will not be accepted. */
+    private int maxLldpAge = DISCOVERY_DELAY_DEFAULT;
 
     // Device link discovery helpers.
     protected final Map<DeviceId, LinkDiscovery> discoverers = new ConcurrentHashMap<>();
@@ -125,12 +136,15 @@ public class NetworkConfigLinksProvider
 
     protected Set<LinkKey> configuredLinks = new HashSet<>();
 
+    // Cache for clustermetadata
+    private AtomicReference<ClusterMetadata> clusterMetadata = new AtomicReference<>();
+
     public NetworkConfigLinksProvider() {
         super(new ProviderId("lldp", PROVIDER_NAME));
     }
 
     private String buildSrcMac() {
-        String srcMac = ProbedLinkProvider.fingerprintMac(metadataService.getClusterMetadata());
+        String srcMac = ProbedLinkProvider.fingerprintMac(clusterMetadata.get());
         String defMac = ProbedLinkProvider.defaultMac();
         if (srcMac.equals(defMac)) {
             log.warn("Couldn't generate fingerprint. Using default value {}", defMac);
@@ -145,6 +159,8 @@ public class NetworkConfigLinksProvider
                 .forEach(linkKey -> configuredLinks.add(linkKey));
     }
 
+    private final ClusterMetadataEventListener metadataListener = new InternalClusterMetadataListener();
+
     @Activate
     protected void activate() {
         log.info("Activated");
@@ -153,6 +169,8 @@ public class NetworkConfigLinksProvider
         providerService = providerRegistry.register(this);
         deviceService.addListener(deviceListener);
         netCfgService.addListener(cfgListener);
+        clusterMetadataService.addListener(metadataListener);
+        clusterMetadata.set(clusterMetadataService.getClusterMetadata());
         requestIntercepts();
         loadDevices();
         createLinks();
@@ -164,6 +182,7 @@ public class NetworkConfigLinksProvider
         providerRegistry.unregister(this);
         deviceService.removeListener(deviceListener);
         netCfgService.removeListener(cfgListener);
+        clusterMetadataService.removeListener(metadataListener);
         packetService.removeProcessor(packetProcessor);
         disable();
         log.info("Deactivated");
@@ -184,7 +203,7 @@ public class NetworkConfigLinksProvider
         }
 
         LinkDiscovery ld = discoverers.computeIfAbsent(device.id(),
-                did -> new LinkDiscovery(device, context));
+                did -> new LinkDiscovery(device.id(), context));
         if (ld.isStopped()) {
             ld.start();
         }
@@ -257,6 +276,10 @@ public class NetworkConfigLinksProvider
         }
 
         @Override
+        public void setTtl(LinkKey key, short ttl) {
+        }
+
+        @Override
         public String fingerprint() {
             return buildSrcMac();
         }
@@ -265,8 +288,30 @@ public class NetworkConfigLinksProvider
         public DeviceService deviceService() {
             return deviceService;
         }
+
+        @Override
+        public String lldpSecret() {
+            return clusterMetadata.get() != null ?
+                    clusterMetadata.get().getClusterSecret() : null;
+        }
+
+        @Override
+        public long maxDiscoveryDelay() {
+            return maxLldpAge;
+        }
     }
 
+    // true if *NOT* this cluster's own probe.
+    private boolean isOthercluster(String mac) {
+        // if we are using DEFAULT_MAC, clustering hadn't initialized, so conservative 'yes'
+        String ourMac = context.fingerprint();
+        if (ProbedLinkProvider.defaultMac().equalsIgnoreCase(ourMac)) {
+            return true;
+        }
+        return !mac.equalsIgnoreCase(ourMac);
+    }
+
+    //doesn't validate. Used just to decide if this is expected link.
     LinkKey extractLinkKey(PacketContext packetContext) {
         Ethernet eth = packetContext.inPacket().parsed();
         if (eth == null) {
@@ -285,6 +330,27 @@ public class NetworkConfigLinksProvider
             return LinkKey.linkKey(src, dst);
         }
         return null;
+    }
+
+    private boolean verify(PacketContext packetContext) {
+        Ethernet eth = packetContext.inPacket().parsed();
+        if (eth == null) {
+            return false;
+        }
+
+        ONOSLLDP onoslldp = ONOSLLDP.parseONOSLLDP(eth);
+        if (onoslldp != null) {
+            if (!isOthercluster(eth.getSourceMAC().toString())) {
+                return false;
+            }
+
+            if (!ONOSLLDP.verify(onoslldp, context.lldpSecret(), context.maxDiscoveryDelay())) {
+                log.warn("LLDP Packet failed to validate!");
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -344,13 +410,15 @@ public class NetworkConfigLinksProvider
                         context.block();
                     }
                 } else {
-                    log.debug("Found link that was not in the configuration {}", linkKey);
-                    providerService.linkDetected(
-                            new DefaultLinkDescription(linkKey.src(),
-                                                       linkKey.dst(),
-                                                       Link.Type.DIRECT,
-                                                       DefaultLinkDescription.NOT_EXPECTED,
-                                                       DefaultAnnotations.EMPTY));
+                    if (verify(context)) {
+                        log.debug("Found link that was not in the configuration {}", linkKey);
+                        providerService.linkDetected(
+                                new DefaultLinkDescription(linkKey.src(),
+                                                           linkKey.dst(),
+                                                           Link.Type.DIRECT,
+                                                           DefaultLinkDescription.NOT_EXPECTED,
+                                                           DefaultAnnotations.EMPTY));
+                    }
                 }
             }
         }
@@ -475,6 +543,13 @@ public class NetworkConfigLinksProvider
                 }
                 log.info("Link reconfigured");
             }
+        }
+    }
+
+    private class InternalClusterMetadataListener implements ClusterMetadataEventListener {
+        @Override
+        public void event(ClusterMetadataEvent event) {
+            clusterMetadata.set(event.subject());
         }
     }
 

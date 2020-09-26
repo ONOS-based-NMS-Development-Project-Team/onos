@@ -67,6 +67,23 @@ public interface BgpCfg {
         NONE
     }
 
+    enum ConnectionType {
+        /**
+         * Signifies that BGP connects to peer over IPv4 only.
+         */
+        IPV4,
+
+        /**
+         * Signifies that BGP connects to peer over IPv6 only.
+         */
+        IPV6,
+
+        /**
+         * Signifies that BGP connects to peer over IPv4 and IPv6 both.
+         */
+        IPV4_IPV6
+    }
+
     /**
      * Returns the status of the configuration based on this state certain operations like connection is handled.
      *
@@ -358,5 +375,75 @@ public interface BgpCfg {
      * @return evpn capability
      */
     boolean getEvpnCapability();
+
+    /**
+     * Gets the BGP connection type.
+     *
+     * @return BGP connection type.
+     */
+    ConnectionType connectionType();
+
+    /**
+     * Sets the BGP connection type.
+     *
+     * @param connectionType BGP connection type
+     */
+    void setConnectionType(ConnectionType connectionType);
+
+    /**
+     * Gets route refresh is enabled or not.
+     *
+     * @return route refresh enabled
+     */
+    boolean isRouteRefreshEnabled();
+
+    /**
+     * Sets if route refresh is enabled or disabled.
+     *
+     * @param isEnabled is route refresh enabled
+     */
+    void setRouteRefreshEnabled(boolean isEnabled);
+
+    /**
+     * Gets the value of route refresh periodic timer.
+     *
+     * @return route refresh periodic timer value
+     */
+    long getRouteRefreshPeriodicTimer();
+
+    /**
+     * Sets the value of route refresh periodic timer.
+     *
+     * @param periodicTimer value for periodic timer
+     */
+    void setRouteRefreshPeriodicTimer(long periodicTimer);
+
+    /**
+     * Gets the value of route refresh warmup timer.
+     *
+     * @return route refresh warmup timer value
+     */
+    long getRouteRefreshWarmupTimer();
+
+    /**
+     * Sets the value of route refresh warmup timer.
+     *
+     * @param warmupTimer value for warmup timer
+     */
+    void setRouteRefreshWarmupTimer(long warmupTimer);
+
+    /**
+     * Gets the value of route refresh cooldown timer.
+     *
+     * @return route refresh cooldown timer value
+     */
+    long getRouteRefreshCooldownTimer();
+
+    /**
+     * Sets the value of route refresh cooldown timer.
+     *
+     * @param cooldownTimer value for cooldown timer
+     */
+    void setRouteRefreshCooldownTimer(long cooldownTimer);
 
 }

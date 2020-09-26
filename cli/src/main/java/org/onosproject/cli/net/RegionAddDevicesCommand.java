@@ -15,8 +15,10 @@
  */
 package org.onosproject.cli.net;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.region.RegionAdminService;
@@ -28,20 +30,23 @@ import java.util.stream.Collectors;
 /**
  * Add a set of devices into existing region.
  */
+@Service
 @Command(scope = "onos", name = "region-add-devices",
         description = "Adds a set of devices into the region.")
 public class RegionAddDevicesCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "id", description = "Region ID",
             required = true, multiValued = false)
+    @Completion(RegionIdCompleter.class)
     String id = null;
 
     @Argument(index = 1, name = "devIds", description = "Device IDs",
             required = true, multiValued = true)
+    @Completion(DeviceIdCompleter.class)
     List<String> devIds = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         RegionAdminService service = get(RegionAdminService.class);
         RegionId regionId = RegionId.regionId(id);
 

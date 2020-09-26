@@ -17,12 +17,19 @@ package org.onosproject.openstacknode.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
+import org.apache.commons.lang3.StringUtils;
+import org.onosproject.net.Device;
+import org.onosproject.net.behaviour.BridgeConfig;
+import org.onosproject.net.behaviour.BridgeName;
 import org.onosproject.net.device.DeviceService;
+import org.onosproject.openstacknode.api.DpdkInterface;
 import org.onosproject.openstacknode.api.OpenstackAuth;
 import org.onosproject.openstacknode.api.OpenstackAuth.Perspective;
 import org.onosproject.openstacknode.api.OpenstackNode;
 import org.onosproject.ovsdb.controller.OvsdbClientService;
 import org.onosproject.ovsdb.controller.OvsdbController;
+import org.onosproject.ovsdb.controller.OvsdbInterface;
 import org.onosproject.ovsdb.controller.OvsdbNodeId;
 import org.openstack4j.api.OSClient;
 import org.openstack4j.api.client.IOSClientBuilder;
@@ -42,6 +49,11 @@ import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import static org.onlab.util.Tools.get;
 
@@ -55,8 +67,16 @@ public final class OpenstackNodeUtil {
     private static final String DOMAIN_DEFAULT = "default";
     private static final String KEYSTONE_V2 = "v2.0";
     private static final String KEYSTONE_V3 = "v3";
-    private static final String IDENTITY_PATH = "identity/";
     private static final String SSL_TYPE = "SSL";
+
+    private static final int HEX_LENGTH = 16;
+    private static final String OF_PREFIX = "of:";
+    private static final String ZERO = "0";
+
+    private static final String DPDK_DEVARGS = "dpdk-devargs";
+    private static final String NOT_AVAILABLE = "N/A";
+
+    private static final int PORT_NAME_MAX_LENGTH = 15;
 
     /**
      * Prevents object installation from external.
@@ -78,11 +98,25 @@ public final class OpenstackNodeUtil {
                                            int ovsdbPort,
                                            OvsdbController ovsdbController,
                                            DeviceService deviceService) {
-        OvsdbNodeId ovsdb = new OvsdbNodeId(osNode.managementIp(), ovsdbPort);
-        OvsdbClientService client = ovsdbController.getOvsdbClient(ovsdb);
+        OvsdbClientService client = getOvsdbClient(osNode, ovsdbPort, ovsdbController);
         return deviceService.isAvailable(osNode.ovsdb()) &&
                 client != null &&
                 client.isConnected();
+    }
+
+    /**
+     * Gets the ovsdb client with supplied openstack node.
+     *
+     * @param osNode openstack node
+     * @param ovsdbPort ovsdb port
+     * @param ovsdbController ovsdb controller
+     * @return ovsdb client
+     */
+    public static OvsdbClientService getOvsdbClient(OpenstackNode osNode,
+                                                    int ovsdbPort,
+                                                    OvsdbController ovsdbController) {
+        OvsdbNodeId ovsdb = new OvsdbNodeId(osNode.managementIp(), ovsdbPort);
+        return ovsdbController.getOvsdbClient(ovsdb);
     }
 
     /**
@@ -92,7 +126,7 @@ public final class OpenstackNodeUtil {
      * @return a connected openstack client
      */
     public static OSClient getConnectedClient(OpenstackNode osNode) {
-        OpenstackAuth auth = osNode.authentication();
+        OpenstackAuth auth = osNode.keystoneConfig().authentication();
         String endpoint = buildEndpoint(osNode);
         Perspective perspective = auth.perspective();
 
@@ -132,7 +166,7 @@ public final class OpenstackNodeUtil {
                 return null;
             }
         } catch (AuthenticationException e) {
-            log.error("Authentication failed due to {}", e.toString());
+            log.error("Authentication failed due to {}", e);
             return null;
         }
     }
@@ -152,6 +186,7 @@ public final class OpenstackNodeUtil {
             String s = get(properties, propertyName);
             value = Strings.isNullOrEmpty(s) ? null : Boolean.valueOf(s);
         } catch (ClassCastException e) {
+            log.error("Exception occurred because of {}. set valud to null..", e);
             value = null;
         }
         return value;
@@ -175,6 +210,164 @@ public final class OpenstackNodeUtil {
     }
 
     /**
+     * Generates a DPID (of:0000000000000001) from an index value.
+     *
+     * @param index index value
+     * @return generated DPID
+     */
+    public static String genDpid(long index) {
+        if (index < 0) {
+            return null;
+        }
+
+        String hexStr = Long.toHexString(index);
+
+        StringBuilder zeroPadding = new StringBuilder();
+        for (int i = 0; i < HEX_LENGTH - hexStr.length(); i++) {
+            zeroPadding.append(ZERO);
+        }
+
+        return OF_PREFIX + zeroPadding.toString() + hexStr;
+    }
+
+
+    /**
+     * Adds or removes a network interface (aka port) into a given bridge of openstack node.
+     *
+     * @param osNode openstack node
+     * @param bridgeName bridge name
+     * @param intfName interface name
+     * @param deviceService device service
+     * @param addOrRemove add port is true, remove it otherwise
+     */
+    public static synchronized void addOrRemoveSystemInterface(OpenstackNode osNode,
+                                                               String bridgeName,
+                                                               String intfName,
+                                                               DeviceService deviceService,
+                                                               boolean addOrRemove) {
+
+
+        Device device = deviceService.getDevice(osNode.ovsdb());
+        if (device == null || !device.is(BridgeConfig.class)) {
+            log.info("device is null or this device if not ovsdb device");
+            return;
+        }
+        BridgeConfig bridgeConfig =  device.as(BridgeConfig.class);
+
+        if (addOrRemove) {
+            bridgeConfig.addPort(BridgeName.bridgeName(bridgeName), intfName);
+        } else {
+            bridgeConfig.deletePort(BridgeName.bridgeName(bridgeName), intfName);
+        }
+    }
+
+    /**
+     * Adds or removes a dpdk interface into a given openstack node.
+     *
+     * @param osNode openstack node
+     * @param dpdkInterface dpdk interface
+     * @param ovsdbPort ovsdb port
+     * @param ovsdbController ovsdb controller
+     * @param addOrRemove add port is true, remove it otherwise
+     */
+    public static synchronized void addOrRemoveDpdkInterface(OpenstackNode osNode,
+                                                             DpdkInterface dpdkInterface,
+                                                             int ovsdbPort,
+                                                             OvsdbController ovsdbController,
+                                                             boolean addOrRemove) {
+
+        OvsdbClientService client = getOvsdbClient(osNode, ovsdbPort, ovsdbController);
+        if (client == null) {
+            log.info("Failed to get ovsdb client");
+            return;
+        }
+
+        if (addOrRemove) {
+            Map<String, String> options =
+                    ImmutableMap.of(DPDK_DEVARGS, dpdkInterface.pciAddress());
+
+            OvsdbInterface.Builder builder = OvsdbInterface.builder()
+                    .name(dpdkInterface.intf())
+                    .type(OvsdbInterface.Type.DPDK)
+                    .mtu(dpdkInterface.mtu())
+                    .options(options);
+
+
+            client.createInterface(dpdkInterface.deviceName(), builder.build());
+        } else {
+            client.dropInterface(dpdkInterface.intf());
+        }
+    }
+
+    /**
+     * Re-structures the OVS port name.
+     * The length of OVS port name should be not large than 15.
+     *
+     * @param portName  original port name
+     * @return re-structured OVS port name
+     */
+    public static String structurePortName(String portName) {
+
+        // The size of OVS port name should not be larger than 15
+        if (portName.length() > PORT_NAME_MAX_LENGTH) {
+            return StringUtils.substring(portName, 0, PORT_NAME_MAX_LENGTH);
+        }
+
+        return portName;
+    }
+
+    /**
+     * Obtains the gateway node by openstack node. Note that the gateway
+     * node is determined by device's device identifier.
+     *
+     * @param gws                a collection of gateway nodes
+     * @param openstackNode      device identifier
+     * @return the hostname of selected gateway node
+     */
+    public static String getGwByComputeNode(Set<OpenstackNode> gws,
+                                            OpenstackNode openstackNode) {
+        int numOfGw = gws.size();
+
+        if (numOfGw == 0) {
+            return NOT_AVAILABLE;
+        }
+
+        if (!openstackNode.type().equals(OpenstackNode.NodeType.COMPUTE)) {
+            return NOT_AVAILABLE;
+        }
+
+        int gwIndex = Math.abs(openstackNode.intgBridge().hashCode()) % numOfGw;
+
+        return getGwByIndex(gws, gwIndex).hostname();
+    }
+
+    /**
+     * Obtains gateway instance by giving index number.
+     *
+     * @param gws       a collection of gateway nodes
+     * @param index     index number
+     * @return gateway instance
+     */
+    private static OpenstackNode getGwByIndex(Set<OpenstackNode> gws, int index) {
+        Map<String, OpenstackNode> hashMap = new HashMap<>();
+        gws.forEach(gw -> hashMap.put(gw.hostname(), gw));
+        TreeMap<String, OpenstackNode> treeMap = new TreeMap<>(hashMap);
+        Iterator<String> iteratorKey = treeMap.keySet().iterator();
+
+        int intIndex = 0;
+        OpenstackNode gw = null;
+        while (iteratorKey.hasNext()) {
+            String key = iteratorKey.next();
+
+            if (intIndex == index) {
+                gw = treeMap.get(key);
+            }
+            intIndex++;
+        }
+        return gw;
+    }
+
+    /**
      * Builds up and a complete endpoint URL from gateway node.
      *
      * @param node gateway node
@@ -182,22 +375,12 @@ public final class OpenstackNodeUtil {
      */
     private static String buildEndpoint(OpenstackNode node) {
 
-        OpenstackAuth auth = node.authentication();
+        OpenstackAuth auth = node.keystoneConfig().authentication();
 
         StringBuilder endpointSb = new StringBuilder();
         endpointSb.append(auth.protocol().name().toLowerCase());
         endpointSb.append("://");
-        endpointSb.append(node.endPoint());
-        endpointSb.append(":");
-        endpointSb.append(auth.port());
-        endpointSb.append("/");
-
-        // in case the version is v3, we need to append identity path into endpoint
-        if (auth.version().equals(KEYSTONE_V3)) {
-            endpointSb.append(IDENTITY_PATH);
-        }
-
-        endpointSb.append(auth.version());
+        endpointSb.append(node.keystoneConfig().endpoint());
         return endpointSb.toString();
     }
 
@@ -213,16 +396,21 @@ public final class OpenstackNodeUtil {
 
         TrustManager[] trustAllCerts = new TrustManager[]{
                 new X509TrustManager() {
+                    @Override
                     public X509Certificate[] getAcceptedIssuers() {
                         return null;
                     }
 
+                    @Override
                     public void checkClientTrusted(X509Certificate[] certs,
                                                    String authType) {
+                        return;
                     }
 
+                    @Override
                     public void checkServerTrusted(X509Certificate[] certs,
                                                    String authType) {
+                        return;
                     }
                 }
         };
@@ -238,7 +426,7 @@ public final class OpenstackNodeUtil {
 
             config.withSSLContext(sc);
         } catch (Exception e) {
-            log.error("Failed to access OpenStack service due to {}", e.toString());
+            log.error("Failed to access OpenStack service due to {}", e);
             return null;
         }
 

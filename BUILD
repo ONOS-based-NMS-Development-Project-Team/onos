@@ -1,29 +1,60 @@
-load("//tools/build/bazel:generate_workspace.bzl", "ONOS_VERSION")
-load(":modules.bzl", "APPS", "CORE", "FEATURES")
+load("//tools/build/bazel:variables.bzl", "ONOS_VERSION")
+load(
+    "//tools/build/bazel:modules.bzl",
+    "CORE",
+    "FEATURES",
+    "apps",
+    "extensions",
+    "profiles",
+)
+
+#
+# ONOS Package Profiles
+# Usage: bazel build onos-package --define profile=<profile name>
+# Example: bazel build onos-package --define profile=minimal
+#
+# To view or update which apps and features are included in each
+# profile, open: tools/build/bazel/modules.bzl
+#
+profiles([
+    "minimal",
+    "seba",
+    "stratum",
+    "tost",
+    "sona",
+])
 
 filegroup(
     name = "onos",
-    srcs = CORE + APPS + [
+    srcs = CORE + [
+        "//tools/build/conf:onos-build-conf",
         ":onos-package-admin",
         ":onos-package-test",
         ":onos-package",
-    ],
+    ] + select({
+        ":minimal_profile": extensions("minimal") + apps("minimal"),
+        ":seba_profile": extensions("seba") + apps("seba"),
+        ":stratum_profile": extensions("stratum") + apps("stratum"),
+        ":tost_profile": extensions("tost") + apps("tost"),
+        ":sona_profile": extensions("sona") + apps("sona"),
+        "//conditions:default": extensions() + apps(),
+    }),
     visibility = ["//visibility:public"],
 )
 
-KARAF = "@apache_karaf//file"
-
-PATCHES = "@apache_karaf_patches//file"
+KARAF = "@apache_karaf//:apache_karaf"
 
 BRANDING = "//tools/package/branding:onos-tools-package-branding"
+
+LOG4J_EXTRA = "//tools/package/log4j2-extra:onos-log4j2-extra"
 
 # Generates auxiliary karaf.zip file; branded and augmented with ONOS runtime tools
 genrule(
     name = "onos-karaf",
     srcs = [
         KARAF,
-        PATCHES,
         BRANDING,
+        LOG4J_EXTRA,
     ] + glob([
         "tools/package/bin/*",
         "tools/package/etc/*",
@@ -31,8 +62,8 @@ genrule(
         "tools/package/runtime/bin/*",
     ]),
     outs = ["karaf.zip"],
-    cmd = "$(location tools/package/onos-prep-karaf) $(location karaf.zip) $(location %s) %s $(location %s) $(location %s) tools/package" %
-          (KARAF, ONOS_VERSION, BRANDING, PATCHES),
+    cmd = "$(location tools/package/onos-prep-karaf) $(location karaf.zip) $(location %s) %s $(location %s) '' $(location %s) tools/package" %
+          (KARAF, ONOS_VERSION, BRANDING, LOG4J_EXTRA),
     tools = ["tools/package/onos-prep-karaf"],
 )
 
@@ -42,7 +73,14 @@ genrule(
     srcs = [
         "//tools/package/features:onos-features",
         ":onos-karaf",
-    ] + APPS + FEATURES,
+    ] + FEATURES + select({
+        ":minimal_profile": apps("minimal"),
+        ":seba_profile": apps("seba"),
+        ":stratum_profile": apps("stratum"),
+        ":tost_profile": apps("tost"),
+        ":sona_profile": apps("sona"),
+        "//conditions:default": apps(),
+    }),
     outs = ["onos.tar.gz"],
     cmd = "$(location tools/package/onos_stage.py) $(location onos.tar.gz) %s $(location :onos-karaf) $(SRCS)" % ONOS_VERSION,
     output_to_bindir = True,
@@ -81,15 +119,82 @@ genrule(
 )
 
 # Runs ONOS as a single instance from the /tmp directory
-genrule(
+alias(
     name = "onos-local",
+    actual = select({
+        ":run_with_absolute_javabase": ":onos-local_absolute-javabase",
+        "//conditions:default": ":onos-local_current-jdk",
+    }),
+)
+
+config_setting(
+    name = "run_with_absolute_javabase",
+    define_values = {
+        "RUN_WITH_ABSOLUTE_JAVABASE": "true",
+    },
+)
+
+# Run onos-local with JAVA_HOME set to ABSOLUTE_JAVABASE (see .bazelrc)
+genrule(
+    name = "onos-local_absolute-javabase",
+    srcs = [":onos-local-base"],
+    outs = ["onos-runner_absolute-javabase"],
+    cmd = "sed \"s#ABSOLUTE_JAVABASE=#ABSOLUTE_JAVABASE=$(ABSOLUTE_JAVABASE)#\" " +
+          "$(location onos-local-base) > $(location onos-runner_absolute-javabase)",
+    executable = True,
+    output_to_bindir = True,
+    visibility = ["//visibility:private"],
+)
+
+# Run onos-local with the same JDK used for the build, packaged in a tarball.
+genrule(
+    name = "onos-local_current-jdk",
+    srcs = [
+        ":onos-local-base",
+        "//tools/build/jdk:current_jdk_tar",
+    ],
+    outs = ["onos-runner_current-jdk"],
+    cmd = "sed \"s#JDK_TAR=#JDK_TAR=$(location //tools/build/jdk:current_jdk_tar)#\" " +
+          "$(location :onos-local-base) > $(location onos-runner_current-jdk); ",
+    executable = True,
+    output_to_bindir = True,
+    visibility = ["//visibility:private"],
+)
+
+# Create an onos-runner script based on onos-run-karaf
+genrule(
+    name = "onos-local-base",
     srcs = [
         ":onos-package",
         "tools/package/onos-run-karaf",
     ] + glob(["tools/package/config/**"]),
     outs = ["onos-runner"],
-    cmd = "sed \"s#ONOS_TAR=#ONOS_TAR=$(location :onos-package)#\" $(location tools/package/onos-run-karaf) > $(location onos-runner); chmod +x $(location onos-runner)",
-    executable = True,
-    output_to_bindir = True,
-    visibility = ["//visibility:public"],
+    cmd = "sed \"s#ONOS_TAR=#ONOS_TAR=$(location :onos-package)#\" " +
+          "$(location tools/package/onos-run-karaf) > $(location onos-runner); " +
+          "chmod +x $(location onos-runner)",
+    visibility = ["//visibility:private"],
+)
+
+load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
+
+buildifier(
+    name = "buildifier_check",
+    exclude_patterns = [
+        "./tools/build/bazel/generate_workspace.bzl",
+        "./web/gui2/node_modules/@angular/bazel/src/esm5.bzl",
+        "./web/gui2/node_modules/@bazel/typescript/internal/common/tsconfig.bzl",
+        "./web/gui2/node_modules/@bazel/typescript/internal/common/compilation.bzl",
+    ],
+    mode = "check",
+)
+
+buildifier(
+    name = "buildifier_fix",
+    exclude_patterns = [
+        "./tools/build/bazel/generate_workspace.bzl",
+        "./web/gui2/node_modules/@angular/bazel/src/esm5.bzl",
+        "./web/gui2/node_modules/@bazel/typescript/internal/common/tsconfig.bzl",
+        "./web/gui2/node_modules/@bazel/typescript/internal/common/compilation.bzl",
+    ],
+    mode = "fix",
 )

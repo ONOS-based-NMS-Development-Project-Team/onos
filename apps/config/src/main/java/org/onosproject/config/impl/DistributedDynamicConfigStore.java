@@ -16,12 +16,6 @@
 package org.onosproject.config.impl;
 
 import com.google.common.annotations.Beta;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onlab.util.KryoNamespace;
 import org.onosproject.config.DynamicConfigEvent;
 import org.onosproject.config.DynamicConfigStore;
@@ -29,6 +23,7 @@ import org.onosproject.config.DynamicConfigStoreDelegate;
 import org.onosproject.config.FailedException;
 import org.onosproject.config.Filter;
 import org.onosproject.config.ResourceIdParser;
+import org.onosproject.d.config.DeviceResourceIds;
 import org.onosproject.d.config.ResourceIds;
 import org.onosproject.store.AbstractStore;
 import org.onosproject.store.serializers.KryoNamespaces;
@@ -55,6 +50,11 @@ import org.onosproject.yang.model.ListKey;
 import org.onosproject.yang.model.NodeKey;
 import org.onosproject.yang.model.ResourceId;
 import org.onosproject.yang.model.SchemaId;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,24 +65,25 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+
 import static org.onosproject.config.DynamicConfigEvent.Type.NODE_ADDED;
 import static org.onosproject.config.DynamicConfigEvent.Type.NODE_DELETED;
 import static org.onosproject.config.DynamicConfigEvent.Type.NODE_UPDATED;
 import static org.onosproject.config.DynamicConfigEvent.Type.UNKNOWN_OPRN;
+import static org.onosproject.d.config.DeviceResourceIds.DCS_NAMESPACE;
 
 /**
  * Implementation of the dynamic config store.
  */
 @Beta
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = DynamicConfigStore.class)
 public class DistributedDynamicConfigStore
         extends AbstractStore<DynamicConfigEvent, DynamicConfigStoreDelegate>
         implements DynamicConfigStore {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected StorageService storageService;
 
     // FIXME transactionally mutate the 2 or consolidate into 1 AsyncDocTree
@@ -145,7 +146,14 @@ public class DistributedDynamicConfigStore
         if (spath == null) {
             throw new FailedException("Invalid ResourceId, cannot create Node");
         }
-        if (spath.equals(ResourceIdParser.ROOT) && node == null) {
+        if (spath.equals(ResourceIdParser.ROOT)) {
+            //If not present, adding static ROOT node after immutable documentTree root.
+            if (complete(keystore.get(DocumentPath.from(spath))) == null) {
+                addLeaf(spath, LeafNode.builder(DeviceResourceIds.ROOT_NAME, DCS_NAMESPACE)
+                        .type(DataNode.Type.SINGLE_INSTANCE_NODE).build());
+            }
+            ResourceId abs = ResourceIds.resourceId(parent, node);
+            parseNode(ResourceIdParser.parseResId(abs), node);
             return CompletableFuture.completedFuture(true);
         } else if (complete(keystore.get(DocumentPath.from(spath))) == null) {
             throw new FailedException("Node or parent does not exist for " + spath);

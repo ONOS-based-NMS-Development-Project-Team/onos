@@ -19,28 +19,32 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
+import org.onosproject.net.ConnectPoint;
+import org.onosproject.net.GridType;
+import org.onosproject.net.OchSignal;
+import org.onosproject.net.Path;
+import org.onosproject.net.ChannelSpacing;
+import org.onosproject.net.Port;
+import org.onosproject.net.Link;
+import org.onosproject.net.DeviceId;
+import org.onosproject.net.Annotations;
+import org.onosproject.net.AnnotationKeys;
+import org.onosproject.net.DefaultAnnotations;
+import org.onosproject.net.DefaultPath;
+import org.onosproject.net.OchSignalType;
+import org.onosproject.net.DefaultOchSignalComparator;
+import org.onosproject.net.DefaultLink;
+import org.onosproject.net.resource.Resource;
+import org.onosproject.net.resource.ResourceAllocation;
+import org.onosproject.net.resource.ResourceService;
+import org.onosproject.net.resource.Resources;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.onlab.graph.ScalarWeight;
 import org.onlab.graph.Weight;
-import org.onosproject.net.AnnotationKeys;
-import org.onosproject.net.Annotations;
-import org.onosproject.net.ChannelSpacing;
-import org.onosproject.net.ConnectPoint;
-import org.onosproject.net.DefaultAnnotations;
-import org.onosproject.net.DefaultLink;
-import org.onosproject.net.DefaultOchSignalComparator;
-import org.onosproject.net.DefaultPath;
-import org.onosproject.net.DeviceId;
-import org.onosproject.net.GridType;
-import org.onosproject.net.Link;
-import org.onosproject.net.OchSignal;
-import org.onosproject.net.OchSignalType;
-import org.onosproject.net.Path;
-import org.onosproject.net.Port;
 import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.intent.Intent;
 import org.onosproject.net.intent.IntentCompiler;
@@ -49,10 +53,6 @@ import org.onosproject.net.intent.OpticalConnectivityIntent;
 import org.onosproject.net.intent.OpticalPathIntent;
 import org.onosproject.net.optical.OchPort;
 import org.onosproject.net.provider.ProviderId;
-import org.onosproject.net.resource.Resource;
-import org.onosproject.net.resource.ResourceAllocation;
-import org.onosproject.net.resource.ResourceService;
-import org.onosproject.net.resource.Resources;
 import org.onosproject.net.topology.LinkWeigher;
 import org.onosproject.net.topology.Topology;
 import org.onosproject.net.topology.TopologyEdge;
@@ -60,13 +60,13 @@ import org.onosproject.net.topology.TopologyService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -87,16 +87,16 @@ public class OpticalConnectivityIntentCompiler implements IntentCompiler<Optical
     private static final ProviderId PROVIDER_ID = new ProviderId("opticalConnectivityIntent",
             "org.onosproject.net.optical.intent");
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected IntentExtensionService intentManager;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected TopologyService topologyService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DeviceService deviceService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ResourceService resourceService;
 
     @Activate
@@ -139,8 +139,15 @@ public class OpticalConnectivityIntentCompiler implements IntentCompiler<Optical
         resources.add(srcPortResource);
         resources.add(dstPortResource);
 
+        // If there is a suggestedPath, use this path without further checking, otherwise trigger path computation
+        Stream<Path> paths;
+        if (intent.suggestedPath().isPresent()) {
+            paths = Stream.of(intent.suggestedPath().get());
+        } else {
+            paths = getOpticalPaths(intent);
+        }
+
         // Find first path that has the required resources
-        Stream<Path> paths = getOpticalPaths(intent);
         Optional<Map.Entry<Path, List<OchSignal>>> found = paths
                 .map(path -> Maps.immutableEntry(path, findFirstAvailableLambda(intent, path)))
                 .filter(entry -> !entry.getValue().isEmpty())
@@ -150,6 +157,7 @@ public class OpticalConnectivityIntentCompiler implements IntentCompiler<Optical
 
         // Allocate resources and create optical path intent
         if (found.isPresent()) {
+            log.debug("Suitable lightpath FOUND for intent {}", intent);
             resources.addAll(convertToResources(found.get().getKey(), found.get().getValue()));
             allocateResources(intent, resources);
             OchSignal ochSignal = OchSignal.toFixedGrid(found.get().getValue(), ChannelSpacing.CHL_50GHZ);
@@ -175,6 +183,7 @@ public class OpticalConnectivityIntentCompiler implements IntentCompiler<Optical
         return OpticalPathIntent.builder()
                 .appId(parentIntent.appId())
                 .key(parentIntent.key())
+                .priority(parentIntent.priority())
                 .src(parentIntent.getSrc())
                 .dst(parentIntent.getDst())
                 .path(path)
@@ -195,8 +204,10 @@ public class OpticalConnectivityIntentCompiler implements IntentCompiler<Optical
     private List<Resource> convertToResources(Path path, Collection<OchSignal> lambda) {
         return path.links().stream()
                 .flatMap(x -> Stream.of(
-                        Resources.discrete(x.src().deviceId(), x.src().port()).resource(),
-                        Resources.discrete(x.dst().deviceId(), x.dst().port()).resource()
+                        Resources.discrete(x.src().deviceId(),
+                                deviceService.getPort(x.src().deviceId(), x.src().port()).number()).resource(),
+                        Resources.discrete(x.dst().deviceId(),
+                                deviceService.getPort(x.dst().deviceId(), x.dst().port()).number()).resource()
                 ))
                 .flatMap(x -> lambda.stream().map(x::child))
                 .collect(Collectors.toList());
@@ -277,15 +288,26 @@ public class OpticalConnectivityIntentCompiler implements IntentCompiler<Optical
      * @return set of common lambdas
      */
     private Set<OchSignal> findCommonLambdas(Path path) {
-        return path.links().stream()
+
+        Set<OchSignal> ochSignals = path.links().stream()
                 .flatMap(x -> Stream.of(
-                        Resources.discrete(x.src().deviceId(), x.src().port()).id(),
-                        Resources.discrete(x.dst().deviceId(), x.dst().port()).id()
+                        Resources.discrete(x.src().deviceId(),
+                                deviceService.getPort(x.src().deviceId(), x.src().port()).number()).id(),
+                        Resources.discrete(x.dst().deviceId(),
+                                deviceService.getPort(x.dst().deviceId(), x.dst().port()).number()).id()
                 ))
                 .map(x -> resourceService.getAvailableResourceValues(x, OchSignal.class))
                 .map(x -> (Set<OchSignal>) ImmutableSet.copyOf(x))
                 .reduce(Sets::intersection)
                 .orElse(Collections.emptySet());
+
+        if (ochSignals.isEmpty()) {
+            log.warn("Common lambdas not found");
+        } else {
+            log.debug("Common lambdas found {}", ochSignals);
+        }
+
+        return ochSignals;
     }
 
     /**
@@ -299,7 +321,10 @@ public class OpticalConnectivityIntentCompiler implements IntentCompiler<Optical
         // Sort available lambdas
         List<OchSignal> lambdaList = new ArrayList<>(lambdas);
         lambdaList.sort(new DefaultOchSignalComparator());
-
+        //Means there is only exactly one set of lambdas available
+        if (lambdaList.size() == count) {
+            return lambdaList;
+        }
         // Look ahead by count and ensure spacing multiplier is as expected (i.e., no gaps)
         for (int i = 0; i < lambdaList.size() - count; i++) {
             if (lambdaList.get(i).spacingMultiplier() + 2 * count ==
@@ -350,8 +375,16 @@ public class OpticalConnectivityIntentCompiler implements IntentCompiler<Optical
                 return ScalarWeight.NON_VIABLE_WEIGHT;
             }
 
+            /**
+             *
+             * @param edge edge to be weighed
+             * @return the metric retrieved from the annotations otherwise 1
+             */
             @Override
             public Weight weight(TopologyEdge edge) {
+
+                log.debug("Link {} metric {}", edge.link(), edge.link().annotations().value("metric"));
+
                 // Disregard inactive or non-optical links
                 if (edge.link().state() == Link.State.INACTIVE) {
                     return ScalarWeight.toWeight(-1);
@@ -375,7 +408,14 @@ public class OpticalConnectivityIntentCompiler implements IntentCompiler<Optical
                     }
                 }
 
-                return ScalarWeight.toWeight(1);
+                Annotations annotations = edge.link().annotations();
+                if (annotations != null &&
+                        annotations.value("metric") != null && !annotations.value("metric").isEmpty()) {
+                    double metric = Double.parseDouble(annotations.value("metric"));
+                    return ScalarWeight.toWeight(metric);
+                } else {
+                    return ScalarWeight.toWeight(1);
+                }
             }
         };
 
@@ -418,6 +458,7 @@ public class OpticalConnectivityIntentCompiler implements IntentCompiler<Optical
                         return path;
                     });
         }
+
         return paths;
     }
 }

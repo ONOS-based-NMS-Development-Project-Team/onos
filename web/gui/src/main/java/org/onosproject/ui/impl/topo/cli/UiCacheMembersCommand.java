@@ -16,18 +16,20 @@
 
 package org.onosproject.ui.impl.topo.cli;
 
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.ui.impl.topo.model.UiSharedTopologyModel;
 
 /**
  * CLI command to list the UiClusterMembers stored in the ModelCache.
  */
+@Service
 @Command(scope = "onos", name = "ui-cache-members",
         description = "Lists UiClusterMembers in the Model Cache")
 public class UiCacheMembersCommand extends AbstractUiCacheElementCommand {
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         UiSharedTopologyModel model = get(UiSharedTopologyModel.class);
         // note: getClusterMembers() returns an already sorted list...
         model.getClusterMembers().forEach(m -> print("%s", m));

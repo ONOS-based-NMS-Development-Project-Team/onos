@@ -15,9 +15,10 @@
  */
 package org.onosproject.distributedprimitives.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Option;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.store.service.AsyncAtomicCounter;
 import org.onosproject.store.service.StorageService;
@@ -33,6 +34,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * CLI command to increment a distributed counter.
  */
+@Service
 @Command(scope = "onos", name = "counter-test-increment",
         description = "Increment a distributed counter")
 public class CounterTestIncrementCommand extends AbstractShellCommand {
@@ -57,7 +59,7 @@ public class CounterTestIncrementCommand extends AbstractShellCommand {
 
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         StorageService storageService = get(StorageService.class);
         atomicCounter = storageService.getAsyncAtomicCounter(counter);
         CompletableFuture<Long> result;

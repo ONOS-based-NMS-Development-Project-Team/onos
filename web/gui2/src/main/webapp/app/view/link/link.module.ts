@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { LinkComponent } from './link/link.component';
-import { SvgModule } from '../../fw/svg/svg.module';
-import { LinkRoutingModule } from './link-routing.module';
-import { WidgetModule } from '../../fw/widget/widget.module';
+import {NgModule} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {LinkComponent} from './link/link.component';
+import {Gui2FwLibModule} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
+import {RouterModule} from '@angular/router';
 
 @NgModule({
-  imports: [
-    CommonModule,
-    LinkRoutingModule,
-    SvgModule,
-    WidgetModule
-  ],
-  declarations: [
-    LinkComponent
-  ]
+    imports: [
+        CommonModule,
+        RouterModule.forChild([{path: '', component: LinkComponent}]),
+        Gui2FwLibModule
+    ],
+    declarations: [
+        LinkComponent
+    ]
 })
-export class LinkModule { }
+export class LinkModule {
+}

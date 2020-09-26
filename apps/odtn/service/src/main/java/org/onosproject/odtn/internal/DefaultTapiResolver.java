@@ -16,6 +16,16 @@
 
 package org.onosproject.odtn.internal;
 
+import org.onosproject.net.ConnectPoint;
+import org.onosproject.net.ElementId;
+import org.onosproject.odtn.TapiResolver;
+import org.onosproject.odtn.utils.tapi.TapiNepRef;
+import org.onosproject.odtn.utils.tapi.TapiNodeRef;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.slf4j.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,24 +33,13 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Service;
-import org.onosproject.net.ConnectPoint;
-import org.onosproject.net.ElementId;
-import org.onosproject.odtn.TapiResolver;
-import org.onosproject.odtn.utils.tapi.TapiNepRef;
-import org.onosproject.odtn.utils.tapi.TapiNodeRef;
-import org.slf4j.Logger;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * OSGi Component for ODTN TAPI resolver application.
  */
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = TapiResolver.class)
 public class DefaultTapiResolver implements TapiResolver {
 
     private final Logger log = getLogger(getClass());
@@ -97,7 +96,7 @@ public class DefaultTapiResolver implements TapiResolver {
     public boolean hasNepRef(String sipId) {
         updateCache();
         return tapiNepRefList.stream()
-                .anyMatch(nep -> nep.getSipId().equals(sipId));
+                .anyMatch(nep -> nep.getSipId() != null && nep.getSipId().equals(sipId));
     }
 
     @Override
@@ -215,31 +214,31 @@ public class DefaultTapiResolver implements TapiResolver {
 
     protected void addNodeRef(TapiNodeRef nodeRef) {
         tapiNodeRefList.add(nodeRef);
-        log.info("Nodes: {}", tapiNodeRefList);
+        log.debug("Nodes: {}", tapiNodeRefList);
     }
 
     protected void addNepRef(TapiNepRef nepRef) {
         tapiNepRefList.add(nepRef);
-        log.info("Neps: {}", tapiNepRefList);
+        log.debug("Neps: {}", tapiNepRefList);
     }
 
     protected void addNodeRefList(List<TapiNodeRef> nodes) {
         tapiNodeRefList = nodes;
-        log.info("Nodes: {}", tapiNodeRefList);
+        log.debug("Nodes: {}", tapiNodeRefList);
     }
 
     protected void addNepRefList(List<TapiNepRef> neps) {
         tapiNepRefList = neps;
-        log.info("Neps: {}", tapiNepRefList);
+        log.debug("Neps: {}", tapiNepRefList);
     }
 
     private void updateCache() {
-        log.info("Dirty: {}, Source updated: {}", isDirty, sourceUpdated);
+        log.debug("Dirty: {}, Source updated: {}", isDirty, sourceUpdated);
         if (isDirty || sourceUpdated) {
             sourceUpdated = false;
             clearCache();
             dataProvider.updateCacheRequest(this);
-            log.info("Update completed: {}", tapiNodeRefList);
+            log.debug("Update completed: {}", tapiNodeRefList);
             isDirty = false;
         }
     }

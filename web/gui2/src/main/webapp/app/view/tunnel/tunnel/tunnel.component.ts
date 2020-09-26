@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { TableResponse, TableBaseImpl, SortDir } from '../../../fw/widget/table.base';
-import { FnService } from '../../../fw/util/fn.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { LogService } from '../../../log.service';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
+import {
+    FnService,
+    LogService,
+    WebSocketService,
+    SortDir, TableBaseImpl, TableResponse
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 
 /**
  * Model of the response from WebSocket
@@ -47,17 +48,16 @@ interface Tunnel {
 @Component({
     selector: 'onos-tunnel',
     templateUrl: './tunnel.component.html',
-    styleUrls: ['./tunnel.component.css', '../../../fw/widget/table.css', '../../../fw/widget/table.theme.css']
+    styleUrls: ['./tunnel.component.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.theme.css']
 })
 export class TunnelComponent extends TableBaseImpl implements OnInit, OnDestroy {
 
     constructor(
         protected fs: FnService,
-        protected ls: LoadingService,
         protected log: LogService,
         protected wss: WebSocketService,
     ) {
-        super(fs, ls, log, wss, 'tunnel');
+        super(fs, log, wss, 'tunnel');
         this.responseCallback = this.tunnelResponseCb;
         this.sortParams = {
             firstCol: 'id',

@@ -16,8 +16,9 @@
 
 package org.onosproject.scalablegateway.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.DeviceId;
 import org.onosproject.scalablegateway.api.GatewayNode;
@@ -26,7 +27,7 @@ import org.onosproject.scalablegateway.api.ScalableGatewayService;
 /**
  * Deletes gateway node information for scalablegateway node managements.
  */
-
+@Service
 @Command(scope = "onos", name = "gateway-delete",
         description = "Deletes gateway node information for scalablegateway node managements")
 public class ScalableGatewayDeleteCommand extends AbstractShellCommand {
@@ -40,7 +41,7 @@ public class ScalableGatewayDeleteCommand extends AbstractShellCommand {
     String deviceId = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         ScalableGatewayService service = get(ScalableGatewayService.class);
 
         GatewayNode gatewayNode = service.getGatewayNode(DeviceId.deviceId(deviceId));

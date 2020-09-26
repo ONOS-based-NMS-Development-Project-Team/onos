@@ -18,8 +18,9 @@ package org.onosproject.cli.net;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.Host;
 import org.onosproject.net.host.HostService;
@@ -33,12 +34,13 @@ import static com.google.common.collect.Lists.newArrayList;
 /**
  * Lists all currently-known hosts.
  */
+@Service
 @Command(scope = "onos", name = "hosts",
         description = "Lists all currently-known hosts.")
 public class HostsListCommand extends AbstractShellCommand {
 
     private static final String FMT =
-            "id=%s, mac=%s, locations=%s, vlan=%s, ip(s)=%s%s, innerVlan=%s, outerTPID=%s, " +
+            "id=%s, mac=%s, locations=%s, auxLocations=%s, vlan=%s, ip(s)=%s%s, innerVlan=%s, outerTPID=%s, " +
                     "provider=%s:%s, configured=%s";
 
     private static final String FMT_SHORT =
@@ -49,7 +51,7 @@ public class HostsListCommand extends AbstractShellCommand {
     private boolean shortOnly = false;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         HostService service = get(HostService.class);
         if (outputJson()) {
             print("%s", json(getSortedHosts(service)));
@@ -93,7 +95,7 @@ public class HostsListCommand extends AbstractShellCommand {
                   host.vlan(), host.ipAddresses());
         } else {
             print(FMT, host.id(), host.mac(),
-                  host.locations(),
+                  host.locations(), host.auxLocations(),
                   host.vlan(), host.ipAddresses(), annotations(host.annotations()),
                   host.innerVlan(), host.tpid().toString(),
                   host.providerId().scheme(), host.providerId().id(),

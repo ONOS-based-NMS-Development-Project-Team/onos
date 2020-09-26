@@ -15,9 +15,21 @@
   ~ limitations under the License.
   -->
 <drivers>
-    <driver name="gnmi" manufacturer="gnmi" hwVersion="master" swVersion="master">
+    <driver name="gnmi" manufacturer="Unknown" hwVersion="Unknown" swVersion="Unknown">
         <behaviour api="org.onosproject.net.device.DeviceDescriptionDiscovery"
-                   impl="org.onosproject.drivers.gnmi.GnmiDeviceDescriptionDiscovery"/>
+                   impl="org.onosproject.drivers.gnmi.OpenConfigGnmiDeviceDescriptionDiscovery"/>
+        <behaviour api="org.onosproject.net.device.DeviceHandshaker"
+                   impl="org.onosproject.drivers.gnmi.GnmiHandshaker"/>
+        <behaviour api="org.onosproject.net.device.PortStatisticsDiscovery"
+                   impl="org.onosproject.drivers.gnmi.OpenConfigGnmiPortStatisticsDiscovery"/>
+        <behaviour api="org.onosproject.net.behaviour.PortAdmin"
+                   impl="org.onosproject.drivers.gnmi.OpenConfigGnmiPortAdminBehaviour"/>
+    </driver>
+
+    <driver name="gnmi-standalone" manufacturer="Unknown" hwVersion="Unknown"
+            swVersion="Unknown" extends="gnmi">
+        <behaviour api="org.onosproject.net.device.DeviceHandshaker"
+                   impl="org.onosproject.drivers.gnmi.GnmiHandshakerStandalone"/>
     </driver>
 </drivers>
 

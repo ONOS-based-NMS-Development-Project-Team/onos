@@ -18,6 +18,8 @@ package org.onosproject.openstacknetworking.api;
 import org.onlab.packet.IpAddress;
 import org.onlab.packet.MacAddress;
 import org.onosproject.event.ListenerService;
+import org.onosproject.net.DeviceId;
+import org.onosproject.net.PortNumber;
 
 import java.util.Set;
 
@@ -53,6 +55,23 @@ public interface InstancePortService
     InstancePort instancePort(String osPortId);
 
     /**
+     * Returns instance port with the given device identifier and port number.
+     *
+     * @param deviceId      device identifier
+     * @param portNumber    port number
+     * @return instance port; null if not found
+     */
+    InstancePort instancePort(DeviceId deviceId, PortNumber portNumber);
+
+    /**
+     * Returns instance ports with the given device identifier.
+     *
+     * @param deviceId device identifier
+     * @return set of instance ports; empty list if no port exists
+     */
+    Set<InstancePort> instancePort(DeviceId deviceId);
+
+    /**
      * Returns all instance ports.
      *
      * @return set of instance ports; empty list if no port exists
@@ -66,4 +85,12 @@ public interface InstancePortService
      * @return set of instance ports; empty list if no port exists
      */
     Set<InstancePort> instancePorts(String osNetId);
+
+    /**
+     * Returns the floating IP with the supplied instance port.
+     *
+     * @param osPortId openstack port id
+     * @return openstack floating IP
+     */
+    IpAddress floatingIp(String osPortId);
 }

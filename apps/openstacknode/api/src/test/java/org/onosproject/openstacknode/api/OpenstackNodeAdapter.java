@@ -17,11 +17,10 @@ package org.onosproject.openstacknode.api;
 
 import org.onlab.packet.IpAddress;
 import org.onlab.packet.MacAddress;
-import org.onosproject.core.GroupId;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.PortNumber;
 import org.onosproject.net.behaviour.ControllerInfo;
-import org.onosproject.net.group.GroupKey;
+import org.onosproject.openstacknode.api.DpdkConfig.DatapathType;
 
 import java.util.Collection;
 
@@ -70,17 +69,17 @@ public class OpenstackNodeAdapter implements OpenstackNode {
     }
 
     @Override
-    public GroupId gatewayGroupId(OpenstackNode.NetworkMode mode) {
+    public PortNumber greTunnelPortNum() {
         return null;
     }
 
     @Override
-    public GroupKey gatewayGroupKey(OpenstackNode.NetworkMode mode) {
+    public PortNumber vxlanTunnelPortNum() {
         return null;
     }
 
     @Override
-    public PortNumber tunnelPortNum() {
+    public PortNumber geneveTunnelPortNum() {
         return null;
     }
 
@@ -105,6 +104,16 @@ public class OpenstackNodeAdapter implements OpenstackNode {
     }
 
     @Override
+    public DatapathType datapathType() {
+        return DatapathType.NORMAL;
+    }
+
+    @Override
+    public String socketDir() {
+        return null;
+    }
+
+    @Override
     public PortNumber uplinkPortNum() {
         return null;
     }
@@ -115,22 +124,12 @@ public class OpenstackNodeAdapter implements OpenstackNode {
     }
 
     @Override
+    public OpenstackNode updateIntbridge(DeviceId newIntgBridge) {
+        return null;
+    }
+
+    @Override
     public Collection<OpenstackPhyInterface> phyIntfs() {
-        return null;
-    }
-
-    @Override
-    public PortNumber phyIntfPortNum(String providerPhysnet) {
-        return null;
-    }
-
-    @Override
-    public OpenstackAuth authentication() {
-        return null;
-    }
-
-    @Override
-    public String endPoint() {
         return null;
     }
 
@@ -141,6 +140,21 @@ public class OpenstackNodeAdapter implements OpenstackNode {
 
     @Override
     public OpenstackSshAuth sshAuthInfo() {
+        return null;
+    }
+
+    @Override
+    public DpdkConfig dpdkConfig() {
+        return null;
+    }
+
+    @Override
+    public KeystoneConfig keystoneConfig() {
+        return null;
+    }
+
+    @Override
+    public NeutronConfig neutronConfig() {
         return null;
     }
 }

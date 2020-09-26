@@ -223,69 +223,13 @@ public class IntentData { //FIXME need to make this "immutable"
     }
 
     /**
-     * Creates a new intent data object.
-     *
-     * @param intent intent this metadata references
-     * @param state intent state
-     * @param version version of the intent for this key
-     * @param origin ID of the node where the data was originally created
-     *
-     * @deprecated in 1.11.0
-     */
-    // No longer used in the code base anywhere
-    @Deprecated
-    public IntentData(Intent intent, IntentState state, Timestamp version, NodeId origin) {
-        checkNotNull(intent);
-        checkNotNull(state);
-        checkNotNull(version);
-        checkNotNull(origin);
-
-        this.intent = intent;
-        this.state = state;
-        this.request = state;
-        this.version = version;
-        this.origin = origin;
-    }
-
-    /**
-     * Creates a new intent data object.
-     *
-     * @param intent intent this metadata references
-     * @param state intent state
-     * @param request intent request
-     * @param version version of the intent for this key
-     * @param origin ID of the node where the data was originally created
-     *
-     * @deprecated in 1.11.0
-     */
-    // No longer used in the code base anywhere
-    // was used when IntentData is picked up by some of the node and was assigned with a version
-    @Deprecated
-    public IntentData(Intent intent, IntentState state, IntentState request, Timestamp version, NodeId origin) {
-        checkNotNull(intent);
-        checkNotNull(state);
-        checkNotNull(request);
-        checkNotNull(version);
-        checkNotNull(origin);
-
-        this.intent = intent;
-        this.state = state;
-        this.request = request;
-        this.version = version;
-        this.origin = origin;
-    }
-
-    /**
      * Copy constructor.
      *
      * @param intentData intent data to copy
      *
-     * @deprecated in 1.11.0 use {@link #copy(IntentData)} instead
      */
     // used to create a defensive copy
-    // to be made private
-    @Deprecated
-    public IntentData(IntentData intentData) {
+    private IntentData(IntentData intentData) {
         checkNotNull(intentData);
 
         intent = intentData.intent;
@@ -304,13 +248,11 @@ public class IntentData { //FIXME need to make this "immutable"
      * @param original original data
      * @param installables new installable intents to set
      *
-     * @deprecated in 1.11.0 use {@link #compiled(IntentData, List)} instead
      */
     // used to create an instance who reached stable state
     // note that state is mutable field, so it gets altered else where
     // (probably that design is mother of all intent bugs)
-    @Deprecated
-    public IntentData(IntentData original, List<Intent> installables) {
+    private  IntentData(IntentData original, List<Intent> installables) {
         this(original);
         this.internalStateVersion++;
 

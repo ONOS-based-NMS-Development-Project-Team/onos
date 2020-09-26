@@ -19,14 +19,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.izettle.metrics.influxdb.InfluxDbHttpSender;
 import com.izettle.metrics.influxdb.InfluxDbReporter;
 import org.apache.commons.lang.StringUtils;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onlab.metrics.MetricsService;
 import org.onlab.util.Tools;
 import org.onosproject.cfg.ComponentConfigService;
@@ -34,18 +26,34 @@ import org.onosproject.cluster.ClusterService;
 import org.onosproject.cluster.ControllerNode;
 import org.onosproject.core.CoreService;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.Dictionary;
 import java.util.concurrent.TimeUnit;
 
+import static org.onosproject.influxdbmetrics.OsgiPropertyConstants.METRIC_NAMES;
+import static org.onosproject.influxdbmetrics.OsgiPropertyConstants.METRIC_NAMES_DEFAULT;
+import static org.onosproject.influxdbmetrics.OsgiPropertyConstants.MONITOR_ALL;
+import static org.onosproject.influxdbmetrics.OsgiPropertyConstants.MONITOR_ALL_DEFAULT;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * A Metric reporter that reports all metrics value to influxDB server.
  */
-@Component(immediate = true)
-@Service
+@Component(
+    immediate = true,
+    service = InfluxDbMetricsReporter.class,
+    property = {
+        MONITOR_ALL + ":Boolean=" + MONITOR_ALL_DEFAULT,
+        METRIC_NAMES + "=" + METRIC_NAMES_DEFAULT
+    }
+)
 public class DefaultInfluxDbMetricsReporter implements InfluxDbMetricsReporter {
     private final Logger log = getLogger(getClass());
 
@@ -53,32 +61,28 @@ public class DefaultInfluxDbMetricsReporter implements InfluxDbMetricsReporter {
     private static final TimeUnit REPORT_TIME_UNIT = TimeUnit.MINUTES;
 
     private static final String DEFAULT_PROTOCOL = "http";
-    private static final String DEFAULT_METRIC_NAMES = "default";
+
     private static final String SEPARATOR = ":";
     private static final int DEFAULT_CONN_TIMEOUT = 1000;
     private static final int DEFAULT_READ_TIMEOUT = 1000;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected MetricsService metricsService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService cfgService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ClusterService clusterService;
 
-    @Property(name = "monitorAll", boolValue = true,
-            label = "Enable to monitor all of metrics stored in metric registry " +
-                    "default is true")
-    protected boolean monitorAll = true;
+    /** Enable to monitor all of metrics stored in metric registry default is true. */
+    protected boolean monitorAll = MONITOR_ALL_DEFAULT;
 
-    @Property(name = "metricNames", value = DEFAULT_METRIC_NAMES,
-            label = "Names of metric to be monitored in third party monitoring " +
-                    "server; default metric names are 'default'")
-    protected String metricNames = DEFAULT_METRIC_NAMES;
+    /** Names of metric to be monitored in third party monitoring server; default metric names are 'default'. */
+    protected String metricNames = METRIC_NAMES_DEFAULT;
 
     protected String address;
     protected int port;
@@ -227,11 +231,11 @@ public class DefaultInfluxDbMetricsReporter implements InfluxDbMetricsReporter {
     private void readComponentConfiguration(ComponentContext context) {
         Dictionary<?, ?> properties = context.getProperties();
 
-        String metricNameStr = Tools.get(properties, "metricNames");
-        metricNames = metricNameStr != null ? metricNameStr : DEFAULT_METRIC_NAMES;
+        String metricNameStr = Tools.get(properties, METRIC_NAMES);
+        metricNames = metricNameStr != null ? metricNameStr : METRIC_NAMES_DEFAULT;
         log.info("Configured. Metric name is {}", metricNames);
 
-        Boolean monitorAllEnabled = Tools.isPropertyEnabled(properties, "monitorAll");
+        Boolean monitorAllEnabled = Tools.isPropertyEnabled(properties, MONITOR_ALL);
         if (monitorAllEnabled == null) {
             log.info("Monitor all metrics is not configured, " +
                     "using current value of {}", monitorAll);

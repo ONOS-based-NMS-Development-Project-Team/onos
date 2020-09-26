@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import org.apache.karaf.shell.console.completer.ArgumentCompleter.ArgumentList;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractChoicesCompleter;
 import org.onosproject.net.Device;
 import org.onosproject.net.DeviceId;
@@ -34,6 +34,7 @@ import org.onosproject.net.device.DeviceService;
  *
  * Assumes argument right before the one being completed is DeviceId.
  */
+@Service
 public class PortNumberCompleter extends AbstractChoicesCompleter {
 
     /**
@@ -42,11 +43,10 @@ public class PortNumberCompleter extends AbstractChoicesCompleter {
      * @return DeviceId found or null if not found
      */
     protected DeviceId lookForDeviceId() {
-        ArgumentList args = getArgumentList();
         //parse argument list for deviceId
         DeviceService deviceService = getService(DeviceService.class);
         Device dev = null;
-        for (String str : args.getArguments()) {
+        for (String str : commandLine.getArguments()) {
             if (str.contains(":")) {
                 dev = deviceService.getDevice(DeviceId.deviceId(str));
                 if (dev != null) {

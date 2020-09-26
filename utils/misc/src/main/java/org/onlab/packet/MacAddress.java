@@ -48,6 +48,10 @@ public class MacAddress {
      */
     public static final MacAddress BROADCAST = valueOf("ff:ff:ff:ff:ff:ff");
     /**
+     * Mask that indicates exact match on the MacAddress.
+     */
+    public static final MacAddress EXACT_MASK = valueOf("ff:ff:ff:ff:ff:ff");
+    /**
      * IPv4 multicast MAC address.
      */
     public static final MacAddress IPV4_MULTICAST = valueOf("01:00:5e:00:00:00");
@@ -70,6 +74,10 @@ public class MacAddress {
             MacAddress.valueOf("01:80:c2:00:00:00"),
             MacAddress.valueOf("01:80:c2:00:00:03"),
             MacAddress.valueOf("01:80:c2:00:00:0e"));
+    /**
+     * LACP MAC address.
+     */
+    public static final MacAddress LACP = valueOf("01:80:C2:00:00:02");
 
     public static final int MAC_ADDRESS_LENGTH = 6;
     private byte[] address = new byte[MacAddress.MAC_ADDRESS_LENGTH];
@@ -199,18 +207,6 @@ public class MacAddress {
             return false;
         }
         return (this.address[0] & 0x01) != 0;
-    }
-
-    /**
-     * Returns true if this MAC address is link local.
-     *
-     * @return true if link local
-     * @deprecated in Kingfisher release. Link local is not a correct description for
-     *             this MAC address. Replaced with {@link #isLldp()}
-     */
-    @Deprecated
-    public boolean isLinkLocal() {
-        return isLldp();
     }
 
     /**

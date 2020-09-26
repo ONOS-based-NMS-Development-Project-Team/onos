@@ -16,18 +16,16 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { HostRoutingModule } from './host-routing.module';
 import { HostComponent } from './host/host.component';
-import { SvgModule } from '../../fw/svg/svg.module';
-import { WidgetModule } from '../../fw/widget/widget.module';
+import { Gui2FwLibModule } from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 import { HostDetailsComponent } from './hostdetails/hostdetails.component';
+import {RouterModule} from '@angular/router';
 
 @NgModule({
     imports: [
         CommonModule,
-        HostRoutingModule,
-        WidgetModule,
-        SvgModule
+        RouterModule.forChild([{path: '', component: HostComponent}]),
+        Gui2FwLibModule
     ],
     declarations: [HostComponent, HostDetailsComponent]
 })

@@ -15,8 +15,10 @@
  */
 package org.onosproject.cli.net;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.ConnectPoint;
 import org.onosproject.net.DeviceId;
@@ -32,6 +34,7 @@ import static org.onosproject.net.PortNumber.portNumber;
 /**
  * Fetches statistics.
  */
+@Service
 @Command(scope = "onos", name = "get-stats",
          description = "Fetches stats for a connection point")
 public class GetStatisticsCommand extends AbstractShellCommand {
@@ -39,11 +42,12 @@ public class GetStatisticsCommand extends AbstractShellCommand {
     @Argument(index = 0, name = "connectPoint",
               description = "Device/Port Description",
               required = true, multiValued = false)
+    @Completion(ConnectPointCompleter.class)
     String connectPoint = null;
 
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         StatisticService service = get(StatisticService.class);
 
         DeviceId ingressDeviceId = deviceId(getDeviceId(connectPoint));

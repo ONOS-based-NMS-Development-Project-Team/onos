@@ -15,6 +15,7 @@
  */
 package org.onosproject.codec.impl;
 
+import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.onlab.util.HexString;
@@ -57,7 +58,9 @@ import org.onosproject.net.pi.runtime.PiFieldMatch;
 import org.onosproject.net.pi.runtime.PiLpmFieldMatch;
 import org.onosproject.net.pi.runtime.PiRangeFieldMatch;
 import org.onosproject.net.pi.runtime.PiTernaryFieldMatch;
+import org.onosproject.store.serializers.KryoNamespaces;
 
+import java.io.ByteArrayOutputStream;
 import java.util.EnumMap;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -89,6 +92,7 @@ public final class EncodeCriterionCodecHelper {
         formatMap.put(Criterion.Type.IN_PHY_PORT, new FormatInPort());
         formatMap.put(Criterion.Type.METADATA, new FormatMetadata());
         formatMap.put(Criterion.Type.ETH_DST, new FormatEth());
+        formatMap.put(Criterion.Type.ETH_DST_MASKED, new FormatEthMasked());
         formatMap.put(Criterion.Type.ETH_SRC, new FormatEth());
         formatMap.put(Criterion.Type.ETH_TYPE, new FormatEthType());
         formatMap.put(Criterion.Type.VLAN_VID, new FormatVlanVid());
@@ -132,6 +136,7 @@ public final class EncodeCriterionCodecHelper {
         formatMap.put(Criterion.Type.ODU_SIGID, new FormatOduSignalId());
         formatMap.put(Criterion.Type.ODU_SIGTYPE, new FormatOduSignalType());
         formatMap.put(Criterion.Type.PROTOCOL_INDEPENDENT, new FormatProtocolIndependent());
+        formatMap.put(Criterion.Type.EXTENSION, new FormatExtension());
         // Currently unimplemented
         formatMap.put(Criterion.Type.ARP_OP, new FormatUnknown());
         formatMap.put(Criterion.Type.ARP_SPA, new FormatUnknown());
@@ -145,8 +150,6 @@ public final class EncodeCriterionCodecHelper {
         formatMap.put(Criterion.Type.TCP_FLAGS, new FormatUnknown());
         formatMap.put(Criterion.Type.ACTSET_OUTPUT, new FormatUnknown());
         formatMap.put(Criterion.Type.PACKET_TYPE, new FormatUnknown());
-        formatMap.put(Criterion.Type.EXTENSION, new FormatUnknown());
-        formatMap.put(Criterion.Type.ETH_DST_MASKED, new FormatUnknown());
         formatMap.put(Criterion.Type.ETH_SRC_MASKED, new FormatUnknown());
         formatMap.put(Criterion.Type.TCP_SRC_MASKED, new FormatUnknown());
         formatMap.put(Criterion.Type.TCP_DST_MASKED, new FormatUnknown());
@@ -190,6 +193,17 @@ public final class EncodeCriterionCodecHelper {
         public ObjectNode encodeCriterion(ObjectNode root, Criterion criterion) {
             final EthCriterion ethCriterion = (EthCriterion) criterion;
             return root.put(CriterionCodec.MAC, ethCriterion.mac().toString());
+        }
+    }
+
+    private static class FormatEthMasked implements CriterionTypeFormatter {
+        @Override
+        public ObjectNode encodeCriterion(ObjectNode root, Criterion criterion) {
+            final EthCriterion ethCriterion = (EthCriterion) criterion;
+            root.put(CriterionCodec.MAC, ethCriterion.mac().toString());
+            root.put(CriterionCodec.MAC_MASK, ethCriterion.mask().toString());
+
+            return root;
         }
     }
 
@@ -565,6 +579,19 @@ public final class EncodeCriterionCodecHelper {
                 }
             }
             return (ObjectNode) root.set(CriterionCodec.PI_MATCHES, matchNodes);
+        }
+    }
+
+    private class FormatExtension implements CriterionTypeFormatter {
+        @Override
+        public ObjectNode encodeCriterion(ObjectNode root, Criterion criterion) {
+            Output output = new Output(new ByteArrayOutputStream());
+            KryoNamespaces.API.borrow().writeObject(output, criterion);
+            root.put(CriterionCodec.EXTENSION, output.toBytes());
+            output.flush();
+            output.close();
+
+            return root;
         }
     }
 

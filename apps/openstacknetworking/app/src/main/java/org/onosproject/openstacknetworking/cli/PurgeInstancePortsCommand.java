@@ -15,18 +15,22 @@
  */
 package org.onosproject.openstacknetworking.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.Option;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.openstacknetworking.api.InstancePort;
 import org.onosproject.openstacknetworking.api.InstancePortAdminService;
 
 import static org.onosproject.openstacknetworking.api.InstancePort.State.INACTIVE;
+import static org.onosproject.openstacknetworking.api.InstancePort.State.REMOVE_PENDING;
 
 /**
  * Purges existing instance ports.
  */
+@Service
 @Command(scope = "onos", name = "purge-instance-ports",
         description = "Purges existing instance ports created by OpenStack networking app")
 public class PurgeInstancePortsCommand extends AbstractShellCommand {
@@ -40,19 +44,26 @@ public class PurgeInstancePortsCommand extends AbstractShellCommand {
             required = false, multiValued = false)
     private boolean isInactive = false;
 
+    @Option(name = "-p", aliases = "--pending",
+            description = "Instance ports in pending removal state",
+            required = false, multiValued = false)
+    private boolean isPending = false;
+
     @Argument(index = 0, name = "portIds", description = "Instance Port IDs",
             required = false, multiValued = true)
+    @Completion(InstancePortIdCompleter.class)
     private String[] portIds = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         InstancePortAdminService service = get(InstancePortAdminService.class);
 
-        if ((!isAll && !isInactive && portIds == null) ||
-                (isAll && isInactive) ||
-                (isInactive && portIds != null) ||
-                (portIds != null && isAll)) {
-            print("Please specify one of portIds, --all, and --inactive options.");
+        if ((!isAll && !isInactive && !isPending && portIds == null) ||
+                (isAll && isInactive && isPending) ||
+                (isInactive && isPending && portIds != null) ||
+                (portIds != null && isAll && isPending) ||
+                (isAll && isInactive && portIds != null)) {
+            print("Please specify one of portIds, --all or --inactive or --pending options.");
             return;
         }
 
@@ -62,6 +73,10 @@ public class PurgeInstancePortsCommand extends AbstractShellCommand {
         } else if (isInactive) {
             portIds = service.instancePorts().stream()
                              .filter(p -> p.state() == INACTIVE)
+                             .map(InstancePort::portId).toArray(String[]::new);
+        } else if (isPending) {
+            portIds = service.instancePorts().stream()
+                             .filter(p -> p.state() == REMOVE_PENDING)
                              .map(InstancePort::portId).toArray(String[]::new);
         }
 

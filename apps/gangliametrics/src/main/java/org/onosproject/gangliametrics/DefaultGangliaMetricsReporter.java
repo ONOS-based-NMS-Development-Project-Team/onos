@@ -19,30 +19,48 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ganglia.GangliaReporter;
 import info.ganglia.gmetric4j.gmetric.GMetric;
 import org.apache.commons.lang.StringUtils;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.onlab.metrics.MetricsService;
 import org.onlab.util.Tools;
 import org.onosproject.cfg.ComponentConfigService;
 import org.onosproject.core.CoreService;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.util.Dictionary;
 import java.util.concurrent.TimeUnit;
 
+import static org.onosproject.gangliametrics.OsgiPropertyConstants.ADDRESS;
+import static org.onosproject.gangliametrics.OsgiPropertyConstants.ADDRESS_DEFAULT;
+import static org.onosproject.gangliametrics.OsgiPropertyConstants.METRIC_NAMES;
+import static org.onosproject.gangliametrics.OsgiPropertyConstants.METRIC_NAMES_DEFAULT;
+import static org.onosproject.gangliametrics.OsgiPropertyConstants.MONITOR_ALL;
+import static org.onosproject.gangliametrics.OsgiPropertyConstants.MONITOR_ALL_DEFAULT;
+import static org.onosproject.gangliametrics.OsgiPropertyConstants.PORT;
+import static org.onosproject.gangliametrics.OsgiPropertyConstants.PORT_DEFAULT;
+import static org.onosproject.gangliametrics.OsgiPropertyConstants.TTL;
+import static org.onosproject.gangliametrics.OsgiPropertyConstants.TTL_DEFAULT;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * A metric report that reports all metrics value to ganglia monitoring server.
  */
-@Component(immediate = true)
+@Component(
+    immediate = true,
+    property = {
+        MONITOR_ALL + ":Boolean=" + MONITOR_ALL_DEFAULT,
+        METRIC_NAMES + "=" + METRIC_NAMES_DEFAULT,
+        ADDRESS + "=" + ADDRESS_DEFAULT,
+        PORT + ":Integer=" + PORT_DEFAULT,
+        TTL + ":Integer=" + TTL_DEFAULT
+    }
+)
 public class DefaultGangliaMetricsReporter implements GangliaMetricsReporter {
     private final Logger log = getLogger(getClass());
 
@@ -52,39 +70,29 @@ public class DefaultGangliaMetricsReporter implements GangliaMetricsReporter {
     private static final int REPORT_PERIOD = 1;
     private static final TimeUnit REPORT_TIME_UNIT = TimeUnit.MINUTES;
 
-    private static final String DEFAULT_ADDRESS = "localhost";
-    private static final int DEFAULT_PORT = 8649;
-    private static final int DEFAULT_TTL = 1;
-    private static final String DEFAULT_METRIC_NAMES = "default";
-
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected MetricsService metricsService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService cfgService;
 
-    @Property(name = "monitorAll", boolValue = true,
-              label = "Enable to monitor all of metrics stored in metric registry default is true")
-    protected boolean monitorAll = true;
+    /** Enable to monitor all of metrics stored in metric registry default is true. */
+    protected boolean monitorAll = MONITOR_ALL_DEFAULT;
 
-    @Property(name = "metricNames", value = DEFAULT_METRIC_NAMES,
-              label = "Names of metric to be monitored; default metric names are 'default'")
-    protected String metricNames = DEFAULT_METRIC_NAMES;
+    /** Names of metric to be monitored; default metric names are 'default'. */
+    protected String metricNames = METRIC_NAMES_DEFAULT;
 
-    @Property(name = "address", value = DEFAULT_ADDRESS,
-              label = "IP address of ganglia monitoring server; default is localhost")
-    protected String address = DEFAULT_ADDRESS;
+    /** IP address of ganglia monitoring server; default is localhost. */
+    protected String address = ADDRESS_DEFAULT;
 
-    @Property(name = "port", intValue = DEFAULT_PORT,
-              label = "Port number of ganglia monitoring server; default is 8649")
-    protected int port = DEFAULT_PORT;
+    /** Port number of ganglia monitoring server; default is 8649. */
+    protected int port = PORT_DEFAULT;
 
-    @Property(name = "ttl", intValue = DEFAULT_TTL,
-              label = "TTL value of ganglia monitoring server; default is 1")
-    protected int ttl = DEFAULT_TTL;
+    /** TTL value of ganglia monitoring server; default is 1. */
+    protected int ttl = TTL_DEFAULT;
 
     private GMetric ganglia;
     private GangliaReporter gangliaReporter;
@@ -202,33 +210,33 @@ public class DefaultGangliaMetricsReporter implements GangliaMetricsReporter {
     private void readComponentConfiguration(ComponentContext context) {
         Dictionary<?, ?> properties = context.getProperties();
 
-        String addressStr = Tools.get(properties, "address");
-        address = addressStr != null ? addressStr : DEFAULT_ADDRESS;
+        String addressStr = Tools.get(properties, ADDRESS);
+        address = addressStr != null ? addressStr : ADDRESS_DEFAULT;
         log.info("Configured. Ganglia server address is {}", address);
 
-        String metricNameStr = Tools.get(properties, "metricNames");
-        metricNames = metricNameStr != null ? metricNameStr : DEFAULT_METRIC_NAMES;
+        String metricNameStr = Tools.get(properties, METRIC_NAMES);
+        metricNames = metricNameStr != null ? metricNameStr : METRIC_NAMES_DEFAULT;
         log.info("Configured. Metric name is {}", metricNames);
 
-        Integer portConfigured = Tools.getIntegerProperty(properties, "port");
+        Integer portConfigured = Tools.getIntegerProperty(properties, PORT);
         if (portConfigured == null) {
-            port = DEFAULT_PORT;
+            port = PORT_DEFAULT;
             log.info("Ganglia port is not configured, default value is {}", port);
         } else {
             port = portConfigured;
             log.info("Configured. Ganglia port is configured to {}", port);
         }
 
-        Integer ttlConfigured = Tools.getIntegerProperty(properties, "ttl");
+        Integer ttlConfigured = Tools.getIntegerProperty(properties, TTL);
         if (ttlConfigured == null) {
-            ttl = DEFAULT_TTL;
+            ttl = TTL_DEFAULT;
             log.info("Ganglia TTL is not configured, default value is {}", ttl);
         } else {
             ttl = ttlConfigured;
             log.info("Configured. Ganglia TTL is configured to {}", ttl);
         }
 
-        Boolean monitorAllEnabled = Tools.isPropertyEnabled(properties, "monitorAll");
+        Boolean monitorAllEnabled = Tools.isPropertyEnabled(properties, MONITOR_ALL);
         if (monitorAllEnabled == null) {
             log.info("Monitor all metrics is not configured, " +
                      "using current value of {}", monitorAll);

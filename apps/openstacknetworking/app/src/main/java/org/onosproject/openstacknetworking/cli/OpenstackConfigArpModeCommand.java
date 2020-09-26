@@ -15,8 +15,10 @@
  */
 package org.onosproject.openstacknetworking.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cfg.ComponentConfigService;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.core.ApplicationId;
@@ -37,6 +39,7 @@ import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.g
 /**
  * Configure ARP mode.
  */
+@Service
 @Command(scope = "onos", name = "openstack-config-arp-mode",
         description = "Re-configure ARP mode (proxy | broadcast)")
 public class OpenstackConfigArpModeCommand extends AbstractShellCommand {
@@ -46,10 +49,11 @@ public class OpenstackConfigArpModeCommand extends AbstractShellCommand {
     @Argument(index = 0, name = "arpMode",
             description = "ARP mode (proxy | broadcast)",
             required = true, multiValued = false)
+    @Completion(ArpModeCompleter.class)
     String arpMode = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
 
         if (checkArpMode(arpMode)) {
             configArpMode(arpMode);
@@ -62,9 +66,11 @@ public class OpenstackConfigArpModeCommand extends AbstractShellCommand {
             // reinstall all rules only if the arpMode is changed to the configured one
             while (true) {
                 String switchingValue =
-                        getPropertyValue(service.getProperties(switchingComponent), ARP_MODE_NAME);
+                        getPropertyValue(
+                                service.getProperties(switchingComponent), ARP_MODE_NAME);
                 String routingValue =
-                        getPropertyValue(service.getProperties(routingComponent), ARP_MODE_NAME);
+                        getPropertyValue(
+                                service.getProperties(routingComponent), ARP_MODE_NAME);
 
                 if (arpMode.equals(switchingValue) && arpMode.equals(routingValue)) {
                     break;

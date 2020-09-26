@@ -16,30 +16,37 @@
 package org.onosproject.openstacknetworking.cli;
 
 import com.google.common.collect.Lists;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.openstacknetworking.api.ExternalPeerRouter;
 import org.onosproject.openstacknetworking.api.OpenstackNetworkAdminService;
 
 import java.util.List;
 
+import static org.onosproject.cli.AbstractShellCommand.get;
+
 /**
  * Deletes external peer router.
  */
+@Service
 @Command(scope = "onos", name = "openstack-delete-peer-router",
         description = "Delete external peer router")
 public class DeleteExternalPeerRouterCommand extends AbstractShellCommand {
     @Argument(index = 0, name = "ip address", description = "ip address",
             required = true, multiValued = false)
+    @Completion(IpAddressCompleter.class)
     private String ipAddress = null;
 
     private static final String FORMAT = "%-20s%-20s%-20s";
-    private static final String NO_ELEMENT = "There's no external peer router information with given ip address";
+    private static final String NO_ELEMENT =
+            "There's no external peer router information with given ip address";
 
     @Override
-    protected void execute() {
-        OpenstackNetworkAdminService service = AbstractShellCommand.get(OpenstackNetworkAdminService.class);
+    protected void doExecute() {
+        OpenstackNetworkAdminService service = get(OpenstackNetworkAdminService.class);
 
         if (service.externalPeerRouters().stream()
                 .noneMatch(router -> router.ipAddress().toString().equals(ipAddress))) {
@@ -50,7 +57,7 @@ public class DeleteExternalPeerRouterCommand extends AbstractShellCommand {
         try {
             service.deleteExternalPeerRouter(ipAddress);
         } catch (IllegalArgumentException e) {
-            log.error("Exception occurred because of {}", e.toString());
+            log.error("Exception occurred because of {}", e);
         }
         print(FORMAT, "Router IP", "Mac Address", "VLAN ID");
         List<ExternalPeerRouter> routers = Lists.newArrayList(service.externalPeerRouters());

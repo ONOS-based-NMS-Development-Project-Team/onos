@@ -19,7 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.openstacknetworking.api.OpenstackRouterService;
 import org.openstack4j.model.network.NetFloatingIP;
@@ -28,12 +29,14 @@ import org.openstack4j.openstack.networking.domain.NeutronFloatingIP;
 import java.util.Comparator;
 import java.util.List;
 
+import static org.onosproject.cli.AbstractShellCommand.get;
 import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.modelEntityToJson;
 import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.prettyJson;
 
 /**
  * Lists OpenStack floating IP addresses.
  */
+@Service
 @Command(scope = "onos", name = "openstack-floatingips",
         description = "Lists all OpenStack floating IP addresses")
 public class OpenstackFloatingIpListCommand extends AbstractShellCommand {
@@ -41,8 +44,8 @@ public class OpenstackFloatingIpListCommand extends AbstractShellCommand {
     private static final String FORMAT = "%-40s%-20s%-20s";
 
     @Override
-    protected void execute() {
-        OpenstackRouterService service = AbstractShellCommand.get(OpenstackRouterService.class);
+    protected void doExecute() {
+        OpenstackRouterService service = get(OpenstackRouterService.class);
         List<NetFloatingIP> floatingIps = Lists.newArrayList(service.floatingIps());
         floatingIps.sort(Comparator.comparing(NetFloatingIP::getFloatingIpAddress));
 

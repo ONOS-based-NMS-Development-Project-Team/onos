@@ -9,5 +9,7 @@
 ssh -t -t $ONOS_USER@$OCN "
     source ~/.bash_aliases
     cd \$ONOS_ROOT
+    export ONOS_APPS=$ONOS_APPS
+    export stcOpenJDK=$stcOpenJDK
     stc $@
 "

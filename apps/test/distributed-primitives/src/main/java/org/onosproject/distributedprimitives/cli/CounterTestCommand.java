@@ -15,8 +15,9 @@
  */
 package org.onosproject.distributedprimitives.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.store.service.AtomicCounter;
 import org.onosproject.store.service.StorageService;
@@ -24,6 +25,7 @@ import org.onosproject.store.service.StorageService;
 /**
  * CLI command to increment a distributed counter.
  */
+@Service
 @Command(scope = "onos", name = "counter-test",
         description = "Manipulate a distributed counter")
 public class CounterTestCommand extends AbstractShellCommand {
@@ -51,7 +53,7 @@ public class CounterTestCommand extends AbstractShellCommand {
     AtomicCounter atomicCounter;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         StorageService storageService = get(StorageService.class);
         atomicCounter = storageService.getAsyncAtomicCounter(counter).asAtomicCounter();
         if ("get".equals(operation)) {

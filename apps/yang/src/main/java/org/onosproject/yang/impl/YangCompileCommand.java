@@ -16,9 +16,10 @@
 package org.onosproject.yang.impl;
 
 import com.google.common.io.ByteStreams;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Option;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.app.ApplicationAdminService;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.core.ApplicationId;
@@ -31,6 +32,7 @@ import java.net.URL;
 /**
  * Compiles the provided YANG source files and installs the resulting model extension.
  */
+@Service
 @Command(scope = "onos", name = "compile-model",
         description = "Compiles the provided YANG source files and installs the resulting model extension")
 public class YangCompileCommand extends AbstractShellCommand {
@@ -53,7 +55,7 @@ public class YangCompileCommand extends AbstractShellCommand {
     String url = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         try {
             InputStream yangJar = new URL(url).openStream();
             YangLiveCompilerService compiler = get(YangLiveCompilerService.class);

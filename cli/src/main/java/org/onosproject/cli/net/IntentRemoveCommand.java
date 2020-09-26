@@ -16,10 +16,13 @@
 package org.onosproject.cli.net;
 
 import com.google.common.collect.ImmutableList;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.app.ApplicationIdWithIntentNameCompleter;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
 import org.onosproject.net.intent.Intent;
@@ -45,6 +48,7 @@ import static org.onosproject.net.intent.IntentState.WITHDRAWN;
 /**
  * Removes an intent.
  */
+@Service
 @Command(scope = "onos", name = "remove-intent",
         description = "Removes the specified intent")
 public class IntentRemoveCommand extends AbstractShellCommand {
@@ -52,11 +56,13 @@ public class IntentRemoveCommand extends AbstractShellCommand {
     @Argument(index = 0, name = "app",
             description = "Application ID",
             required = false, multiValued = false)
+    @Completion(ApplicationIdWithIntentNameCompleter.class)
     String applicationIdString = null;
 
     @Argument(index = 1, name = "key",
             description = "Intent Key",
             required = false, multiValued = false)
+    @Completion(IntentKeyCompleter.class)
     String keyString = null;
 
     @Option(name = "-p", aliases = "--purge",
@@ -72,7 +78,7 @@ public class IntentRemoveCommand extends AbstractShellCommand {
     private static final EnumSet<IntentState> CAN_PURGE = EnumSet.of(WITHDRAWN, FAILED);
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         IntentService intentService = get(IntentService.class);
         removeIntent(intentService.getIntents(),
              applicationIdString, keyString,

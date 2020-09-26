@@ -15,9 +15,12 @@
  */
 package org.onosproject.cli.net;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
+import org.onosproject.cli.NodeIdCompleter;
 import org.onosproject.cluster.NodeId;
 import org.onosproject.mastership.MastershipAdminService;
 import org.onosproject.net.MastershipRole;
@@ -29,24 +32,28 @@ import static org.onosproject.net.DeviceId.deviceId;
 /**
  * Sets role of the controller node for the given infrastructure device.
  */
+@Service
 @Command(scope = "onos", name = "device-role",
          description = "Sets role of the controller node for the given infrastructure device")
 public class DeviceRoleCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "uri", description = "Device ID",
               required = true, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     String uri = null;
 
     @Argument(index = 1, name = "node", description = "Node ID",
               required = true, multiValued = false)
+    @Completion(NodeIdCompleter.class)
     String node = null;
 
     @Argument(index = 2, name = "role", description = "Mastership role",
               required = true, multiValued = false)
+    @Completion(RoleCompleter.class)
     String role = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         MastershipAdminService service = get(MastershipAdminService.class);
         MastershipRole mastershipRole = MastershipRole.valueOf(role.toUpperCase());
         Futures.getUnchecked(service.setRole(new NodeId(node), deviceId(uri), mastershipRole));

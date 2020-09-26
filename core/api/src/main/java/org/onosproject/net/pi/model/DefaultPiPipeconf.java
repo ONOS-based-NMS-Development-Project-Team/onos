@@ -17,11 +17,16 @@
 package org.onosproject.net.pi.model;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.hash.Hashing;
+import com.google.common.hash.HashingInputStream;
 import org.onosproject.net.driver.Behaviour;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -37,14 +42,16 @@ public final class DefaultPiPipeconf implements PiPipeconf {
 
     private final PiPipeconfId id;
     private final PiPipelineModel pipelineModel;
+    private final long fingerprint;
     private final Map<Class<? extends Behaviour>, Class<? extends Behaviour>> behaviours;
     private final Map<ExtensionType, URL> extensions;
 
-    private DefaultPiPipeconf(PiPipeconfId id, PiPipelineModel pipelineModel,
+    private DefaultPiPipeconf(PiPipeconfId id, PiPipelineModel pipelineModel, long fingerprint,
                               Map<Class<? extends Behaviour>, Class<? extends Behaviour>> behaviours,
                               Map<ExtensionType, URL> extensions) {
         this.id = id;
         this.pipelineModel = pipelineModel;
+        this.fingerprint = fingerprint;
         this.behaviours = behaviours;
         this.extensions = extensions;
     }
@@ -57,6 +64,11 @@ public final class DefaultPiPipeconf implements PiPipeconf {
     @Override
     public PiPipelineModel pipelineModel() {
         return pipelineModel;
+    }
+
+    @Override
+    public long fingerprint() {
+        return fingerprint;
     }
 
     @Override
@@ -175,8 +187,34 @@ public final class DefaultPiPipeconf implements PiPipeconf {
         public PiPipeconf build() {
             checkNotNull(id);
             checkNotNull(pipelineModel);
-            return new DefaultPiPipeconf(id, pipelineModel, behaviourMapBuilder.build(), extensionMapBuilder.build());
+
+            Map<ExtensionType, URL> extensions = extensionMapBuilder.build();
+            Map<Class<? extends Behaviour>, Class<? extends Behaviour>> behaviours =
+                    behaviourMapBuilder.build();
+            return new DefaultPiPipeconf(
+                    id, pipelineModel, generateFingerprint(extensions.values()),
+                    behaviours, extensions);
         }
 
+        private long generateFingerprint(Collection<URL> extensions) {
+            Collection<Integer> hashes = new ArrayList<>();
+            for (URL extUrl : extensions) {
+                try {
+                    HashingInputStream hin = new HashingInputStream(
+                            Hashing.crc32(), extUrl.openStream());
+                    //noinspection StatementWithEmptyBody
+                    while (hin.read() != -1) {
+                        // Do nothing. Reading all input stream to update hash.
+                    }
+                    hashes.add(hin.hash().asInt());
+                } catch (IOException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            }
+            //  FIXME: how to include behaviours in the hash?
+            int low = Arrays.hashCode(hashes.toArray());
+            int high = pipelineModel.hashCode();
+            return ByteBuffer.allocate(8).putInt(high).putInt(low).getLong(0);
+        }
     }
 }

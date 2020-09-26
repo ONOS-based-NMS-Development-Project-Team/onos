@@ -45,6 +45,13 @@ public interface PiPipeconf {
     PiPipelineModel pipelineModel();
 
     /**
+     * Returns the fingerprint of pipeconf.
+     *
+     * @return a fingerprint
+     */
+    long fingerprint();
+
+    /**
      * Returns all pipeline-specific behaviour interfaces defined by this configuration.
      *
      * @return a collection of behaviours
@@ -93,6 +100,11 @@ public interface PiPipeconf {
         BMV2_JSON,
 
         /**
+         * Mellanox Spectrum configuration binary.
+         */
+        SPECTRUM_BIN,
+
+        /**
          * Barefoot's Tofino configuration binary.
          */
         TOFINO_BIN,
@@ -100,6 +112,24 @@ public interface PiPipeconf {
         /**
          * Barefoot's Tofino context JSON.
          */
-        TOFINO_CONTEXT_JSON
+        TOFINO_CONTEXT_JSON,
+
+        /**
+         * Stratum Fixed Pipeline Model (FPM) pipeline configuration binary.
+         */
+        STRATUM_FPM_BIN,
+
+        /**
+         * CPU port file in UTF 8 encoding.
+         */
+        // TODO: consider a better way to get the CPU port in the interpreter
+        // (see FabricInterpreter.java mapLogicalPortNumber). Perhaps using
+        // pipeconf annotations?
+        CPU_PORT_TXT,
+
+        /**
+         * Raw device config.
+         */
+        RAW_DEVICE_CONFIG
     }
 }

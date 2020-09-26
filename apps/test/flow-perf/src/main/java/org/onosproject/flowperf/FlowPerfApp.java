@@ -15,28 +15,8 @@
  */
 package org.onosproject.flowperf;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.apache.felix.scr.annotations.ReferenceCardinality.MANDATORY_UNARY;
-import static org.onlab.util.Tools.get;
-import static org.slf4j.LoggerFactory.getLogger;
-
-import java.util.Dictionary;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import org.onlab.packet.MacAddress;
 import org.onlab.util.Tools;
 import org.onosproject.cfg.ComponentConfigService;
@@ -56,10 +36,32 @@ import org.onosproject.net.flow.TrafficSelector;
 import org.onosproject.net.flow.TrafficTreatment;
 import org.onosproject.net.flow.instructions.Instructions;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
+import java.util.Dictionary;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.onlab.util.Tools.get;
+import static org.onosproject.flowperf.OsgiPropertyConstants.BATCH_SIZE;
+import static org.onosproject.flowperf.OsgiPropertyConstants.BATCH_SIZE_DEFAULT;
+import static org.onosproject.flowperf.OsgiPropertyConstants.TOTAL_FLOWS;
+import static org.onosproject.flowperf.OsgiPropertyConstants.TOTAL_FLOWS_DEFAULT;
+import static org.onosproject.flowperf.OsgiPropertyConstants.TOTAL_THREADS;
+import static org.onosproject.flowperf.OsgiPropertyConstants.TOTAL_THREADS_DEFAULT;
+import static org.osgi.service.component.annotations.ReferenceCardinality.MANDATORY;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Application for measuring flow installation performance.
@@ -67,28 +69,32 @@ import com.google.common.collect.Lists;
  * This application installs a bunch of flows, validates that all those flows have
  * been successfully added and immediately proceeds to remove all the added flows.
  */
-@Component(immediate = true, enabled = true)
-@Service(value = FlowPerfApp.class)
+@Component(
+    immediate = true,
+    service = FlowPerfApp.class,
+    property = {
+        TOTAL_FLOWS + ":Integer=" + TOTAL_FLOWS_DEFAULT,
+        BATCH_SIZE + ":Integer=" + BATCH_SIZE_DEFAULT,
+        TOTAL_THREADS + ":Integer=" + TOTAL_THREADS_DEFAULT
+    }
+)
 public class FlowPerfApp {
     private final Logger log = getLogger(getClass());
 
-    @Reference(cardinality = MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected DeviceService deviceService;
 
-    @Reference(cardinality = MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected FlowRuleService flowRuleService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = MANDATORY)
     protected ComponentConfigService configService;
 
     protected ApplicationId appId;
 
-    private static final int DEFAULT_BATCH_SIZE = 200;
-    private static final int DEFAULT_TOTAL_THREADS = 1;
-    private static final int DEFAULT_TOTAL_FLOWS = 100000;
     private AtomicInteger pendingBatchCount;
     private CountDownLatch installationLatch;
     private CountDownLatch uninstallationLatch;
@@ -97,17 +103,14 @@ public class FlowPerfApp {
 
     List<FlowRule> addedRules = Lists.newArrayList();
 
-    @Property(name = "totalFlows", intValue = DEFAULT_TOTAL_FLOWS,
-            label = "Total number of flows")
-    protected int totalFlows = DEFAULT_TOTAL_FLOWS;
+    /** Total number of flows. */
+    private int totalFlows = TOTAL_FLOWS_DEFAULT;
 
-    @Property(name = "batchSize", intValue = DEFAULT_BATCH_SIZE,
-            label = "Number of flows per batch")
-    protected int batchSize = DEFAULT_BATCH_SIZE;
+    /** Number of flows per batch. */
+    private int batchSize = BATCH_SIZE_DEFAULT;
 
-    @Property(name = "totalThreads", intValue = DEFAULT_TOTAL_THREADS,
-            label = "Number of installer threads")
-    protected int totalThreads = DEFAULT_TOTAL_THREADS;
+    /** Number of installer threads. */
+    private int totalThreads = TOTAL_THREADS_DEFAULT;
 
     private ExecutorService installer;
     private ExecutorService testRunner =
@@ -208,14 +211,16 @@ public class FlowPerfApp {
                     .build();
             TrafficTreatment treatment = DefaultTrafficTreatment.builder()
                     .add(Instructions.createOutput(PortNumber.portNumber(3))).build();
-            FlowRule rule = new DefaultFlowRule(device.id(),
-                    selector,
-                    treatment,
-                    100,
-                    appId,
-                    50000,
-                    true,
-                    null);
+            FlowRule rule = DefaultFlowRule.builder()
+                .forDevice(device.id())
+                .withSelector(selector)
+                .withTreatment(treatment)
+                .withPriority(100)
+                .fromApp(appId)
+                .withHardTimeout(50000)
+                .makePermanent()
+                .build();
+
             rules.add(rule);
         }
         return rules;
@@ -224,9 +229,9 @@ public class FlowPerfApp {
     @Modified
     public void modified(ComponentContext context) {
         if (context == null) {
-            totalFlows = DEFAULT_TOTAL_FLOWS;
-            batchSize = DEFAULT_BATCH_SIZE;
-            totalThreads = DEFAULT_TOTAL_THREADS;
+            totalFlows = TOTAL_FLOWS_DEFAULT;
+            batchSize = BATCH_SIZE_DEFAULT;
+            totalThreads = TOTAL_THREADS_DEFAULT;
             return;
         }
 
@@ -236,15 +241,15 @@ public class FlowPerfApp {
         int newBatchSize = batchSize;
         int newTotalThreads = totalThreads;
         try {
-            String s = get(properties, "batchSize");
+            String s = get(properties, TOTAL_FLOWS);
             newTotalFlows = isNullOrEmpty(s)
                     ? totalFlows : Integer.parseInt(s.trim());
 
-            s = get(properties, "batchSize");
+            s = get(properties, BATCH_SIZE);
             newBatchSize = isNullOrEmpty(s)
                     ? batchSize : Integer.parseInt(s.trim());
 
-            s = get(properties, "totalThreads");
+            s = get(properties, TOTAL_THREADS);
             newTotalThreads = isNullOrEmpty(s)
                     ? totalThreads : Integer.parseInt(s.trim());
 

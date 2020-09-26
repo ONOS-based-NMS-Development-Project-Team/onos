@@ -16,16 +16,9 @@
 package org.onosproject.rest.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.onlab.packet.IpAddress;
-import org.onlab.packet.MacAddress;
-import org.onlab.packet.VlanId;
-import org.onosproject.net.ConnectPoint;
-import org.onosproject.net.DefaultAnnotations;
 import org.onosproject.net.Host;
 import org.onosproject.net.HostId;
-import org.onosproject.net.HostLocation;
 import org.onosproject.net.SparseAnnotations;
 import org.onosproject.net.host.DefaultHostDescription;
 import org.onosproject.net.host.HostAdminService;
@@ -51,10 +44,6 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 
 import static org.onlab.util.Tools.nullIsNotFound;
 import static org.onlab.util.Tools.readTreeFromStream;
@@ -69,7 +58,6 @@ public class HostsWebResource extends AbstractWebResource {
     @Context
     private UriInfo uriInfo;
     private static final String HOST_NOT_FOUND = "Host is not found";
-    private static final String[] REMOVAL_KEYS = {"mac", "vlan", "locations", "ipAddresses"};
 
     /**
      * Get all end-station hosts.
@@ -138,12 +126,12 @@ public class HostsWebResource extends AbstractWebResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response createAndAddHost(InputStream stream) {
         URI location;
+        HostProviderRegistry hostProviderRegistry = get(HostProviderRegistry.class);
+        InternalHostProvider hostProvider = new InternalHostProvider();
         try {
             // Parse the input stream
             ObjectNode root = readTreeFromStream(mapper(), stream);
 
-            HostProviderRegistry hostProviderRegistry = get(HostProviderRegistry.class);
-            InternalHostProvider hostProvider = new InternalHostProvider();
             HostProviderService hostProviderService = hostProviderRegistry.register(hostProvider);
             hostProvider.setHostProviderService(hostProviderService);
             HostId hostId = hostProvider.parseHost(root);
@@ -153,11 +141,12 @@ public class HostsWebResource extends AbstractWebResource {
                     .path(hostId.mac().toString())
                     .path(hostId.vlanId().toString());
             location = locationBuilder.build();
-            hostProviderRegistry.unregister(hostProvider);
-
         } catch (IOException ex) {
             throw new IllegalArgumentException(ex);
+        } finally {
+            hostProviderRegistry.unregister(hostProvider);
         }
+
         return Response
                 .created(location)
                 .build();
@@ -187,7 +176,7 @@ public class HostsWebResource extends AbstractWebResource {
      */
     private final class InternalHostProvider implements HostProvider {
         private final ProviderId providerId =
-                new ProviderId("host", "org.onosproject.rest", true);
+                new ProviderId("host", "org.onosproject.rest");
         private HostProviderService hostProviderService;
 
         /**
@@ -218,72 +207,16 @@ public class HostsWebResource extends AbstractWebResource {
          * @return host ID of new host created
          */
         private HostId parseHost(JsonNode node) {
-            MacAddress mac = MacAddress.valueOf(node.get("mac").asText());
-            VlanId vlanId = VlanId.vlanId((short) node.get("vlan").asInt(VlanId.UNTAGGED));
+            Host host = codec(Host.class).decode((ObjectNode) node, HostsWebResource.this);
 
-            Iterator<JsonNode> locationNodes = node.get("locations").elements();
-            Set<HostLocation> locations = new HashSet<>();
-            while (locationNodes.hasNext()) {
-                JsonNode locationNode = locationNodes.next();
-                String deviceAndPort = locationNode.get("elementId").asText() + "/" +
-                        locationNode.get("port").asText();
-                HostLocation hostLocation = new HostLocation(ConnectPoint.deviceConnectPoint(deviceAndPort), 0);
-                locations.add(hostLocation);
-            }
-
-            Iterator<JsonNode> ipNodes = node.get("ipAddresses").elements();
-            Set<IpAddress> ips = new HashSet<>();
-            while (ipNodes.hasNext()) {
-                ips.add(IpAddress.valueOf(ipNodes.next().asText()));
-            }
-
-            // try to remove elements from json node after reading them
-            SparseAnnotations annotations = annotations(removeElements(node, REMOVAL_KEYS));
-            // Update host inventory
-
-            HostId hostId = HostId.hostId(mac, vlanId);
-            DefaultHostDescription desc = new DefaultHostDescription(mac, vlanId, locations, ips, true, annotations);
+            HostId hostId = host.id();
+            DefaultHostDescription desc = new DefaultHostDescription(
+                    host.mac(), host.vlan(), host.locations(), host.ipAddresses(), host.innerVlan(),
+                    host.tpid(), host.configured(), (SparseAnnotations) host.annotations());
             hostProviderService.hostDetected(hostId, desc, false);
+
             return hostId;
         }
-
-        /**
-         * Remove a set of elements from JsonNode by specifying keys.
-         *
-         * @param node JsonNode containing host information
-         * @param removalKeys key of elements that need to be removed
-         * @return removal keys
-         */
-        private JsonNode removeElements(JsonNode node, String[] removalKeys) {
-            ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> map = mapper.convertValue(node, Map.class);
-            for (String key : removalKeys) {
-                map.remove(key);
-            }
-            return mapper.convertValue(map, JsonNode.class);
-        }
-
-        /**
-         * Produces annotations from specified JsonNode. Copied from the ConfigProvider
-         * class for use in the POST method.
-         *
-         * @param node node to be annotated
-         * @return SparseAnnotations object with information about node
-         */
-        private SparseAnnotations annotations(JsonNode node) {
-            if (node == null) {
-                return DefaultAnnotations.EMPTY;
-            }
-
-            DefaultAnnotations.Builder builder = DefaultAnnotations.builder();
-            Iterator<String> it = node.fieldNames();
-            while (it.hasNext()) {
-                String k = it.next();
-                builder.set(k, node.get(k).asText());
-            }
-            return builder.build();
-        }
-
     }
 }
 

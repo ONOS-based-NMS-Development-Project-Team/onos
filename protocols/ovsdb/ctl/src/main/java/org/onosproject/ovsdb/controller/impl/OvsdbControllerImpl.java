@@ -16,15 +16,8 @@
 package org.onosproject.ovsdb.controller.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onlab.packet.IpAddress;
 import org.onlab.packet.MacAddress;
 import org.onlab.packet.TpPort;
@@ -46,6 +39,7 @@ import org.onosproject.ovsdb.controller.OvsdbPortName;
 import org.onosproject.ovsdb.controller.OvsdbPortNumber;
 import org.onosproject.ovsdb.controller.OvsdbPortType;
 import org.onosproject.ovsdb.controller.driver.OvsdbAgent;
+import org.onosproject.ovsdb.controller.impl.TlsParams.TlsMode;
 import org.onosproject.ovsdb.rfc.jsonrpc.Callback;
 import org.onosproject.ovsdb.rfc.message.TableUpdate;
 import org.onosproject.ovsdb.rfc.message.TableUpdates;
@@ -61,6 +55,12 @@ import org.onosproject.ovsdb.rfc.table.OvsdbTable;
 import org.onosproject.ovsdb.rfc.table.TableGenerator;
 import org.onosproject.ovsdb.rfc.utils.FromJsonUtil;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,6 +70,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -79,13 +80,22 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.onosproject.ovsdb.controller.OvsdbConstant.SERVER_MODE;
+import static org.onlab.util.Tools.get;
+import static org.onosproject.ovsdb.controller.impl.Controller.MIN_KS_LENGTH;
+import static org.onosproject.ovsdb.controller.impl.OsgiPropertyConstants.*;
 
 /**
  * The implementation of OvsdbController.
  */
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = OvsdbController.class,
+        property = {
+                "serverMode" + ":Boolean=" + SERVER_MODE_DEFAULT,
+                "enableOvsdbTls" + ":Boolean=" + OVSDB_TLS_FLAG_DEFAULT,
+                "keyStoreLocation" + "=" + KS_FILE_DEFAULT,
+                "keyStorePassword" + "=" + KS_PASSWORD_DEFAULT,
+                "trustStoreLocation" + "=" + TS_FILE_DEFAULT,
+                "trustStorePassword" + "=" + TS_PASSWORD_DEFAULT,
+        })
 public class OvsdbControllerImpl implements OvsdbController {
 
     public static final Logger log = LoggerFactory
@@ -102,18 +112,32 @@ public class OvsdbControllerImpl implements OvsdbController {
             new ConcurrentHashMap<>();
     protected ConcurrentHashMap<String, String> requestDbName = new ConcurrentHashMap<>();
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService configService;
 
-    @Property(name = "serverMode", boolValue = SERVER_MODE,
-            label = "Run as server mode, listen on 6640 port")
-    private boolean serverMode = SERVER_MODE;
+    /** Run as server mode, listen on 6640 port. */
+    private boolean serverMode = SERVER_MODE_DEFAULT;
+
+    /** TLS mode for OVSDB channel; options are: true false. */
+    private boolean enableOvsdbTls = OVSDB_TLS_FLAG_DEFAULT;
+
+    /** File path to KeyStore for Ovsdb TLS Connections. */
+    protected String keyStoreLocation = KS_FILE_DEFAULT;
+
+    /** File path to TrustStore for Ovsdb TLS Connections. */
+    protected String trustStoreLocation = TS_FILE_DEFAULT;
+
+    /** KeyStore Password. */
+    protected String keyStorePassword = KS_PASSWORD_DEFAULT;
+
+    /** TrustStore Password. */
+    protected String trustStorePassword = TS_PASSWORD_DEFAULT;
 
     @Activate
     public void activate(ComponentContext context) {
-        controller.start(agent, updateCallback, serverMode);
-
         configService.registerProperties(getClass());
+        modified(context);
+        controller.start(agent, updateCallback, serverMode);
 
         log.info("Started");
     }
@@ -124,25 +148,90 @@ public class OvsdbControllerImpl implements OvsdbController {
 
         configService.unregisterProperties(getClass(), false);
 
-        log.info("Stoped");
+        log.info("Stopped");
     }
 
     @Modified
     protected void modified(ComponentContext context) {
-        Dictionary<?, ?> properties = context.getProperties();
-        Boolean flag;
+        this.setConfigParams(context.getProperties());
+    }
 
-        flag = Tools.isPropertyEnabled(properties, "serverMode");
-        if (flag == null) {
-            log.info("OVSDB server mode is not configured, " +
-                    "using current value of {}", serverMode);
+    /**
+     * Sets config params.
+     *
+     * @param properties dictionary
+     */
+    public void setConfigParams(Dictionary<?, ?> properties) {
+        boolean restartRequired = setServerMode(properties);
+        TlsParams tlsParams = getTlsParams(properties);
+        restartRequired |= controller.setTlsParameters(tlsParams);
+        if (restartRequired) {
+            restartController();
+        }
+    }
+
+    /**
+     * Gets the TLS parameters from the properties dict.
+     *
+     * @param properties dictionary
+     * @return TlsParams Modified Tls Params
+     */
+    private TlsParams getTlsParams(Dictionary<?, ?> properties) {
+        TlsMode mode = null;
+
+        boolean flag = Tools.isPropertyEnabled(properties, OVSDB_TLS_FLAG);
+        if (Objects.isNull(flag) || !flag) {
+            log.warn("OvsdbTLS Disabled");
+            mode = TlsMode.DISABLED;
+        } else {
+            log.warn("OvsdbTLS Enabled");
+            mode = TlsMode.ENABLED;
+        }
+
+        String ksLocation = null, tsLocation = null, ksPwd = null, tsPwd = null;
+
+        ksLocation = get(properties, KS_FILE);
+        if (Strings.isNullOrEmpty(ksLocation)) {
+            log.warn("trustStoreLocation is not configured");
+            mode = TlsMode.DISABLED;
+        }
+
+        tsLocation = get(properties, TS_FILE);
+        if (Strings.isNullOrEmpty(tsLocation)) {
+            log.warn("trustStoreLocation is not configured");
+            mode = TlsMode.DISABLED;
+        }
+
+        ksPwd = get(properties, KS_PASSWORD);
+        if (Strings.isNullOrEmpty(ksPwd) || MIN_KS_LENGTH > ksPwd.length()) {
+            log.warn("keyStorePassword is not configured or Password length too small");
+            mode = TlsMode.DISABLED;
+        }
+
+        tsPwd = get(properties, TS_PASSWORD);
+        if (Strings.isNullOrEmpty(tsPwd) || MIN_KS_LENGTH > tsPwd.length()) {
+            log.warn("trustStorePassword is not configured or Password length too small");
+            mode = TlsMode.DISABLED;
+        }
+
+        TlsParams tlsParams = new TlsParams(mode, ksLocation, tsLocation, ksPwd, tsPwd);
+        log.info("OVSDB TLS Params: {}", tlsParams);
+        return tlsParams;
+    }
+
+    private boolean setServerMode(Dictionary<?, ?> properties) {
+        boolean flag = Tools.isPropertyEnabled(properties, "serverMode");
+        if (Objects.isNull(flag) || flag == serverMode) {
+            log.info("Ovsdb server mode is not configured, " +
+                             "or modified. Using current value of {}", serverMode);
+            return false;
         } else {
             serverMode = flag;
             log.info("Configured. OVSDB server mode was {}",
-                    serverMode ? "enabled" : "disabled");
+                     serverMode ? "enabled" : "disabled");
+            return true;
         }
 
-        restartController();
     }
 
     @Override

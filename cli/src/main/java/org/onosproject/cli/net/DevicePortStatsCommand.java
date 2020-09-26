@@ -23,9 +23,11 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Lists;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
+import org.apache.karaf.shell.api.action.Option;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.Device;
 import org.onosproject.net.DeviceId;
@@ -36,6 +38,7 @@ import org.onosproject.net.device.PortStatistics;
 /**
  * Lists port statistic of all ports in the system.
  */
+@Service
 @Command(scope = "onos", name = "portstats",
         description = "Lists statistics of all ports in the system")
 public class DevicePortStatsCommand extends AbstractShellCommand {
@@ -58,10 +61,12 @@ public class DevicePortStatsCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "uri", description = "Device ID",
             required = false, multiValued = false)
+    @Completion(DeviceIdCompleter.class)
     String uri = null;
 
     @Argument(index = 1, name = "portNumber", description = "Port Number",
             required = false, multiValued = false)
+    @Completion(PortNumberCompleter.class)
     String portNumberStr = null;
 
     PortNumber portNumber = null;
@@ -70,7 +75,7 @@ public class DevicePortStatsCommand extends AbstractShellCommand {
             "   port=%s, pktRx=%s, pktTx=%s, bytesRx=%s, bytesTx=%s, pktRxDrp=%s, pktTxDrp=%s, Dur=%s%s";
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         DeviceService deviceService = get(DeviceService.class);
 
         if (portNumberStr != null) {

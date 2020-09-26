@@ -30,12 +30,13 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.onlab.packet.IpAddress;
+
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+
 import org.onosproject.cluster.ClusterMetadata;
 import org.onosproject.cluster.ClusterMetadataProvider;
 import org.onosproject.cluster.ClusterMetadataProviderRegistry;
@@ -65,7 +66,7 @@ public class ConfigFileBasedClusterMetadataProvider implements ClusterMetadataPr
     private static final String CONFIG_FILE_NAME = "cluster.json";
     private static final File CONFIG_FILE = new File(CONFIG_DIR, CONFIG_FILE_NAME);
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ClusterMetadataProviderRegistry providerRegistry;
 
     private static final ProviderId PROVIDER_ID = new ProviderId("file", "none");
@@ -116,17 +117,19 @@ public class ConfigFileBasedClusterMetadataProvider implements ClusterMetadataPr
                 .stream()
                 .map(this::toPrototype)
                 .collect(Collectors.toSet()));
+        prototype.setStorageDnsService(metadata.getStorageDnsService());
         prototype.setStorage(metadata.getStorageNodes()
                 .stream()
                 .map(this::toPrototype)
                 .collect(Collectors.toSet()));
+        prototype.setClusterSecret(metadata.getClusterSecret());
         return prototype;
     }
 
     private NodePrototype toPrototype(Node node) {
         NodePrototype prototype = new NodePrototype();
         prototype.setId(node.id().id());
-        prototype.setIp(node.ip().toString());
+        prototype.setHost(node.host());
         prototype.setPort(node.tcpPort());
         return prototype;
     }
@@ -198,6 +201,36 @@ public class ConfigFileBasedClusterMetadataProvider implements ClusterMetadataPr
         }
     }
 
+    private static NodeId getNodeId(NodePrototype node) {
+        if (node.getId() != null) {
+            return NodeId.nodeId(node.getId());
+        } else if (node.getHost() != null) {
+            return NodeId.nodeId(node.getHost());
+        } else if (node.getIp() != null) {
+            return NodeId.nodeId(node.getIp());
+        } else {
+            return NodeId.nodeId(UUID.randomUUID().toString());
+        }
+    }
+
+    private static String getNodeHost(NodePrototype node) {
+        if (node.getHost() != null) {
+            return node.getHost();
+        } else if (node.getIp() != null) {
+            return node.getIp();
+        } else {
+            throw new IllegalArgumentException(
+                "Malformed cluster configuration: No host specified for node " + node.getId());
+        }
+    }
+
+    private static int getNodePort(NodePrototype node) {
+        if (node.getPort() != null) {
+            return node.getPort();
+        }
+        return DefaultControllerNode.DEFAULT_PORT;
+    }
+
     private Versioned<ClusterMetadata> fetchMetadata(String metadataUrl) {
         try {
             URL url = new URL(metadataUrl);
@@ -235,31 +268,19 @@ public class ConfigFileBasedClusterMetadataProvider implements ClusterMetadataPr
                 metadata.getName(),
                 metadata.getNode() != null ?
                     new DefaultControllerNode(
-                        metadata.getNode().getId() != null
-                            ? NodeId.nodeId(metadata.getNode().getId())
-                            : metadata.getNode().getIp() != null
-                            ? NodeId.nodeId(IpAddress.valueOf(metadata.getNode().getIp()).toString())
-                            : NodeId.nodeId(UUID.randomUUID().toString()),
-                        metadata.getNode().getIp() != null
-                            ? IpAddress.valueOf(metadata.getNode().getIp())
-                            : null,
-                        metadata.getNode().getPort() != null
-                            ? metadata.getNode().getPort()
-                            : DefaultControllerNode.DEFAULT_PORT) : null,
+                        getNodeId(metadata.getNode()),
+                        getNodeHost(metadata.getNode()),
+                        getNodePort(metadata.getNode())) : null,
                     metadata.getController()
                         .stream()
-                        .map(node -> new DefaultControllerNode(
-                            NodeId.nodeId(node.getId()),
-                            IpAddress.valueOf(node.getIp()),
-                            node.getPort() != null ? node.getPort() : 5679))
+                        .map(node -> new DefaultControllerNode(getNodeId(node), getNodeHost(node), getNodePort(node)))
                         .collect(Collectors.toSet()),
+                    metadata.getStorageDnsService(),
                     metadata.getStorage()
                         .stream()
-                        .map(node -> new DefaultControllerNode(
-                            NodeId.nodeId(node.getId()),
-                            IpAddress.valueOf(node.getIp()),
-                            node.getPort() != null ? node.getPort() : 5679))
-                        .collect(Collectors.toSet())),
+                        .map(node -> new DefaultControllerNode(getNodeId(node), getNodeHost(node), getNodePort(node)))
+                        .collect(Collectors.toSet()),
+                    metadata.getClusterSecret()),
                 version);
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
@@ -291,7 +312,9 @@ public class ConfigFileBasedClusterMetadataProvider implements ClusterMetadataPr
         private String name;
         private NodePrototype node;
         private Set<NodePrototype> controller = Sets.newHashSet();
+        private String storageDnsService;
         private Set<NodePrototype> storage = Sets.newHashSet();
+        private String clusterSecret;
 
         public String getName() {
             return name;
@@ -317,6 +340,14 @@ public class ConfigFileBasedClusterMetadataProvider implements ClusterMetadataPr
             this.controller = controller;
         }
 
+        public String getStorageDnsService() {
+            return storageDnsService;
+        }
+
+        public void setStorageDnsService(String storageDnsService) {
+            this.storageDnsService = storageDnsService;
+        }
+
         public Set<NodePrototype> getStorage() {
             return storage;
         }
@@ -324,11 +355,20 @@ public class ConfigFileBasedClusterMetadataProvider implements ClusterMetadataPr
         public void setStorage(Set<NodePrototype> storage) {
             this.storage = storage;
         }
+
+        public void setClusterSecret(String clusterSecret) {
+            this.clusterSecret = clusterSecret;
+        }
+
+        public String getClusterSecret() {
+            return clusterSecret;
+        }
     }
 
     private static class NodePrototype {
         private String id;
         private String ip;
+        private String host;
         private Integer port;
 
         public String getId() {
@@ -345,6 +385,14 @@ public class ConfigFileBasedClusterMetadataProvider implements ClusterMetadataPr
 
         public void setIp(String ip) {
             this.ip = ip;
+        }
+
+        public String getHost() {
+            return host;
+        }
+
+        public void setHost(String host) {
+            this.host = host;
         }
 
         public Integer getPort() {

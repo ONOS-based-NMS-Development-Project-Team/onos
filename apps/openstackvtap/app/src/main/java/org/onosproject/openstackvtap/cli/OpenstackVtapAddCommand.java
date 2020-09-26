@@ -15,42 +15,46 @@
  */
 package org.onosproject.openstackvtap.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.onlab.packet.IpPrefix;
-import org.onlab.packet.TpPort;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.openstackvtap.api.OpenstackVtap;
 import org.onosproject.openstackvtap.api.OpenstackVtapAdminService;
-import org.onosproject.openstackvtap.impl.DefaultOpenstackVtapCriterion;
+import org.onosproject.openstackvtap.api.OpenstackVtapCriterion;
 
-import static org.onosproject.openstackvtap.util.OpenstackVtapUtil.getProtocolTypeFromString;
 import static org.onosproject.openstackvtap.util.OpenstackVtapUtil.getVtapTypeFromString;
+import static org.onosproject.openstackvtap.util.OpenstackVtapUtil.makeVtapCriterion;
 
 /**
- * Command line interface for adding openstack vTap rule.
+ * Adds a openstack vtap rule.
  */
+@Service
 @Command(scope = "onos", name = "openstack-vtap-add",
         description = "OpenstackVtap activate")
 public class OpenstackVtapAddCommand extends AbstractShellCommand {
 
-    private final OpenstackVtapAdminService vTapService =
+    private final OpenstackVtapAdminService vtapService =
                                             get(OpenstackVtapAdminService.class);
 
     @Argument(index = 0, name = "srcIp",
             description = "source IP address CIDR (e.g., \"10.1.0.2/32\")",
             required = true, multiValued = false)
+    @Completion(VmIpCompleter.class)
     String srcIp = "";
 
     @Argument(index = 1, name = "dstIp",
             description = "destination IP address CIDR (e.g., \"10.1.0.3/32\")",
             required = true, multiValued = false)
+    @Completion(VmIpCompleter.class)
     String dstIp = "";
 
     @Argument(index = 2, name = "ipProto",
-            description = "IP protocol [tcp|udp|icmp|none]",
+            description = "IP protocol [any|tcp|udp|icmp]",
             required = false, multiValued = false)
-    String ipProto = "";
+    @Completion(ProtocolTypeCompleter.class)
+    String ipProto = "any";
 
     @Argument(index = 3, name = "srcTpPort",
             description = "source transport layer port (0 is skip)",
@@ -63,44 +67,26 @@ public class OpenstackVtapAddCommand extends AbstractShellCommand {
     int dstTpPort = 0;
 
     @Argument(index = 5, name = "type",
-            description = "vTap type [all|tx|rx]",
+            description = "vtap type [all|rx|tx]",
             required = false, multiValued = false)
-    String vTapTypeStr = "all";
+    @Completion(VtapTypeCompleter.class)
+    String vtapTypeStr = "all";
 
     @Override
-    protected void execute() {
-        DefaultOpenstackVtapCriterion.Builder
-                    defaultVtapCriterionBuilder = DefaultOpenstackVtapCriterion.builder();
-        if (makeCriterion(defaultVtapCriterionBuilder)) {
-            OpenstackVtap.Type type = getVtapTypeFromString(vTapTypeStr);
-            if (type == null) {
-                print("Invalid vTap type");
-                return;
-            }
-
-            OpenstackVtap vTap = vTapService.createVtap(type, defaultVtapCriterionBuilder.build());
-            if (vTap != null) {
-                print("Created OpenstackVtap with id { %s }", vTap.id().toString());
-            } else {
-                print("Failed to create OpenstackVtap");
-            }
-        }
-    }
-
-    private boolean makeCriterion(DefaultOpenstackVtapCriterion.Builder vTapCriterionBuilder) {
-        try {
-            vTapCriterionBuilder.srcIpPrefix(IpPrefix.valueOf(srcIp));
-            vTapCriterionBuilder.dstIpPrefix(IpPrefix.valueOf(dstIp));
-        } catch (Exception e) {
-            print("Inputted valid source IP & destination IP in CIDR (e.g., \"10.1.0.4/32\")");
-            return false;
+    protected void doExecute() {
+        OpenstackVtapCriterion criterion =
+                makeVtapCriterion(srcIp, dstIp, ipProto, srcTpPort, dstTpPort);
+        OpenstackVtap.Type type = getVtapTypeFromString(vtapTypeStr);
+        if (type == null) {
+            print("Invalid vtap type");
+            return;
         }
 
-        vTapCriterionBuilder.ipProtocol(getProtocolTypeFromString(ipProto.toLowerCase()));
-
-        vTapCriterionBuilder.srcTpPort(TpPort.tpPort(srcTpPort));
-        vTapCriterionBuilder.dstTpPort(TpPort.tpPort(dstTpPort));
-
-        return true;
+        OpenstackVtap vtap = vtapService.createVtap(type, criterion);
+        if (vtap != null) {
+            print("Created OpenstackVtap with id { %s }", vtap.id().toString());
+        } else {
+            print("Failed to create OpenstackVtap");
+        }
     }
 }

@@ -17,10 +17,10 @@ package org.onosproject.codec.impl;
 
 import com.codahale.metrics.Metric;
 import com.google.common.collect.ImmutableSet;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Service;
+import org.onosproject.net.intf.Interface;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.onlab.packet.Ethernet;
 import org.onosproject.cluster.ControllerNode;
 import org.onosproject.cluster.RoleInfo;
@@ -28,22 +28,7 @@ import org.onosproject.codec.CodecService;
 import org.onosproject.codec.JsonCodec;
 import org.onosproject.core.Application;
 import org.onosproject.core.ApplicationId;
-import org.onosproject.incubator.net.dpi.DpiStatInfo;
-import org.onosproject.incubator.net.dpi.DpiStatInfoCodec;
-import org.onosproject.incubator.net.dpi.DpiStatistics;
-import org.onosproject.incubator.net.dpi.DpiStatisticsCodec;
-import org.onosproject.incubator.net.dpi.FlowStatInfo;
-import org.onosproject.incubator.net.dpi.FlowStatInfoCodec;
-import org.onosproject.incubator.net.dpi.ProtocolStatInfo;
-import org.onosproject.incubator.net.dpi.ProtocolStatInfoCodec;
-import org.onosproject.incubator.net.dpi.TrafficStatInfo;
-import org.onosproject.incubator.net.dpi.TrafficStatInfoCodec;
-import org.onosproject.incubator.net.virtual.TenantId;
-import org.onosproject.incubator.net.virtual.VirtualDevice;
-import org.onosproject.incubator.net.virtual.VirtualHost;
-import org.onosproject.incubator.net.virtual.VirtualLink;
-import org.onosproject.incubator.net.virtual.VirtualNetwork;
-import org.onosproject.incubator.net.virtual.VirtualPort;
+import org.onosproject.net.TenantId;
 import org.onosproject.mastership.MastershipTerm;
 import org.onosproject.net.Annotations;
 import org.onosproject.net.ConnectPoint;
@@ -109,8 +94,7 @@ import static org.onosproject.security.AppPermission.Type.CODEC_WRITE;
 /**
  * Implementation of the JSON codec brokering service.
  */
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = CodecService.class)
 public class CodecManager implements CodecService {
 
     private static Logger log = LoggerFactory.getLogger(CodecManager.class);
@@ -166,19 +150,9 @@ public class CodecManager implements CodecService {
         registerCodec(DeviceKey.class, new DeviceKeyCodec());
         registerCodec(Region.class, new RegionCodec());
         registerCodec(TenantId.class, new TenantIdCodec());
-        registerCodec(VirtualNetwork.class, new VirtualNetworkCodec());
-        registerCodec(VirtualDevice.class, new VirtualDeviceCodec());
-        registerCodec(VirtualPort.class, new VirtualPortCodec());
-        registerCodec(VirtualLink.class, new VirtualLinkCodec());
-        registerCodec(VirtualHost.class, new VirtualHostCodec());
         registerCodec(MastershipTerm.class, new MastershipTermCodec());
         registerCodec(MastershipRole.class, new MastershipRoleCodec());
         registerCodec(RoleInfo.class, new RoleInfoCodec());
-        registerCodec(DpiStatistics.class, new DpiStatisticsCodec());
-        registerCodec(DpiStatInfo.class, new DpiStatInfoCodec());
-        registerCodec(TrafficStatInfo.class, new TrafficStatInfoCodec());
-        registerCodec(ProtocolStatInfo.class, new ProtocolStatInfoCodec());
-        registerCodec(FlowStatInfo.class, new FlowStatInfoCodec());
         registerCodec(FilteredConnectPoint.class, new FilteredConnectPointCodec());
         registerCodec(TransportEndpointDescription.class, new TransportEndpointDescriptionCodec());
         registerCodec(PacketRequest.class, new PacketRequestCodec());
@@ -188,6 +162,7 @@ public class CodecManager implements CodecService {
         registerCodec(PiTableModel.class, new PiTableModelCodec());
         registerCodec(PiMatchFieldModel.class, new PiMatchFieldModelCodec());
         registerCodec(PiActionParamModel.class, new PiActionParamModelCodec());
+        registerCodec(Interface.class, new InterfaceCodec());
         log.info("Started");
     }
 

@@ -22,8 +22,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Option;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.util.Tools;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.cluster.ClusterEvent;
@@ -49,6 +50,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * Command to print history of instance local ONOS Events.
  */
+@Service
 @Command(scope = "onos", name = "events",
          description = "Command to print history of instance local ONOS Events")
 public class EventsCommand
@@ -101,7 +103,7 @@ public class EventsCommand
     private long maxSize = -1;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         EventHistoryService eventHistoryService = get(EventHistoryService.class);
 
         Stream<Event<?, ?>> events = eventHistoryService.history().stream();

@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { LogService } from '../../../log.service';
-import { FnService } from '../../../fw/util/fn.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
+import {
+    FnService,
+    LogService,
+    WebSocketService,
+    SortDir, TableBaseImpl, TableResponse
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 import { ActivatedRoute } from '@angular/router';
-import { TableResponse, TableBaseImpl, SortDir } from '../../../fw/widget/table.base';
 
 /**
  * Model of the response from WebSocket
@@ -46,7 +47,7 @@ interface Group {
 @Component({
     selector: 'onos-group',
     templateUrl: './group.component.html',
-    styleUrls: ['./group.component.css', './group.theme.css', '../../../fw/widget/table.css', '../../../fw/widget/table.theme.css']
+    styleUrls: ['./group.component.css', './group.theme.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.theme.css']
 })
 export class GroupComponent extends TableBaseImpl implements OnInit, OnDestroy {
     id: string;
@@ -64,11 +65,10 @@ export class GroupComponent extends TableBaseImpl implements OnInit, OnDestroy {
     constructor(
         protected log: LogService,
         protected fs: FnService,
-        protected ls: LoadingService,
         protected wss: WebSocketService,
         protected ar: ActivatedRoute,
     ) {
-        super(fs, ls, log, wss, 'group');
+        super(fs, log, wss, 'group');
         this.ar.queryParams.subscribe(params => {
             this.id = params['devId'];
         });

@@ -20,16 +20,31 @@ import com.google.common.annotations.Beta;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import org.onosproject.net.DeviceId;
+import org.onosproject.net.pi.model.PiTableId;
+
+import java.util.OptionalInt;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Global identifier of a PI table entry applied on a device, uniquely defined
  * by a device ID, table ID and match key.
  */
 @Beta
-public final class PiTableEntryHandle extends PiHandle<PiTableEntry> {
+public final class PiTableEntryHandle extends PiHandle {
 
-    private PiTableEntryHandle(DeviceId deviceId, PiTableEntry entry) {
-        super(deviceId, entry);
+    private static final int NO_PRIORITY = -1;
+
+    private final PiTableId tableId;
+    private final PiMatchKey matchKey;
+    private final int priority;
+
+    private PiTableEntryHandle(DeviceId deviceId, PiTableId tableId, PiMatchKey matchKey,
+                               Integer priority) {
+        super(deviceId);
+        this.tableId = tableId;
+        this.matchKey = matchKey;
+        this.priority = priority;
     }
 
     /**
@@ -40,14 +55,48 @@ public final class PiTableEntryHandle extends PiHandle<PiTableEntry> {
      * @return PI table entry handle
      */
     public static PiTableEntryHandle of(DeviceId deviceId, PiTableEntry entry) {
-        return new PiTableEntryHandle(deviceId, entry);
+        checkNotNull(entry);
+        return new PiTableEntryHandle(
+                deviceId, entry.table(), entry.matchKey(),
+                entry.priority().orElse(NO_PRIORITY));
+    }
+
+    /**
+     * Returns the table ID associated with this handle.
+     *
+     * @return table ID
+     */
+    public PiTableId tableId() {
+        return tableId;
+    }
+
+    /**
+     * Returns the match key associated with this handle.
+     *
+     * @return match key
+     */
+    public PiMatchKey matchKey() {
+        return matchKey;
+    }
+
+    /**
+     * Returns the optional priority associated with this handle.
+     *
+     * @return optional priority
+     */
+    public OptionalInt priority() {
+        return priority == NO_PRIORITY
+                ? OptionalInt.empty() : OptionalInt.of(priority);
+    }
+
+    @Override
+    public PiEntityType entityType() {
+        return PiEntityType.TABLE_ENTRY;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(deviceId(),
-                                piEntity().table(),
-                                piEntity().matchKey());
+        return Objects.hashCode(deviceId(), tableId, matchKey, priority().orElse(NO_PRIORITY));
     }
 
     @Override
@@ -60,18 +109,18 @@ public final class PiTableEntryHandle extends PiHandle<PiTableEntry> {
         }
         final PiTableEntryHandle other = (PiTableEntryHandle) obj;
         return Objects.equal(this.deviceId(), other.deviceId())
-                && Objects.equal(this.piEntity().table(),
-                                 other.piEntity().table())
-                && Objects.equal(this.piEntity().matchKey(),
-                                 other.piEntity().matchKey());
+                && Objects.equal(this.tableId, other.tableId)
+                && Objects.equal(this.matchKey, other.matchKey)
+                && Objects.equal(this.priority(), other.priority());
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("deviceId", deviceId())
-                .add("tableId", piEntity().table())
-                .add("matchKey", piEntity().matchKey())
+                .add("tableId", tableId)
+                .add("matchKey", matchKey)
+                .add("priority", priority == NO_PRIORITY ? "N/A" : priority)
                 .toString();
     }
 }

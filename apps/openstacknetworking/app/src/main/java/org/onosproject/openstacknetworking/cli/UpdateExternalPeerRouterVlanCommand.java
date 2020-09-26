@@ -16,8 +16,10 @@
 package org.onosproject.openstacknetworking.cli;
 
 import com.google.common.collect.Lists;
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.packet.Ip4Address;
 import org.onlab.packet.IpAddress;
 import org.onlab.packet.VlanId;
@@ -31,28 +33,34 @@ import org.openstack4j.model.network.Subnet;
 
 import java.util.List;
 
+import static org.onosproject.cli.AbstractShellCommand.get;
+
 /**
  * Updates external peer router macc address.
  */
+@Service
 @Command(scope = "onos", name = "openstack-update-peer-router-vlan",
         description = "Updates external peer router vlan")
 public class UpdateExternalPeerRouterVlanCommand extends AbstractShellCommand {
     @Argument(index = 0, name = "ip address", description = "ip address",
             required = true, multiValued = false)
+    @Completion(IpAddressCompleter.class)
     private String ipAddress = null;
 
     @Argument(index = 1, name = "vlan id", description = "vlan id",
             required = true, multiValued = false)
+    @Completion(VlanIdCompleter.class)
     private String vlanId = null;
 
     private static final String FORMAT = "%-20s%-20s%-20s";
-    private static final String NO_ELEMENT = "There's no external peer router information with given ip address";
+    private static final String NO_ELEMENT =
+            "There's no external peer router information with given ip address";
     private static final String NONE = "None";
 
     @Override
-    protected void execute() {
-        OpenstackNetworkAdminService osNetAdminService = AbstractShellCommand.get(OpenstackNetworkAdminService.class);
-        OpenstackRouterService osRouterService = AbstractShellCommand.get(OpenstackRouterService.class);
+    protected void doExecute() {
+        OpenstackNetworkAdminService osNetAdminService = get(OpenstackNetworkAdminService.class);
+        OpenstackRouterService osRouterService = get(OpenstackRouterService.class);
 
         IpAddress externalPeerIpAddress = IpAddress.valueOf(
                 IpAddress.Version.INET, Ip4Address.valueOf(ipAddress).toOctets());
@@ -88,10 +96,13 @@ public class UpdateExternalPeerRouterVlanCommand extends AbstractShellCommand {
 
         try {
             if (vlanId.equals(NONE)) {
-                osNetAdminService.updateExternalPeerRouterVlan(externalPeerIpAddress, VlanId.NONE);
-                osNetAdminService.deriveExternalPeerRouterMac(router.getExternalGatewayInfo(), router, VlanId.NONE);
+                osNetAdminService.updateExternalPeerRouterVlan(
+                        externalPeerIpAddress, VlanId.NONE);
+                osNetAdminService.deriveExternalPeerRouterMac(
+                        router.getExternalGatewayInfo(), router, VlanId.NONE);
             } else {
-                osNetAdminService.updateExternalPeerRouterVlan(externalPeerIpAddress, VlanId.vlanId(vlanId));
+                osNetAdminService.updateExternalPeerRouterVlan(
+                        externalPeerIpAddress, VlanId.vlanId(vlanId));
                 osNetAdminService.deriveExternalPeerRouterMac(
                         router.getExternalGatewayInfo(), router, VlanId.vlanId(vlanId));
 
@@ -101,7 +112,8 @@ public class UpdateExternalPeerRouterVlanCommand extends AbstractShellCommand {
         }
 
         print(FORMAT, "Router IP", "Mac Address", "VLAN ID");
-        List<ExternalPeerRouter> routers = Lists.newArrayList(osNetAdminService.externalPeerRouters());
+        List<ExternalPeerRouter> routers =
+                Lists.newArrayList(osNetAdminService.externalPeerRouters());
 
         for (ExternalPeerRouter r: routers) {
             print(FORMAT, r.ipAddress(),

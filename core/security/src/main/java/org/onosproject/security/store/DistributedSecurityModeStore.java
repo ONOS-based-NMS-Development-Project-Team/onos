@@ -18,13 +18,6 @@ package org.onosproject.security.store;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.karaf.features.BundleInfo;
 import org.apache.karaf.features.Feature;
 import org.apache.karaf.features.FeaturesService;
@@ -42,6 +35,12 @@ import org.onosproject.store.service.MapEvent;
 import org.onosproject.store.service.MapEventListener;
 import org.onosproject.store.service.Serializer;
 import org.onosproject.store.service.StorageService;
+import org.onosproject.store.service.Versioned;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.HashSet;
@@ -53,15 +52,17 @@ import java.util.stream.Collectors;
 
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.onlab.util.Tools.groupedThreads;
-import static org.onosproject.security.store.SecurityModeState.*;
+import static org.onosproject.security.store.SecurityModeState.INSTALLED;
+import static org.onosproject.security.store.SecurityModeState.POLICY_VIOLATED;
+import static org.onosproject.security.store.SecurityModeState.REVIEWED;
+import static org.onosproject.security.store.SecurityModeState.SECURED;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Manages application permissions granted/requested to applications.
  * Uses both gossip-based and RAFT-based distributed data store.
  */
-@Component(immediate = true)
-@Service
+@Component(immediate = true, service = SecurityModeStore.class)
 public class DistributedSecurityModeStore
         extends AbstractStore<SecurityModeEvent, SecurityModeStoreDelegate>
         implements SecurityModeStore {
@@ -74,16 +75,16 @@ public class DistributedSecurityModeStore
     private ConcurrentHashMap<String, Set<ApplicationId>> localBundleAppDirectory;
     private ConcurrentHashMap<ApplicationId, Set<String>> localAppBundleDirectory;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected StorageService storageService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected LogicalClockService clockService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ApplicationAdminService applicationAdminService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected FeaturesService featuresService;
 
     private ExecutorService eventHandler;
@@ -232,7 +233,8 @@ public class DistributedSecurityModeStore
                 return;
             }
             ApplicationId appId = event.key();
-            SecurityInfo info = event.value().value();
+            Versioned<SecurityInfo> value = event.type() == MapEvent.Type.REMOVE ? event.oldValue() : event.newValue();
+            SecurityInfo info = value.value();
 
             if (event.type() == MapEvent.Type.INSERT || event.type() == MapEvent.Type.UPDATE) {
                 switch (info.getState()) {

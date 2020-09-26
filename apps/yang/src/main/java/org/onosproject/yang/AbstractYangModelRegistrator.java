@@ -16,11 +16,10 @@
 
 package org.onosproject.yang;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.onosproject.yang.model.YangModel;
 import org.onosproject.yang.model.YangModuleId;
 import org.onosproject.yang.runtime.AppModuleInfo;
@@ -38,7 +37,6 @@ import static org.onosproject.yang.runtime.helperutils.YangApacheUtils.getYangMo
 /**
  * Abstract base for self-registering YANG models.
  */
-@Component
 public abstract class AbstractYangModelRegistrator {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -48,11 +46,47 @@ public abstract class AbstractYangModelRegistrator {
     protected YangModel model;
     private ModelRegistrationParam registrationParam;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected YangModelRegistry modelRegistry;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected YangClassLoaderRegistry sourceResolver;
+
+    /**
+     * Binds the specified YANG model registry.
+     *
+     * @param registry model registry
+     */
+    protected void bindModelRegistry(YangModelRegistry registry) {
+        this.modelRegistry = registry;
+    }
+
+    /**
+     * Unbinds the specified YANG model registry.
+     *
+     * @param registry model registry
+     */
+    protected void unbindModelRegistry(YangModelRegistry registry) {
+        this.modelRegistry = null;
+    }
+
+    /**
+     * Binds the specified YANG source resolver registry.
+     *
+     * @param resolver model source resolver
+     */
+    protected void bindSourceResolver(YangClassLoaderRegistry resolver) {
+        this.sourceResolver = resolver;
+    }
+
+    /**
+     * Unbinds the specified YANG source resolver registry.
+     *
+     * @param resolver model source resolver
+     */
+    protected void unbindSourceResolver(YangClassLoaderRegistry resolver) {
+        this.sourceResolver = null;
+    }
 
     /**
      * Creates a model registrator primed with the class-loader of the specified

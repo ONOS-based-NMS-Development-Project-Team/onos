@@ -15,8 +15,10 @@
  */
 package org.onosproject.cli.net;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.net.Link;
 import org.onosproject.net.topology.TopologyCluster;
 
@@ -27,16 +29,18 @@ import static org.onosproject.net.topology.ClusterId.clusterId;
 /**
  * Lists links of the specified topology cluster in the current topology.
  */
+@Service
 @Command(scope = "onos", name = "topo-cluster-links",
          description = "Lists links of the specified topology cluster in the current topology")
 public class ClusterLinksCommand extends ClustersListCommand {
 
     @Argument(index = 0, name = "id", description = "Cluster ID",
               required = true, multiValued = false)
+    @Completion(ClusterIdCompleter.class)
     String id = null;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         int cid = Integer.parseInt(id);
         init();
         TopologyCluster cluster = service.getCluster(topology, clusterId(cid));

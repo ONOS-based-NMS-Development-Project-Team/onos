@@ -22,6 +22,8 @@ import org.onosproject.net.flowobjective.ForwardingObjective;
 import org.onosproject.driver.pipeline.ofdpa.Ofdpa3Pipeline;
 import java.util.Collection;
 
+import static org.onosproject.driver.pipeline.ofdpa.OfdpaPipelineUtility.ACL_TABLE;
+
 public class XpliantPipeline extends Ofdpa3Pipeline {
 
     @Override
@@ -32,6 +34,13 @@ public class XpliantPipeline extends Ofdpa3Pipeline {
 
     @Override
     protected void initGroupHander(PipelinerContext context) {
+        // Terminate internal references
+        // We are terminating the references here
+        // because when the device is offline the apps
+        // are still sending flowobjectives
+        if (groupHandler != null) {
+            groupHandler.terminate();
+        }
         groupHandler = new XpliantGroupHandler();
         groupHandler.init(deviceId, context);
     }
@@ -53,6 +62,11 @@ public class XpliantPipeline extends Ofdpa3Pipeline {
 
     @Override
     public boolean requireMplsTtlModification() {
+        return false;
+    }
+
+    @Override
+    protected boolean requireEthType() {
         return false;
     }
 }

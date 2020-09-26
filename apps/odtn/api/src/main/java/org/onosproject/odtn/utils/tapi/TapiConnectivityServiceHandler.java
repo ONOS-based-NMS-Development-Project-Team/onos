@@ -16,12 +16,14 @@
 
 package org.onosproject.odtn.utils.tapi;
 
-import org.onosproject.yang.gen.v1.tapicommon.rev20180307.tapicommon.DefaultContext;
-import org.onosproject.yang.gen.v1.tapicommon.rev20180307.tapicommon.Uuid;
-import org.onosproject.yang.gen.v1.tapiconnectivity.rev20180307.tapiconnectivity.connectivitycontext.ConnectivityServiceKeys;
-import org.onosproject.yang.gen.v1.tapiconnectivity.rev20180307.tapiconnectivity.connectivitycontext.DefaultConnectivityService;
-import org.onosproject.yang.gen.v1.tapiconnectivity.rev20180307.tapiconnectivity.connectivityservice.DefaultConnection;
-import org.onosproject.yang.gen.v1.tapiconnectivity.rev20180307.tapiconnectivity.connectivityservice.EndPoint;
+import java.util.List;
+import org.onosproject.yang.gen.v1.tapicommon.rev20181210.tapicommon.DefaultContext;
+import org.onosproject.yang.gen.v1.tapicommon.rev20181210.tapicommon.Uuid;
+import org.onosproject.yang.gen.v1.tapiconnectivity.rev20181210.tapiconnectivity.connectivitycontext.ConnectivityServiceKeys;
+import org.onosproject.yang.gen.v1.tapiconnectivity.rev20181210.tapiconnectivity.connectivitycontext.DefaultConnectivityService;
+import org.onosproject.yang.gen.v1.tapiconnectivity.rev20181210.tapiconnectivity.connectivityservice.DefaultConnection;
+import org.onosproject.yang.gen.v1.tapiconnectivity.rev20181210.tapiconnectivity.connectivityservice.EndPoint;
+import org.onosproject.yang.gen.v1.tapiconnectivity.rev20181210.tapiconnectivity.context.augmentedtapicommoncontext.DefaultConnectivityContext;
 import org.onosproject.yang.model.DefaultModelObjectData;
 import org.onosproject.yang.model.ModelObjectData;
 import org.onosproject.yang.model.ModelObjectId;
@@ -55,7 +57,10 @@ public final class TapiConnectivityServiceHandler extends TapiObjectHandler<Defa
 
     @Override
     public ModelObjectId getParentModelObjectId() {
-        return ModelObjectId.builder().addChild(DefaultContext.class).build();
+        return ModelObjectId.builder()
+                .addChild(DefaultContext.class)
+                .addChild(DefaultConnectivityContext.class)
+                .build();
     }
 
     @Override
@@ -68,6 +73,7 @@ public final class TapiConnectivityServiceHandler extends TapiObjectHandler<Defa
 
         ModelObjectId mId = ModelObjectId.builder()
                 .addChild(DefaultContext.class)
+                .addChild(DefaultConnectivityContext.class)
                 .addChild(DefaultConnectivityService.class, key)
                 .build();
 
@@ -77,6 +83,10 @@ public final class TapiConnectivityServiceHandler extends TapiObjectHandler<Defa
                 .build();
     }
 
+    public List<EndPoint> getEndPoint() {
+        return obj.endPoint();
+    }
+
     public TapiConnectivityServiceHandler addSep(EndPoint sep) {
         obj.addToEndPoint(sep);
         return this;
@@ -84,7 +94,7 @@ public final class TapiConnectivityServiceHandler extends TapiObjectHandler<Defa
 
     public TapiConnectivityServiceHandler addConnection(Uuid connectionUuid) {
         DefaultConnection connection = new DefaultConnection();
-        connection.connectionId(connectionUuid.toString());
+        connection.connectionUuid(connectionUuid.toString());
         obj.addToConnection(connection);
         return this;
     }

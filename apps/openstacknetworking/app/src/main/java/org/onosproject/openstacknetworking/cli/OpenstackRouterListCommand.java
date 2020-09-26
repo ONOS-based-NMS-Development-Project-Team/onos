@@ -18,7 +18,8 @@ package org.onosproject.openstacknetworking.cli;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Lists;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.openstacknetworking.api.OpenstackNetworkService;
 import org.onosproject.openstacknetworking.api.OpenstackRouterService;
@@ -39,6 +40,7 @@ import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.p
 /**
  * Lists OpenStack routers.
  */
+@Service
 @Command(scope = "onos", name = "openstack-routers",
         description = "Lists all OpenStack routers")
 public class OpenstackRouterListCommand extends AbstractShellCommand {
@@ -51,7 +53,7 @@ public class OpenstackRouterListCommand extends AbstractShellCommand {
             AbstractShellCommand.get(OpenstackNetworkService.class);
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         List<Router> routers = Lists.newArrayList(routerService.routers());
         routers.sort(Comparator.comparing(Router::getName));
 

@@ -16,9 +16,11 @@
 
 package org.onosproject.openstacknode.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.Option;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.openstacknode.api.NodeState;
 import org.onosproject.openstacknode.api.OpenstackNode;
@@ -28,6 +30,7 @@ import org.onosproject.openstacknode.api.OpenstackNodeService;
 /**
  * Initializes nodes for OpenStack node service.
  */
+@Service
 @Command(scope = "onos", name = "openstack-node-init",
         description = "Initializes nodes for OpenStack node service")
 public class OpenstackNodeInitCommand extends AbstractShellCommand {
@@ -43,19 +46,15 @@ public class OpenstackNodeInitCommand extends AbstractShellCommand {
 
     @Argument(index = 0, name = "hostnames", description = "Hostname(s) to apply this command",
             required = false, multiValued = true)
+    @Completion(OpenstackHostnameCompleter.class)
     private String[] hostnames = null;
 
     @Override
-    protected void execute() {
-        OpenstackNodeService osNodeService =
-                AbstractShellCommand.get(OpenstackNodeService.class);
-        OpenstackNodeAdminService osNodeAdminService =
-                AbstractShellCommand.get(OpenstackNodeAdminService.class);
+    protected void doExecute() {
+        OpenstackNodeService osNodeService = get(OpenstackNodeService.class);
+        OpenstackNodeAdminService osNodeAdminService = get(OpenstackNodeAdminService.class);
 
-        if ((!isAll && !isIncomplete && hostnames == null) ||
-                (isAll && isIncomplete) ||
-                (isIncomplete && hostnames != null) ||
-                (hostnames != null && isAll)) {
+        if (isAll && isIncomplete) {
             print("Please specify one of hostname, --all, and --incomplete options.");
             return;
         }
@@ -67,6 +66,11 @@ public class OpenstackNodeInitCommand extends AbstractShellCommand {
             hostnames = osNodeService.nodes().stream()
                     .filter(osNode -> osNode.state() != NodeState.COMPLETE)
                     .map(OpenstackNode::hostname).toArray(String[]::new);
+        }
+
+        if (hostnames == null) {
+            print("Please specify one of hostname, --all, and --incomplete options.");
+            return;
         }
 
         for (String hostname : hostnames) {

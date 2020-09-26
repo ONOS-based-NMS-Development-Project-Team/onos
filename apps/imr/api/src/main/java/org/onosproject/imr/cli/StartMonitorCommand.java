@@ -16,9 +16,11 @@
 
 package org.onosproject.imr.cli;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
-import org.apache.karaf.shell.commands.Option;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.Option;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.core.DefaultApplicationId;
 import org.onosproject.imr.IntentMonitorAndRerouteService;
@@ -29,6 +31,7 @@ import org.onosproject.net.intent.Key;
 /**
  * Starts monitoring of an intent submitting its key to the IMR service.
  */
+@Service
 @Command(scope = "imr", name = "startmon",
         description = "Submit an intent to the IMR application to start monitoring")
 public class StartMonitorCommand extends AbstractShellCommand {
@@ -40,23 +43,26 @@ public class StartMonitorCommand extends AbstractShellCommand {
     @Argument(index = 0, name = "applicationId",
             description = "Application ID that submitted the intent",
             required = true)
+    @Completion(ApplicationIdImrCompleter.class)
     private Short appId;
 
     @Argument(index = 1, name = "applicationName",
             description = "Application Name that submitted the intent",
             required = true)
+    @Completion(ApplicationNameImrCompleter.class)
     private String appName;
 
     @Argument(index = 2, name = "intentKey",
             description = "String representation of the key of the intent",
             required = false)
+    @Completion(IntentKeyImrCompleter.class)
     private String key;
 
     private IntentMonitorAndRerouteService imrService;
     private IntentService intentService;
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         imrService = get(IntentMonitorAndRerouteService.class);
         intentService = get(IntentService.class);
 

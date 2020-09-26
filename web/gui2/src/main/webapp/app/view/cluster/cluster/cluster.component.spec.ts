@@ -16,22 +16,25 @@
 import {async, ComponentFixture, TestBed} from '@angular/core/testing';
 
 import {ClusterComponent} from './cluster.component';
-import {FnService} from '../../../fw/util/fn.service';
-import {LogService} from '../../../log.service';
+
+import {
+    FnService,
+    LogService,
+    WebSocketService,
+    IconComponent,
+    IconService,
+    GlyphService,
+    MastService,
+    NavService,
+    ThemeService, LoadingComponent,
+
+} from 'gui2-fw-lib';
+
 import {ActivatedRoute, Params} from '@angular/router';
 import {of} from 'rxjs/index';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {FormsModule} from '@angular/forms';
 import {RouterTestingModule} from '@angular/router/testing';
-import {IconComponent} from '../../../fw/svg/icon/icon.component';
-import {IconService} from '../../../fw/svg/icon.service';
-import {GlyphService} from '../../../fw/svg/glyph.service';
-import {KeyService} from '../../../fw/util/key.service';
-import {LoadingService} from '../../../fw/layer/loading.service';
-import {MastService} from '../../../fw/mast/mast.service';
-import {NavService} from '../../../fw/nav/nav.service';
-import {WebSocketService} from '../../../fw/remote/websocket.service';
-import {ThemeService} from '../../../fw/util/theme.service';
 import {DebugElement} from '@angular/core';
 import {By} from '@angular/platform-browser';
 
@@ -48,17 +51,6 @@ class MockIconService {
 }
 
 class MockGlyphService {
-}
-
-class MockKeyService {
-}
-
-class MockLoadingService {
-    startAnim() {
-    }
-
-    stop() {
-    }
 }
 
 class MockNavService {
@@ -115,13 +107,11 @@ describe('ClusterComponent', () => {
 
         TestBed.configureTestingModule({
             imports: [BrowserAnimationsModule, FormsModule, RouterTestingModule],
-            declarations: [ClusterComponent, IconComponent],
+            declarations: [ClusterComponent, IconComponent, LoadingComponent],
             providers: [
                 {provide: FnService, useValue: fs},
                 {provide: IconService, useClass: MockIconService},
                 {provide: GlyphService, useClass: MockGlyphService},
-                {provide: KeyService, useClass: MockKeyService},
-                {provide: LoadingService, useClass: MockLoadingService},
                 {provide: MastService, useClass: MockMastService},
                 {provide: NavService, useClass: MockNavService},
                 {provide: LogService, useValue: logSpy},

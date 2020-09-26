@@ -18,13 +18,6 @@ package org.onosproject.routing.cpr;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.onlab.packet.EthType;
 import org.onlab.packet.Ip4Address;
 import org.onlab.packet.Ip6Address;
@@ -36,8 +29,6 @@ import org.onosproject.app.ApplicationService;
 import org.onosproject.cfg.ComponentConfigService;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
-import org.onosproject.net.intf.Interface;
-import org.onosproject.net.intf.InterfaceService;
 import org.onosproject.mastership.MastershipService;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.Host;
@@ -57,13 +48,21 @@ import org.onosproject.net.flowobjective.ForwardingObjective;
 import org.onosproject.net.flowobjective.NextObjective;
 import org.onosproject.net.host.HostService;
 import org.onosproject.net.host.InterfaceIpAddress;
+import org.onosproject.net.intf.Interface;
+import org.onosproject.net.intf.InterfaceService;
 import org.onosproject.routing.InterfaceProvisionRequest;
 import org.onosproject.routing.Router;
 import org.onosproject.routing.RouterInfo;
 import org.onosproject.routing.RoutingService;
-import org.onosproject.routing.config.RoutingConfiguration;
 import org.onosproject.routing.config.RoutersConfig;
+import org.onosproject.routing.config.RoutingConfiguration;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.Dictionary;
@@ -80,13 +79,20 @@ import static org.onlab.packet.ICMP6.NEIGHBOR_SOLICITATION;
 import static org.onlab.packet.IPv6.PROTOCOL_ICMP6;
 import static org.onlab.packet.IPv6.getLinkLocalAddress;
 import static org.onlab.packet.IPv6.getSolicitNodeAddress;
+import static org.onosproject.routing.cpr.OsgiPropertyConstants.FORCE_UNPROVISION;
+import static org.onosproject.routing.cpr.OsgiPropertyConstants.FORCE_UNPROVISION_DEFAULT;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Manages connectivity between peers redirecting control traffic to a routing
  * control plane available on the dataplane.
  */
-@Component(immediate = true)
+@Component(
+    immediate = true,
+    property = {
+        FORCE_UNPROVISION + ":Boolean=" + FORCE_UNPROVISION_DEFAULT
+    }
+)
 public class ControlPlaneRedirectManager {
 
     private final Logger log = getLogger(getClass());
@@ -99,36 +105,35 @@ public class ControlPlaneRedirectManager {
     static final int ACL_PRIORITY = 40001;
     private static final int OSPF_IP_PROTO = 0x59;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DeviceService deviceService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected InterfaceService interfaceService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected FlowObjectiveService flowObjectiveService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected NetworkConfigRegistry networkConfigService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected MastershipService mastershipService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected HostService hostService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ApplicationService applicationService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService cfgService;
 
-    @Property(name = "forceUnprovision", boolValue = false,
-            label = "Force unprovision when the device goes offline")
-    private boolean forceUnprovision = false;
+    /** Force unprovision when the device goes offline. */
+    private boolean forceUnprovision = FORCE_UNPROVISION_DEFAULT;
 
     private static final String APP_NAME = "org.onosproject.cpr";
     private ApplicationId appId;
@@ -176,7 +181,7 @@ public class ControlPlaneRedirectManager {
         Dictionary<?, ?> properties = context.getProperties();
         Boolean flag;
 
-        flag = Tools.isPropertyEnabled(properties, "forceUnprovision");
+        flag = Tools.isPropertyEnabled(properties, FORCE_UNPROVISION);
         if (flag == null) {
             log.info("ForceUnprovision is not configured, " +
                     "using current value of {}", forceUnprovision);

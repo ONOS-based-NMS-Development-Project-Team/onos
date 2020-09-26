@@ -18,14 +18,16 @@ import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { TunnelComponent } from './tunnel.component';
 import { ActivatedRoute, Params } from '@angular/router';
 import { of } from 'rxjs';
-import { FnService } from '../../../fw/util/fn.service';
-import { LogService } from '../../../log.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
-import { IconService } from '../../../fw/svg/icon.service';
-import { IconComponent } from '../../../fw/svg/icon/icon.component';
+import {
+    FnService,
+    IconService,
+    IconComponent,
+    LogService,
+    WebSocketService, LoadingComponent
+} from 'gui2-fw-lib';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 
 class MockActivatedRoute extends ActivatedRoute {
     constructor(params: Params) {
@@ -36,12 +38,6 @@ class MockActivatedRoute extends ActivatedRoute {
 
 class MockIconService {
     loadIconDef() { }
-}
-
-class MockLoadingService {
-    startAnim() { }
-    stop() { }
-    waiting() { }
 }
 
 class MockWebSocketService {
@@ -81,11 +77,15 @@ describe('TunnelComponent', () => {
         fs = new FnService(ar, logSpy, windowMock);
 
         TestBed.configureTestingModule({
-            declarations: [TunnelComponent, IconComponent],
+            imports: [BrowserAnimationsModule],
+            declarations: [
+                TunnelComponent,
+                IconComponent,
+                LoadingComponent
+            ],
             providers: [
                 { provide: FnService, useValue: fs },
                 { provide: IconService, useClass: MockIconService },
-                { provide: LoadingService, useClass: MockLoadingService },
                 { provide: LogService, useValue: logSpy },
                 { provide: WebSocketService, useClass: MockWebSocketService },
             ]

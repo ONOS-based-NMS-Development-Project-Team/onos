@@ -21,7 +21,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.metrics.intent.IntentMetricsService;
 import org.onosproject.net.intent.IntentEvent;
@@ -29,6 +30,7 @@ import org.onosproject.net.intent.IntentEvent;
 /**
  * Command to show the list of last intent events.
  */
+@Service
 @Command(scope = "onos", name = "intents-events",
          description = "Lists the last intent events")
 public class IntentEventsListCommand extends AbstractShellCommand {
@@ -36,7 +38,7 @@ public class IntentEventsListCommand extends AbstractShellCommand {
     private static final String FORMAT_EVENT = "Event=%s";
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         IntentMetricsService service = get(IntentMetricsService.class);
 
         if (outputJson()) {

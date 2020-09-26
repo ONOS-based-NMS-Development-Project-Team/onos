@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 <drivers>
-    <driver name="bmv2" manufacturer="p4.org" hwVersion="master" swVersion="master" extends="p4runtime, gnmi">
+    <driver name="bmv2" manufacturer="p4.org" hwVersion="master" swVersion="master" extends="p4runtime">
         <behaviour api="org.onosproject.net.behaviour.PiPipelineProgrammable"
                    impl="org.onosproject.drivers.bmv2.Bmv2PipelineProgrammable"/>
         <property name="tableDeleteBeforeUpdate">true</property>
@@ -25,6 +25,12 @@
         <behaviour api="org.onosproject.net.device.DeviceHandshaker"
                    impl="org.onosproject.drivers.bmv2.Bmv2DeviceHandshaker"/>
         -->
+    </driver>
+
+    <driver name="stratum-bmv2" manufacturer="Open Networking Foundation"
+            hwVersion="BMv2 simple_switch" swVersion="Stratum" extends="stratum">
+        <behaviour api="org.onosproject.net.behaviour.PiPipelineProgrammable"
+                   impl="org.onosproject.drivers.bmv2.Bmv2PipelineProgrammable"/>
     </driver>
 </drivers>
 

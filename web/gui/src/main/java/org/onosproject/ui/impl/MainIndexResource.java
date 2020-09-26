@@ -36,6 +36,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
+import java.net.URI;
 
 import static com.google.common.collect.ImmutableList.of;
 import static com.google.common.io.ByteStreams.toByteArray;
@@ -45,6 +46,8 @@ import static com.google.common.io.ByteStreams.toByteArray;
  */
 @Path("/")
 public class MainIndexResource extends AbstractInjectionResource {
+
+    private static final String INDEX_REDIRECT = "/onos/ui/index.html";
 
     private static final String INDEX = "index.html";
     private static final String NOT_READY = "not-ready.html";
@@ -66,6 +69,16 @@ public class MainIndexResource extends AbstractInjectionResource {
 
     @GET
     @Produces(MediaType.TEXT_HTML)
+    public Response getMainIndexRedirect() throws IOException {
+        if (ctx == null || ctx.getUserPrincipal() == null) {
+            return Response.temporaryRedirect(URI.create(INDEX_REDIRECT)).build();
+        }
+        return getMainIndex();
+    }
+
+    @GET
+    @Produces(MediaType.TEXT_HTML)
+    @Path("/index.html")
     public Response getMainIndex() throws IOException {
         ClassLoader classLoader = getClass().getClassLoader();
         UiExtensionService service;

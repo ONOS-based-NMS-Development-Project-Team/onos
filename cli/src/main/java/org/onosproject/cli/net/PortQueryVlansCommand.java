@@ -15,8 +15,10 @@
  */
 package org.onosproject.cli.net;
 
-import org.apache.karaf.shell.commands.Argument;
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Argument;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.Completion;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onlab.packet.VlanId;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.net.ConnectPoint;
@@ -36,6 +38,7 @@ import java.util.Set;
 /**
  * Command to show the list of unused vlan-ids.
  */
+@Service
 @Command(scope = "onos", name = "port-query-vlans",
         description = "Lists all unused VLAN-IDs on port")
 public class PortQueryVlansCommand extends AbstractShellCommand {
@@ -49,11 +52,12 @@ public class PortQueryVlansCommand extends AbstractShellCommand {
     @Argument(index = 0, name = "port",
             description = "Port Description",
             required = true, multiValued = true)
+    @Completion(ConnectPointCompleter.class)
     private String[] ports;
 
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         DeviceService service = get(DeviceService.class);
         for (String portStr : ports) {
             ConnectPoint connectPoint = ConnectPoint.deviceConnectPoint(portStr);

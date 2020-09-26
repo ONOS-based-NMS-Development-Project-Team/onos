@@ -15,27 +15,14 @@
  */
 package org.onosproject.provider.lldp.impl;
 
-import java.util.Dictionary;
-import java.util.EnumSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
-
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import org.onlab.packet.Ethernet;
 import org.onosproject.cfg.ComponentConfigService;
+import org.onosproject.cluster.ClusterMetadata;
+import org.onosproject.cluster.ClusterMetadataEvent;
+import org.onosproject.cluster.ClusterMetadataEventListener;
 import org.onosproject.cluster.ClusterMetadataService;
 import org.onosproject.cluster.ClusterService;
 import org.onosproject.core.ApplicationId;
@@ -72,11 +59,26 @@ import org.onosproject.net.provider.ProviderId;
 import org.onosproject.provider.lldpcommon.LinkDiscovery;
 import org.onosproject.provider.lldpcommon.LinkDiscoveryContext;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
+import java.util.Dictionary;
+import java.util.EnumSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
@@ -89,56 +91,62 @@ import static org.onosproject.net.Link.Type.DIRECT;
 import static org.onosproject.net.config.basics.SubjectFactories.APP_SUBJECT_FACTORY;
 import static org.onosproject.net.config.basics.SubjectFactories.CONNECT_POINT_SUBJECT_FACTORY;
 import static org.onosproject.net.config.basics.SubjectFactories.DEVICE_SUBJECT_FACTORY;
+import static org.onosproject.provider.lldp.impl.OsgiPropertyConstants.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Provider which uses LLDP and BDDP packets to detect network infrastructure links.
  */
-@Component(immediate = true)
+@Component(immediate = true,
+        property = {
+                PROP_ENABLED + ":Boolean=" + ENABLED_DEFAULT,
+                PROP_USE_BDDP + ":Boolean=" + USE_BDDP_DEFAULT,
+                PROP_PROBE_RATE + ":Integer=" + PROBE_RATE_DEFAULT,
+                PROP_STALE_LINK_AGE + ":Integer=" + STALE_LINK_AGE_DEFAULT,
+                PROP_DISCOVERY_DELAY + ":Integer=" + DISCOVERY_DELAY_DEFAULT,
+                PROP_USE_STALE_LINK_AGE + ":Boolean=" + USE_STALE_LINK_AGE_DEFAULT,
+        })
 public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProvider {
 
     private static final String PROVIDER_NAME = "org.onosproject.provider.lldp";
 
     private static final String FORMAT =
             "Settings: enabled={}, useBDDP={}, probeRate={}, " +
-                    "staleLinkAge={}";
+                    "staleLinkAge={}, maxLLDPage={}, useStaleLinkAge={}";
 
     // When a Device/Port has this annotation, do not send out LLDP/BDDP
     public static final String NO_LLDP = "no-lldp";
 
-    private static final int MAX_RETRIES = 5;
-    private static final int RETRY_DELAY = 1_000; // millis
-
     private final Logger log = getLogger(getClass());
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected LinkProviderRegistry providerRegistry;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected DeviceService deviceService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected LinkService linkService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected PacketService packetService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected MastershipService masterService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ComponentConfigService cfgService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ClusterService clusterService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected NetworkConfigRegistry cfgRegistry;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected ClusterMetadataService clusterMetadataService;
 
     private LinkProviderService providerService;
@@ -152,27 +160,23 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
     private static final long DEVICE_SYNC_DELAY = 5;
     private static final long LINK_PRUNER_DELAY = 3;
 
-    private static final String PROP_ENABLED = "enabled";
-    @Property(name = PROP_ENABLED, boolValue = true,
-            label = "If false, link discovery is disabled")
-    private boolean enabled = false;
+    /** If false, link discovery is disabled. */
+    protected boolean enabled = false;
 
-    private static final String PROP_USE_BDDP = "useBDDP";
-    @Property(name = PROP_USE_BDDP, boolValue = true,
-            label = "Use BDDP for link discovery")
-    private boolean useBddp = true;
+    /** Use BDDP for link discovery. */
+    protected boolean useBddp = USE_BDDP_DEFAULT;
 
-    private static final String PROP_PROBE_RATE = "probeRate";
-    private static final int DEFAULT_PROBE_RATE = 3000;
-    @Property(name = PROP_PROBE_RATE, intValue = DEFAULT_PROBE_RATE,
-            label = "LLDP and BDDP probe rate specified in millis")
-    private int probeRate = DEFAULT_PROBE_RATE;
+    /** LLDP and BDDP probe rate specified in millis. */
+    protected int probeRate = PROBE_RATE_DEFAULT;
 
-    private static final String PROP_STALE_LINK_AGE = "staleLinkAge";
-    private static final int DEFAULT_STALE_LINK_AGE = 10000;
-    @Property(name = PROP_STALE_LINK_AGE, intValue = DEFAULT_STALE_LINK_AGE,
-            label = "Number of millis beyond which links will be considered stale")
-    private int staleLinkAge = DEFAULT_STALE_LINK_AGE;
+    /** Number of millis beyond which links will be considered stale. */
+    protected int staleLinkAge = STALE_LINK_AGE_DEFAULT;
+
+    /** Number of millis beyond which an LLDP packet will not be accepted. */
+    private int maxDiscoveryDelayMs = DISCOVERY_DELAY_DEFAULT;
+
+    /** If false, StaleLinkAge capability is disabled. */
+    private boolean useStaleLinkAge = USE_STALE_LINK_AGE_DEFAULT;
 
     private final LinkDiscoveryContext context = new InternalDiscoveryContext();
     private final InternalRoleListener roleListener = new InternalRoleListener();
@@ -186,13 +190,18 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
     // destination connection point is mastered by this controller instance.
     private final Map<LinkKey, Long> linkTimes = Maps.newConcurrentMap();
 
+    // Cache for clustermetadata
+    private AtomicReference<ClusterMetadata> clusterMetadata = new AtomicReference<>();
+
     private ApplicationId appId;
 
     static final SuppressionRules DEFAULT_RULES
         = new SuppressionRules(EnumSet.of(Device.Type.ROADM,
                                           Device.Type.FIBER_SWITCH,
                                           Device.Type.OPTICAL_AMPLIFIER,
-                                          Device.Type.OTN),
+                                          Device.Type.OTN,
+                                          Device.Type.OLS,
+                                          Device.Type.TERMINAL_DEVICE),
                                ImmutableMap.of(NO_LLDP, SuppressionRules.ANY_VALUE));
 
     private SuppressionRules rules = LldpLinkProvider.DEFAULT_RULES;
@@ -226,6 +235,7 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
     );
 
     private final InternalConfigListener cfgListener = new InternalConfigListener();
+    private final ClusterMetadataEventListener metadataListener = new InternalClusterMetadataListener();
 
     /**
      * Creates an OpenFlow link provider.
@@ -241,7 +251,7 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
             return defMac;
         }
 
-        String srcMac = ProbedLinkProvider.fingerprintMac(clusterMetadataService.getClusterMetadata());
+        String srcMac = ProbedLinkProvider.fingerprintMac(clusterMetadata.get());
         if (srcMac.equals(defMac)) {
             log.warn("Couldn't generate fingerprint. Using default value {}", defMac);
             return defMac;
@@ -266,6 +276,10 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
             cfg = this.setDefaultSuppressionConfig();
         }
         cfgListener.reconfigureSuppressionRules(cfg);
+        if (clusterMetadataService != null) {
+            clusterMetadataService.addListener(metadataListener);
+            clusterMetadata.set(clusterMetadataService.getClusterMetadata());
+        }
 
         modified(context);
         log.info("Started");
@@ -282,6 +296,9 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
     @Deactivate
     public void deactivate() {
         shuttingDown = true;
+        if (clusterMetadataService != null) {
+            clusterMetadataService.removeListener(metadataListener);
+        }
         cfgRegistry.removeListener(cfgListener);
         factories.forEach(cfgRegistry::unregisterConfigFactory);
 
@@ -296,8 +313,8 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
     public void modified(ComponentContext context) {
         Dictionary<?, ?> properties = context != null ? context.getProperties() : new Properties();
 
-        boolean newEnabled, newUseBddp;
-        int newProbeRate, newStaleLinkAge;
+        boolean newEnabled, newUseBddp, newUseStaleLinkAge;
+        int newProbeRate, newStaleLinkAge, newDiscoveryDelay;
         try {
             String s = get(properties, PROP_ENABLED);
             newEnabled = isNullOrEmpty(s) || Boolean.parseBoolean(s.trim());
@@ -311,12 +328,20 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
             s = get(properties, PROP_STALE_LINK_AGE);
             newStaleLinkAge = isNullOrEmpty(s) ? staleLinkAge : Integer.parseInt(s.trim());
 
+            s = get(properties, PROP_DISCOVERY_DELAY);
+            newDiscoveryDelay = isNullOrEmpty(s) ? maxDiscoveryDelayMs : Integer.parseInt(s.trim());
+
+            s = get(properties, PROP_USE_STALE_LINK_AGE);
+            newUseStaleLinkAge = isNullOrEmpty(s) || Boolean.parseBoolean(s.trim());
+
         } catch (NumberFormatException e) {
             log.warn("Component configuration had invalid values", e);
             newEnabled = enabled;
             newUseBddp = useBddp;
             newProbeRate = probeRate;
             newStaleLinkAge = staleLinkAge;
+            newDiscoveryDelay = maxDiscoveryDelayMs;
+            newUseStaleLinkAge = useStaleLinkAge;
         }
 
         boolean wasEnabled = enabled;
@@ -325,6 +350,8 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
         useBddp = newUseBddp;
         probeRate = newProbeRate;
         staleLinkAge = newStaleLinkAge;
+        maxDiscoveryDelayMs = newDiscoveryDelay;
+        useStaleLinkAge = newUseStaleLinkAge;
 
         if (!wasEnabled && enabled) {
             enable();
@@ -337,7 +364,7 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
             }
         }
 
-        log.info(FORMAT, enabled, useBddp, probeRate, staleLinkAge);
+        log.info(FORMAT, enabled, useBddp, probeRate, staleLinkAge, maxDiscoveryDelayMs, useStaleLinkAge);
     }
 
     /**
@@ -450,7 +477,7 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
         }
 
         LinkDiscovery ld = discoverers.computeIfAbsent(device.id(),
-                                     did -> new LinkDiscovery(device, context));
+                                     did -> new LinkDiscovery(device.id(), context));
         if (ld.isStopped()) {
             ld.start();
         }
@@ -727,10 +754,26 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
                         return true;
                     }
                     if (isStale(e.getValue())) {
-                        providerService.linkVanished(new DefaultLinkDescription(e.getKey().src(),
+                        if (useStaleLinkAge) {
+                            providerService.linkVanished(new DefaultLinkDescription(e.getKey().src(),
                                                                                 e.getKey().dst(),
                                                                                 DIRECT));
-                        return true;
+                            return true;
+                        }
+                        // if one of the device is not available - let's prune the link
+                        if (!deviceService.isAvailable(e.getKey().src().deviceId()) ||
+                                !deviceService.isAvailable(e.getKey().dst().deviceId())) {
+                            return true;
+                        }
+                        // if one of the ports is not enable - let's prune the link
+                        Port srcPort = deviceService.getPort(e.getKey().src());
+                        Port dstPort = deviceService.getPort(e.getKey().dst());
+                        if (!srcPort.isEnabled() || !dstPort.isEnabled()) {
+                            return true;
+                        }
+                        log.trace("VanishStaleLinkAge feature is disabled, " +
+                                        "not bringing down link src {} dst {} with expired StaleLinkAge",
+                                 e.getKey().src(), e.getKey().dst());
                     }
                     return false;
                 }).clear();
@@ -787,6 +830,11 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
         }
 
         @Override
+        public void setTtl(LinkKey key, short ttl) {
+            linkTimes.put(key, System.currentTimeMillis() - staleLinkAge + SECONDS.toMillis(ttl));
+        }
+
+        @Override
         public DeviceService deviceService() {
             return deviceService;
         }
@@ -794,6 +842,17 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
         @Override
         public String fingerprint() {
             return buildSrcMac();
+        }
+
+        @Override
+        public String lldpSecret() {
+            return clusterMetadata.get() != null ?
+                    clusterMetadata.get().getClusterSecret() : null;
+        }
+
+        @Override
+        public long maxDiscoveryDelay() {
+            return maxDiscoveryDelayMs;
         }
     }
 
@@ -857,6 +916,13 @@ public class LldpLinkProvider extends AbstractProvider implements ProbedLinkProv
                     log.trace("Network config reconfigured");
                 }
             });
+        }
+    }
+
+    private class InternalClusterMetadataListener implements ClusterMetadataEventListener {
+        @Override
+        public void event(ClusterMetadataEvent event) {
+            clusterMetadata.set(event.subject());
         }
     }
 }

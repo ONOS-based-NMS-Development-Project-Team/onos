@@ -15,12 +15,6 @@
  */
 package org.onosproject.drivers.lisp.extensions;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.onosproject.codec.CodecService;
 import org.onosproject.drivers.lisp.extensions.codec.LispAppDataAddressCodec;
 import org.onosproject.drivers.lisp.extensions.codec.LispAsAddressCodec;
 import org.onosproject.drivers.lisp.extensions.codec.LispGcAddressCodec;
@@ -33,6 +27,9 @@ import org.onosproject.drivers.lisp.extensions.codec.LispSrcDstAddressCodec;
 import org.onosproject.drivers.lisp.extensions.codec.LispTeAddressCodec;
 import org.onosproject.drivers.lisp.extensions.codec.LispTeRecordCodec;
 import org.onosproject.mapping.MappingCodecRegistrator;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.slf4j.Logger;
 
 import static org.slf4j.LoggerFactory.getLogger;
@@ -41,14 +38,11 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Implementation of the JSON codec brokering service for
  * mapping extension primitives.
  */
-@Component(immediate = true)
+@Component(immediate = true, service = MappingCodecRegistrator.class)
 public class LispMappingExtensionCodecRegistrator extends MappingCodecRegistrator {
 
     private final Logger log = getLogger(getClass());
     private MappingCodecRegistrator registrator;
-
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
-    public CodecService codecService;
 
     @Activate
     public void activate() {

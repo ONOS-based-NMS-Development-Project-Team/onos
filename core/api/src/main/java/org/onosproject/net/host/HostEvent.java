@@ -48,7 +48,19 @@ public class HostEvent extends AbstractEvent<HostEvent.Type, Host> {
         /**
          * Signifies that a host location has changed.
          */
-        HOST_MOVED
+        HOST_MOVED,
+        /**
+         * Signifies that a host is in offending state, eg: frequent  host movement.
+         */
+        HOST_SUSPENDED,
+        /**
+         * Signifies that host state in non offending state.
+         */
+        HOST_UNSUSPENDED,
+        /**
+         * Signifies that host auxiliary location has changed.
+         */
+        HOST_AUX_MOVED
     }
 
     private Host prevSubject;
@@ -86,7 +98,7 @@ public class HostEvent extends AbstractEvent<HostEvent.Type, Host> {
      */
     public HostEvent(Type type, Host host, Host prevSubject) {
         super(type, host);
-        if (type == Type.HOST_MOVED || type == Type.HOST_UPDATED) {
+        if (type == Type.HOST_MOVED || type == Type.HOST_UPDATED || type == Type.HOST_AUX_MOVED) {
             this.prevSubject = prevSubject;
         }
     }

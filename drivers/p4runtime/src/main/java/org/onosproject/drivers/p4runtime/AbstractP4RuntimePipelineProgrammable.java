@@ -16,18 +16,21 @@
 
 package org.onosproject.drivers.p4runtime;
 
-import org.onlab.util.SharedExecutors;
-import org.onosproject.net.DeviceId;
+import org.onosproject.drivers.p4runtime.mirror.P4RuntimeDefaultEntryMirror;
 import org.onosproject.net.behaviour.PiPipelineProgrammable;
+import org.onosproject.net.pi.model.PiPipelineModel;
 import org.onosproject.net.pi.model.PiPipeconf;
-import org.onosproject.p4runtime.api.P4RuntimeClient;
-import org.onosproject.p4runtime.api.P4RuntimeController;
+import org.onosproject.net.pi.runtime.PiTableEntry;
+import org.onosproject.p4runtime.api.P4RuntimeReadClient;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static org.onosproject.drivers.p4runtime.P4RuntimeDriverProperties.SUPPORT_DEFAULT_TABLE_ENTRY;
+import static org.onosproject.drivers.p4runtime.P4RuntimeDriverProperties.DEFAULT_SUPPORT_DEFAULT_TABLE_ENTRY;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -48,57 +51,73 @@ public abstract class AbstractP4RuntimePipelineProgrammable
     public abstract ByteBuffer createDeviceDataBuffer(PiPipeconf pipeconf);
 
     @Override
-    public CompletableFuture<Boolean> deployPipeconf(PiPipeconf pipeconf) {
-        return CompletableFuture.supplyAsync(
-                () -> doDeployConfig(pipeconf),
-                SharedExecutors.getPoolThreadExecutor());
-    }
-
-    private boolean doDeployConfig(PiPipeconf pipeconf) {
-
-        DeviceId deviceId = handler().data().deviceId();
-        P4RuntimeController controller = handler().get(P4RuntimeController.class);
-
-        P4RuntimeClient client = controller.getClient(deviceId);
-        if (client == null) {
-            log.warn("Unable to find client for {}, aborting pipeconf deploy", deviceId);
-            return false;
+    public CompletableFuture<Boolean> setPipeconf(PiPipeconf pipeconf) {
+        if (!setupBehaviour("setPipeconf()")) {
+            return completedFuture(false);
         }
 
-        ByteBuffer deviceDataBuffer = createDeviceDataBuffer(pipeconf);
+        final ByteBuffer deviceDataBuffer = createDeviceDataBuffer(pipeconf);
         if (deviceDataBuffer == null) {
             // Hopefully the child class logged the problem.
-            return false;
+            return completedFuture(false);
+        }
+        CompletableFuture<Boolean> pipeconfSet = client.setPipelineConfig(
+                p4DeviceId, pipeconf, deviceDataBuffer);
+        return getDefaultEntries(pipeconfSet, pipeconf);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> isPipeconfSet(PiPipeconf pipeconf) {
+        if (!setupBehaviour("isPipeconfSet()")) {
+            return completedFuture(false);
         }
 
-        // We need to be master to perform write RPC to the device.
-        // FIXME: properly perform mastership handling in the device provider
-        // This would probably mean deploying the pipeline after the device as
-        // been notified to the core.
-        final Boolean masterSuccess = getFutureWithDeadline(
-                client.becomeMaster(),
-                "becoming master ", null);
-        if (masterSuccess == null) {
-            // Error already logged by getFutureWithDeadline()
-            return false;
-        } else if (!masterSuccess) {
-            log.warn("Unable to become master for {}, aborting pipeconf deploy", deviceId);
-            return false;
-        }
-
-        final Boolean deploySuccess = getFutureWithDeadline(
-                client.setPipelineConfig(pipeconf, deviceDataBuffer),
-                "deploying pipeconf", null);
-        if (deploySuccess == null) {
-            return false;
-        } else if (!deploySuccess) {
-            log.warn("Unable to deploy pipeconf {} to {}", pipeconf.id(), deviceId);
-            return false;
-        }
-
-        return true;
+        return client.isPipelineConfigSet(p4DeviceId, pipeconf);
     }
 
     @Override
     public abstract Optional<PiPipeconf> getDefaultPipeconf();
+
+    /**
+     * Once the pipeconf is set successfully, we should store all the default entries
+     * before notify other service to prevent overwriting the default entries.
+     * Default entries may be used in P4RuntimeFlowRuleProgrammable.
+     * <p>
+     * This method returns a completable future with the result of the pipeconf set
+     * operation (which might not be true).
+     *
+     * @param pipeconfSet completable future for setting pipeconf
+     * @param pipeconf pipeconf
+     * @return completable future eventually true if the pipeconf set successfully
+     */
+    private CompletableFuture<Boolean> getDefaultEntries(CompletableFuture<Boolean> pipeconfSet, PiPipeconf pipeconf) {
+        if (!driverBoolProperty(
+                SUPPORT_DEFAULT_TABLE_ENTRY,
+                DEFAULT_SUPPORT_DEFAULT_TABLE_ENTRY)) {
+            return pipeconfSet;
+        }
+        return pipeconfSet.thenApply(setSuccess -> {
+            if (!setSuccess) {
+                return setSuccess;
+            }
+            final P4RuntimeDefaultEntryMirror mirror = handler()
+                    .get(P4RuntimeDefaultEntryMirror.class);
+
+            final PiPipelineModel pipelineModel = pipeconf.pipelineModel();
+            final P4RuntimeReadClient.ReadRequest request = client.read(
+                    p4DeviceId, pipeconf);
+            // Read default entries from all non-constant tables.
+            // Ignore constant default entries.
+            pipelineModel.tables().stream()
+                    .filter(t -> !t.isConstantTable())
+                    .forEach(t -> {
+                        if (!t.constDefaultAction().isPresent()) {
+                            request.defaultTableEntry(t.id());
+                        }
+                    });
+            final P4RuntimeReadClient.ReadResponse response = request.submitSync();
+            mirror.sync(deviceId, response.all(PiTableEntry.class));
+            return true;
+        });
+    }
 }

@@ -25,6 +25,7 @@ import com.google.common.testing.EqualsTester;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.onlab.packet.Ip4Address;
 import org.onlab.packet.IpAddress;
@@ -36,6 +37,7 @@ import org.onosproject.net.DeviceId;
 import org.onosproject.net.PortNumber;
 import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.device.DeviceServiceAdapter;
+import org.onosproject.openstacknetworking.api.Constants;
 import org.onosproject.openstacknetworking.api.InstancePort;
 import org.onosproject.openstacknetworking.api.OpenstackNetworkService;
 import org.onosproject.openstacknetworking.api.OpenstackRouterAdminService;
@@ -45,8 +47,10 @@ import org.onosproject.openstacknetworking.impl.OpenstackRouterServiceAdapter;
 import org.onosproject.openstacknetworking.impl.TestRouterInterface;
 import org.onosproject.openstacknetworking.web.OpenstackFloatingIpWebResourceTest;
 import org.onosproject.openstacknetworking.web.OpenstackNetworkWebResourceTest;
+import org.onosproject.openstacknode.api.DefaultKeystoneConfig;
 import org.onosproject.openstacknode.api.DefaultOpenstackAuth;
 import org.onosproject.openstacknode.api.DefaultOpenstackNode;
+import org.onosproject.openstacknode.api.KeystoneConfig;
 import org.onosproject.openstacknode.api.NodeState;
 import org.onosproject.openstacknode.api.OpenstackAuth;
 import org.onosproject.openstacknode.api.OpenstackNode;
@@ -71,9 +75,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.onosproject.net.AnnotationKeys.PORT_NAME;
+import static org.onosproject.openstacknetworking.api.Constants.REST_UTF8;
+import static org.onosproject.openstacknetworking.api.Constants.UNSUPPORTED_VENDOR;
 import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.addRouterIface;
 import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.associatedFloatingIp;
+import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.checkActivationFlag;
 import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.checkArpMode;
+import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.getBroadcastAddr;
 import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.getConnectedClient;
 import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.getGwByComputeDevId;
 import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.getGwByInstancePort;
@@ -84,6 +92,7 @@ import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.m
 import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.prettyJson;
 import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.routerInterfacesEquals;
 import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.swapStaleLocation;
+import static org.onosproject.openstacknetworking.util.OpenstackNetworkingUtil.vnicType;
 
 public final class OpenstackNetworkingUtilTest {
 
@@ -102,7 +111,7 @@ public final class OpenstackNetworkingUtilTest {
     private OpenstackNode openstackControlNodeV3;
 
     @Before
-    public void setUp() {
+    public void setUp() throws IOException {
 
         instancePort1 = DefaultInstancePort.builder()
                 .networkId("net-id-1")
@@ -144,11 +153,14 @@ public final class OpenstackNetworkingUtilTest {
                 .getResourceAsStream("openstack-floatingip3.json");
 
         floatingIp1 = (NetFloatingIP)
-                jsonToModelEntity(floatingIpjsonStream1, NeutronFloatingIP.class);
+                jsonToModelEntity(IOUtils.toString(floatingIpjsonStream1, REST_UTF8),
+                        NeutronFloatingIP.class);
         floatingIp2 = (NetFloatingIP)
-                jsonToModelEntity(floatingIpjsonStream2, NeutronFloatingIP.class);
+                jsonToModelEntity(IOUtils.toString(floatingIpjsonStream2, REST_UTF8),
+                        NeutronFloatingIP.class);
         floatingIp3 = (NetFloatingIP)
-                jsonToModelEntity(floatingIpjsonStream3, NeutronFloatingIP.class);
+                jsonToModelEntity(IOUtils.toString(floatingIpjsonStream3, REST_UTF8),
+                        NeutronFloatingIP.class);
 
         InputStream portJsonStream = OpenstackNetworkWebResourceTest.class
                 .getResourceAsStream("openstack-port.json");
@@ -161,14 +173,18 @@ public final class OpenstackNetworkingUtilTest {
                 .getResourceAsStream("openstack-port-sriov3.json");
 
         openstackPort = (Port)
-                jsonToModelEntity(portJsonStream, NeutronPort.class);
+                jsonToModelEntity(
+                        IOUtils.toString(portJsonStream, REST_UTF8), NeutronPort.class);
 
         openstackSriovPort1 = (Port)
-                jsonToModelEntity(sriovPortJsonStream1, NeutronPort.class);
+                jsonToModelEntity(IOUtils.toString(sriovPortJsonStream1, REST_UTF8),
+                        NeutronPort.class);
         openstackSriovPort2 = (Port)
-                jsonToModelEntity(sriovPortJsonStream2, NeutronPort.class);
+                jsonToModelEntity(IOUtils.toString(sriovPortJsonStream2, REST_UTF8),
+                        NeutronPort.class);
         openstackSriovPort3 = (Port)
-                jsonToModelEntity(sriovPortJsonStream3, NeutronPort.class);
+                jsonToModelEntity(IOUtils.toString(sriovPortJsonStream3, REST_UTF8),
+                        NeutronPort.class);
     }
 
     @After
@@ -184,7 +200,7 @@ public final class OpenstackNetworkingUtilTest {
                 modelEntityToJson(floatingIp1, NeutronFloatingIP.class);
         InputStream is = IOUtils.toInputStream(floatingIpNode.toString(), StandardCharsets.UTF_8.name());
         NetFloatingIP floatingIp2 = (NetFloatingIP)
-                jsonToModelEntity(is, NeutronFloatingIP.class);
+                jsonToModelEntity(IOUtils.toString(is, REST_UTF8), NeutronFloatingIP.class);
         new EqualsTester().addEqualityGroup(floatingIp1, floatingIp2).testEquals();
     }
 
@@ -298,7 +314,7 @@ public final class OpenstackNetworkingUtilTest {
         assertNull(getIntfNameFromPciAddress(openstackPort));
         assertEquals(expectedIntfName1, getIntfNameFromPciAddress(openstackSriovPort1));
         assertEquals(expectedIntfName2, getIntfNameFromPciAddress(openstackSriovPort2));
-        assertNull(getIntfNameFromPciAddress(openstackSriovPort3));
+        assertEquals(UNSUPPORTED_VENDOR, getIntfNameFromPciAddress(openstackSriovPort3));
     }
 
     /**
@@ -397,48 +413,114 @@ public final class OpenstackNetworkingUtilTest {
     /**
      * Tests the getConnectedClient method.
      */
-    @Test(expected = Exception.class)
+    @Ignore
+    @Test
     public void testGetConnectedClient() {
         OpenstackNode.Builder osNodeBuilderV2 = DefaultOpenstackNode.builder();
         OpenstackAuth.Builder osNodeAuthBuilderV2 = DefaultOpenstackAuth.builder()
                 .version("v2.0")
-                .port(35357)
                 .protocol(OpenstackAuth.Protocol.HTTP)
                 .project("admin")
                 .username("admin")
                 .password("password")
                 .perspective(OpenstackAuth.Perspective.PUBLIC);
+
+        String endpointV2 = "1.1.1.1:35357/v2.0";
+
+        KeystoneConfig keystoneConfigV2 = DefaultKeystoneConfig.builder()
+                .authentication(osNodeAuthBuilderV2.build())
+                .endpoint(endpointV2)
+                .build();
 
         openstackControlNodeV2 = osNodeBuilderV2.hostname("controllerv2")
                 .type(OpenstackNode.NodeType.CONTROLLER)
                 .managementIp(IpAddress.valueOf("1.1.1.1"))
-                .endPoint("1.1.1.1")
-                .authentication(osNodeAuthBuilderV2.build())
+                .keystoneConfig(keystoneConfigV2)
                 .state(NodeState.COMPLETE)
                 .build();
-
 
         OpenstackNode.Builder osNodeBuilderV3 = DefaultOpenstackNode.builder();
         OpenstackAuth.Builder osNodeAuthBuilderV3 = DefaultOpenstackAuth.builder()
                 .version("v2")
-                .port(80)
                 .protocol(OpenstackAuth.Protocol.HTTP)
                 .project("admin")
                 .username("admin")
                 .password("password")
                 .perspective(OpenstackAuth.Perspective.PUBLIC);
 
+        String endpointV3 = "2.2.2.2:80/v3";
+
+        KeystoneConfig keystoneConfigV3 = DefaultKeystoneConfig.builder()
+                .authentication(osNodeAuthBuilderV3.build())
+                .endpoint(endpointV3)
+                .build();
+
         openstackControlNodeV3 = osNodeBuilderV3.hostname("controllerv3")
                 .type(OpenstackNode.NodeType.CONTROLLER)
                 .managementIp(IpAddress.valueOf("2.2.2.2"))
-                .endPoint("2.2.2.2")
-                .authentication(osNodeAuthBuilderV3.build())
+                .keystoneConfig(keystoneConfigV3)
                 .state(NodeState.COMPLETE)
                 .build();
 
         getConnectedClient(openstackControlNodeV2);
         getConnectedClient(openstackControlNodeV3);
+    }
 
+    /**
+     * Tests the vnicType method.
+     */
+    @Test
+    public void testVnicType() {
+        String portNameNormalTap = "tap123456789ab";
+        String portNameNormalVhu = "tap123456789ab";
+        String portNameNormalCavium = "enp1f2s3";
+        String portNameUnsupported = "123456789ab";
+
+        assertEquals(vnicType(portNameNormalTap), Constants.VnicType.NORMAL);
+        assertEquals(vnicType(portNameNormalVhu), Constants.VnicType.NORMAL);
+        assertEquals(vnicType(portNameNormalCavium), Constants.VnicType.DIRECT);
+        assertEquals(vnicType(portNameUnsupported), Constants.VnicType.UNSUPPORTED);
+    }
+
+    /**
+     * Tests the checkActivationFlag method.
+     */
+    @Test
+    public void testCheckActivationFlag() {
+        assertFalse(checkActivationFlag("disable"));
+        assertTrue(checkActivationFlag("enable"));
+    }
+
+    /**
+     * Tests the checkActivationFlag method with incorrect input parameters.
+     */
+    @Test (expected = IllegalArgumentException.class)
+    public void testCheckActivationFlagWithException() {
+        checkActivationFlag("test");
+        checkActivationFlag(null);
+    }
+
+    /**
+     * Tests the getBroadcastAddr method.
+     */
+    @Test
+    public void testGetBroadcastAddr() {
+        String ipAddr = "192.168.10.35";
+        int prefix1 = 24;
+        String broadcast1 = getBroadcastAddr(ipAddr, prefix1);
+        assertEquals(broadcast1, "192.168.10.255");
+
+        int prefix2 = 28;
+        String broadcast2 = getBroadcastAddr(ipAddr, prefix2);
+        assertEquals(broadcast2, "192.168.10.47");
+
+        int prefix3 = 32;
+        String broadcast3 = getBroadcastAddr(ipAddr, prefix3);
+        assertEquals(broadcast3, "192.168.10.35");
+
+        int prefix4 = 16;
+        String broadcast4 = getBroadcastAddr(ipAddr, prefix4);
+        assertEquals(broadcast4, "192.168.255.255");
     }
 
     private DeviceId genDeviceId(int index) {

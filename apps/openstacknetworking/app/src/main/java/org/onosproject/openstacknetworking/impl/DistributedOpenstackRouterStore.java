@@ -17,11 +17,6 @@ package org.onosproject.openstacknetworking.impl;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.Service;
 import org.onlab.util.KryoNamespace;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
@@ -48,6 +43,10 @@ import org.openstack4j.openstack.networking.domain.NeutronHostRoute;
 import org.openstack4j.openstack.networking.domain.NeutronRouter;
 import org.openstack4j.openstack.networking.domain.NeutronRouterInterface;
 import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 
 import java.util.Set;
@@ -75,8 +74,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Manages the inventory of OpenStack router and floating IP using a {@code ConsistentMap}.
  */
-@Service
-@Component(immediate = true)
+@Component(immediate = true, service = OpenstackRouterStore.class)
 public class DistributedOpenstackRouterStore
         extends AbstractStore<OpenstackRouterEvent, OpenstackRouterStoreDelegate>
         implements OpenstackRouterStore {
@@ -100,22 +98,23 @@ public class DistributedOpenstackRouterStore
             .register(NeutronFloatingIP.class)
             .build();
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected CoreService coreService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected StorageService storageService;
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY)
     protected OpenstackNetworkService osNetworkService;
 
     private final ExecutorService eventExecutor = newSingleThreadExecutor(
             groupedThreads(this.getClass().getSimpleName(), "event-handler", log));
-    private final MapEventListener<String, Router> routerMapListener = new OpenstackRouterMapListener();
-    private final MapEventListener<String, RouterInterface> routerInterfaceMapListener =
-            new OpenstackRouterInterfaceMapListener();
-    private final MapEventListener<String, NetFloatingIP> floatingIpMapListener =
-            new OpenstackFloatingIpMapListener();
+    private final MapEventListener<String, Router>
+                            routerMapListener = new OpenstackRouterMapListener();
+    private final MapEventListener<String, RouterInterface>
+            routerInterfaceMapListener = new OpenstackRouterInterfaceMapListener();
+    private final MapEventListener<String, NetFloatingIP>
+            floatingIpMapListener = new OpenstackFloatingIpMapListener();
 
     private ConsistentMap<String, Router> osRouterStore;
     private ConsistentMap<String, RouterInterface> osRouterInterfaceStore;
@@ -274,34 +273,40 @@ public class DistributedOpenstackRouterStore
         public void event(MapEvent<String, Router> event) {
             switch (event.type()) {
                 case UPDATE:
-                    log.debug("OpenStack router updated");
-                    eventExecutor.execute(() -> {
-                        notifyDelegate(new OpenstackRouterEvent(
-                                OPENSTACK_ROUTER_UPDATED,
-                                event.newValue().value()));
-                        processGatewayUpdate(event);
-                    });
+                    eventExecutor.execute(() -> processRouterMapUpdate(event));
                     break;
                 case INSERT:
-                    log.debug("OpenStack router created");
-                    eventExecutor.execute(() ->
-                        notifyDelegate(new OpenstackRouterEvent(
-                                OPENSTACK_ROUTER_CREATED,
-                                event.newValue().value()))
-                    );
+                    eventExecutor.execute(() -> processRouterMapInsertion(event));
                     break;
                 case REMOVE:
-                    log.debug("OpenStack router removed");
-                    eventExecutor.execute(() ->
-                        notifyDelegate(new OpenstackRouterEvent(
-                                OPENSTACK_ROUTER_REMOVED,
-                                event.oldValue().value()))
-                    );
+                    eventExecutor.execute(() -> processRouterMapRemoval(event));
                     break;
                 default:
                     log.error("Unsupported openstack router event type");
                     break;
             }
+        }
+
+        private void processRouterMapUpdate(MapEvent<String, Router> event) {
+            log.debug("OpenStack router updated");
+            notifyDelegate(new OpenstackRouterEvent(
+                    OPENSTACK_ROUTER_UPDATED,
+                    event.newValue().value()));
+            processGatewayUpdate(event);
+        }
+
+        private void processRouterMapInsertion(MapEvent<String, Router> event) {
+            log.debug("OpenStack router created");
+            notifyDelegate(new OpenstackRouterEvent(
+                    OPENSTACK_ROUTER_CREATED,
+                    event.newValue().value()));
+        }
+
+        private void processRouterMapRemoval(MapEvent<String, Router> event) {
+            log.debug("OpenStack router removed");
+            notifyDelegate(new OpenstackRouterEvent(
+                    OPENSTACK_ROUTER_REMOVED,
+                    event.oldValue().value()));
         }
 
         private void processGatewayUpdate(MapEvent<String, Router> event) {
@@ -321,94 +326,108 @@ public class DistributedOpenstackRouterStore
         }
     }
 
-    private class OpenstackRouterInterfaceMapListener implements MapEventListener<String, RouterInterface> {
+    private class OpenstackRouterInterfaceMapListener
+                        implements MapEventListener<String, RouterInterface> {
 
         @Override
         public void event(MapEvent<String, RouterInterface> event) {
             switch (event.type()) {
                 case UPDATE:
-                    log.debug("OpenStack router interface updated");
-                    eventExecutor.execute(() ->
-                        notifyDelegate(new OpenstackRouterEvent(
-                                OPENSTACK_ROUTER_INTERFACE_UPDATED,
-                                router(event.newValue().value().getId()),
-                                event.newValue().value()))
-                    );
+                    eventExecutor.execute(() -> processRouterIntfUpdate(event));
                     break;
                 case INSERT:
-                    log.debug("OpenStack router interface created");
-                    eventExecutor.execute(() ->
-                        notifyDelegate(new OpenstackRouterEvent(
-                                OPENSTACK_ROUTER_INTERFACE_ADDED,
-                                router(event.newValue().value().getId()),
-                                event.newValue().value()))
-                    );
+                    eventExecutor.execute(() -> processRouterIntfInsertion(event));
                     break;
                 case REMOVE:
-                    log.debug("OpenStack router interface removed");
-                    eventExecutor.execute(() ->
-                        notifyDelegate(new OpenstackRouterEvent(
-                                OPENSTACK_ROUTER_INTERFACE_REMOVED,
-                                router(event.oldValue().value().getId()),
-                                event.oldValue().value()))
-                    );
+                    eventExecutor.execute(() -> processRouterIntfRemoval(event));
                     break;
                 default:
                     log.error("Unsupported openstack router interface event type");
                     break;
             }
         }
+
+        private void processRouterIntfUpdate(MapEvent<String, RouterInterface> event) {
+            log.debug("OpenStack router interface updated");
+            notifyDelegate(new OpenstackRouterEvent(
+                    OPENSTACK_ROUTER_INTERFACE_UPDATED,
+                    router(event.newValue().value().getId()),
+                    event.newValue().value()));
+        }
+
+        private void processRouterIntfInsertion(MapEvent<String, RouterInterface> event) {
+            log.debug("OpenStack router interface created");
+            notifyDelegate(new OpenstackRouterEvent(
+                    OPENSTACK_ROUTER_INTERFACE_ADDED,
+                    router(event.newValue().value().getId()),
+                    event.newValue().value()));
+        }
+
+        private void processRouterIntfRemoval(MapEvent<String, RouterInterface> event) {
+            log.debug("OpenStack router interface removed");
+            notifyDelegate(new OpenstackRouterEvent(
+                    OPENSTACK_ROUTER_INTERFACE_REMOVED,
+                    router(event.oldValue().value().getId()),
+                    event.oldValue().value()));
+        }
     }
 
-    private class OpenstackFloatingIpMapListener implements MapEventListener<String, NetFloatingIP> {
+    private class OpenstackFloatingIpMapListener
+                            implements MapEventListener<String, NetFloatingIP> {
 
         @Override
         public void event(MapEvent<String, NetFloatingIP> event) {
             switch (event.type()) {
                 case UPDATE:
-                    log.debug("OpenStack floating IP updated");
-                    eventExecutor.execute(() -> {
-                        Router osRouter = Strings.isNullOrEmpty(
-                                event.newValue().value().getRouterId()) ?
-                                null :
-                                router(event.newValue().value().getRouterId());
-                        notifyDelegate(new OpenstackRouterEvent(
-                                OPENSTACK_FLOATING_IP_UPDATED,
-                                osRouter,
-                                event.newValue().value()));
-                        processFloatingIpUpdate(event, osRouter);
-                    });
+                    eventExecutor.execute(() -> processFloatingIpMapUpdate(event));
                     break;
                 case INSERT:
-                    log.debug("OpenStack floating IP created");
-                    eventExecutor.execute(() -> {
-                        Router osRouter = Strings.isNullOrEmpty(
-                                event.newValue().value().getRouterId()) ?
-                                null :
-                                router(event.newValue().value().getRouterId());
-                        notifyDelegate(new OpenstackRouterEvent(
-                                OPENSTACK_FLOATING_IP_CREATED,
-                                osRouter,
-                                event.newValue().value()));
-                    });
+                    eventExecutor.execute(() -> processFloatingIpMapInsertion(event));
                     break;
                 case REMOVE:
-                    log.debug("OpenStack floating IP removed");
-                    eventExecutor.execute(() -> {
-                        Router osRouter = Strings.isNullOrEmpty(
-                                event.oldValue().value().getRouterId()) ?
-                                null :
-                                router(event.oldValue().value().getRouterId());
-                        notifyDelegate(new OpenstackRouterEvent(
-                                OPENSTACK_FLOATING_IP_REMOVED,
-                                osRouter,
-                                event.oldValue().value()));
-                    });
+                    eventExecutor.execute(() -> processFloatingIpMapRemoval(event));
                     break;
                 default:
                     log.error("Unsupported openstack floating IP event type");
                     break;
             }
+        }
+
+        private void processFloatingIpMapUpdate(MapEvent<String, NetFloatingIP> event) {
+            log.debug("OpenStack floating IP updated");
+            Router osRouter = Strings.isNullOrEmpty(
+                    event.newValue().value().getRouterId()) ?
+                    null :
+                    router(event.newValue().value().getRouterId());
+            notifyDelegate(new OpenstackRouterEvent(
+                    OPENSTACK_FLOATING_IP_UPDATED,
+                    osRouter,
+                    event.newValue().value()));
+            processFloatingIpUpdate(event, osRouter);
+        }
+
+        private void processFloatingIpMapInsertion(MapEvent<String, NetFloatingIP> event) {
+            log.debug("OpenStack floating IP created");
+            Router osRouter = Strings.isNullOrEmpty(
+                    event.newValue().value().getRouterId()) ?
+                    null :
+                    router(event.newValue().value().getRouterId());
+            notifyDelegate(new OpenstackRouterEvent(
+                    OPENSTACK_FLOATING_IP_CREATED,
+                    osRouter,
+                    event.newValue().value()));
+        }
+
+        private void processFloatingIpMapRemoval(MapEvent<String, NetFloatingIP> event) {
+            log.debug("OpenStack floating IP removed");
+            Router osRouter = Strings.isNullOrEmpty(
+                    event.oldValue().value().getRouterId()) ?
+                    null :
+                    router(event.oldValue().value().getRouterId());
+            notifyDelegate(new OpenstackRouterEvent(
+                    OPENSTACK_FLOATING_IP_REMOVED,
+                    osRouter,
+                    event.oldValue().value()));
         }
 
         private void processFloatingIpUpdate(MapEvent<String, NetFloatingIP> event,

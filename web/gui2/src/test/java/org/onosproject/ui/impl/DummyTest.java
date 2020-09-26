@@ -15,8 +15,17 @@
  */
 package org.onosproject.ui.impl;
 
+import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
+
 /**
- * This is just a dummy file to get BUCK going.
+ * This is just a dummy file to satisfy Bazel's need for a file to be present.
  */
 public class DummyTest {
+
+    @Test
+    public void dummyTest() {
+        assertTrue(true);
+    }
 }

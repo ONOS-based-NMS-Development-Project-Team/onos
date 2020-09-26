@@ -20,10 +20,7 @@ import org.onosproject.cluster.Member;
 import org.onosproject.core.Application;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.net.intf.Interface;
-import org.onosproject.incubator.net.virtual.TenantId;
-import org.onosproject.incubator.net.virtual.VirtualDevice;
-import org.onosproject.incubator.net.virtual.VirtualNetwork;
-import org.onosproject.incubator.net.virtual.VirtualPort;
+import org.onosproject.net.TenantId;
 import org.onosproject.net.ConnectPoint;
 import org.onosproject.net.Element;
 import org.onosproject.net.ElementId;
@@ -62,14 +59,14 @@ public final class Comparators {
     public static final Comparator<FlowRule> FLOW_RULE_COMPARATOR =
             (f1, f2) -> {
                 // Compare table IDs in ascending order
-                int tableCompare = f1.tableId() - f2.tableId();
+                int tableCompare = f1.table().compareTo(f2.table());
                 if (tableCompare != 0) {
                     return tableCompare;
                 }
                 // Compare priorities in descending order
                 int priorityCompare = f2.priority() - f1.priority();
                 return (priorityCompare == 0)
-                        ? Long.valueOf(f1.id().value()).compareTo(f2.id().value())
+                        ? Long.compare(f1.id().value(), f2.id().value())
                         : priorityCompare;
             };
 
@@ -121,15 +118,4 @@ public final class Comparators {
     public static final Comparator<TenantId> TENANT_ID_COMPARATOR =
             (t1, t2) -> t1.id().compareTo(t2.id());
 
-    public static final Comparator<VirtualNetwork> VIRTUAL_NETWORK_COMPARATOR =
-            (v1, v2) -> {
-                int compareId = v1.tenantId().toString().compareTo(v2.tenantId().toString());
-                return (compareId != 0) ? compareId : Long.signum(v1.id().id() - v2.id().id());
-            };
-
-    public static final Comparator<VirtualDevice> VIRTUAL_DEVICE_COMPARATOR =
-            (v1, v2) -> v1.id().toString().compareTo(v2.id().toString());
-
-    public static final Comparator<VirtualPort> VIRTUAL_PORT_COMPARATOR =
-            (v1, v2) -> v1.number().toString().compareTo(v2.number().toString());
 }

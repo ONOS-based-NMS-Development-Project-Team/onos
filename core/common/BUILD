@@ -1,5 +1,5 @@
-COMPILE_DEPS = CORE_DEPS + JACKSON + METRICS + [
-    "//incubator/api:onos-incubator-api",
+COMPILE_DEPS = CORE_DEPS + JACKSON + METRICS + KRYO + [
+    "//core/store/serializers:onos-core-serializers",
 ]
 
 TEST_DEPS = TEST + ["//core/api:onos-api-tests"]

@@ -15,7 +15,8 @@
  */
 package org.onosproject.election.cli;
 
-import org.apache.karaf.shell.commands.Command;
+import org.apache.karaf.shell.api.action.Command;
+import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 import org.onosproject.cluster.LeadershipService;
 
@@ -23,6 +24,7 @@ import org.onosproject.cluster.LeadershipService;
  * CLI command to withdraw the local node from leadership election for
  * the Election test application.
  */
+@Service
 @Command(scope = "onos", name = "election-test-withdraw",
         description = "Withdraw node from leadership election for the Election test application")
 public class ElectionTestWithdrawCommand extends AbstractShellCommand {
@@ -30,7 +32,7 @@ public class ElectionTestWithdrawCommand extends AbstractShellCommand {
     private static final String ELECTION_APP = "org.onosproject.election";
 
     @Override
-    protected void execute() {
+    protected void doExecute() {
         LeadershipService service = get(LeadershipService.class);
 
         service.withdraw(ELECTION_APP);

@@ -15,14 +15,14 @@
  */
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { SortDir, TableBaseImpl, TableResponse } from '../../../fw/widget/table.base';
-import { WebSocketService } from '../../../fw/remote/websocket.service';
-import { LogService } from '../../../log.service';
-import { LoadingService } from '../../../fw/layer/loading.service';
-import { FnService } from '../../../fw/util/fn.service';
+import {
+    FnService,
+    LogService,
+    WebSocketService,
+    LionService,
+    SortDir, TableBaseImpl, TableResponse
+} from 'org_onosproject_onos/web/gui2-fw-lib/public_api';
 import { ActivatedRoute } from '@angular/router';
-import { LionService } from '../../../fw/util/lion.service';
-
 
 /**
  * Model of the response from WebSocket
@@ -51,7 +51,7 @@ interface Flow {
 @Component({
     selector: 'onos-flow',
     templateUrl: './flow.component.html',
-    styleUrls: ['./flow.component.css', './flow.theme.css', '../../../fw/widget/table.css', '../../../fw/widget/table.theme.css']
+    styleUrls: ['./flow.component.css', './flow.theme.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.css', '../../../../../../../../gui2-fw-lib/lib/widget/table.theme.css']
 })
 export class FlowComponent extends TableBaseImpl implements OnInit, OnDestroy {
 
@@ -69,13 +69,12 @@ export class FlowComponent extends TableBaseImpl implements OnInit, OnDestroy {
     pipeconfTip: string;
 
     constructor(protected fs: FnService,
-        protected ls: LoadingService,
         protected log: LogService,
         protected as: ActivatedRoute,
         protected wss: WebSocketService,
         protected lion: LionService,
     ) {
-        super(fs, ls, log, wss, 'flow');
+        super(fs, log, wss, 'flow');
         this.as.queryParams.subscribe(params => {
             this.id = params['devId'];
 
